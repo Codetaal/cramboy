@@ -37,7 +37,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var standalone = window.navigator.standalone || matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches;
   if (isIOS && !standalone) $('ios-hint').hidden = false;
-  var APP_VERSION = 'dsk-7';
+  var APP_VERSION = 'dsk-8';
   $('ver').textContent = 'Version ' + APP_VERSION;
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
     var hadController = !!navigator.serviceWorker.controller;
@@ -58,8 +58,10 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   $('file-rom').onchange = function () {
     var f = this.files[0]; this.value = '';
     if (!f) return;
-    $('status').textContent = 'Storing ROM on this device…';
     readHeader(f).then(function (h) {
+      // Check before storing, so a wrong file never replaces the Continue game.
+      if (h.error) { $('status').textContent = ''; alert(h.error); return; }
+      $('status').textContent = 'Storing ROM on this device…';
       return KV.set('rom', { blob: f, name: f.name, title: h.title }).catch(function () {
         // Storage full or refused: still play, just won't be remembered.
       }).then(function () { startGame(f, f.name); });
@@ -71,8 +73,24 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
       var u8 = new Uint8Array(ab), id = '', title = '';
       for (var i = 0; i < 0x10; i++) id += u8[i] ? String.fromCharCode(u8[i]) : ' ';
       title = id.slice(0, 12).trim();
-      return { id: id, title: title, code: id.slice(12, 16) };
+      return { id: id, title: title, code: id.slice(12, 16), error: checkRom(u8, blob) };
     });
+  }
+
+  // Returns a message if this isn't a DS game file, else null.
+  function checkRom(u8, blob) {
+    var unpack = ' Unpack it first and pick the .nds file inside.\n\n' +
+      'A .zip unpacks by tapping it in the Files app. A .rar needs an unpacking app (e.g. iZip).';
+    if (u8[0] === 0x50 && u8[1] === 0x4B) return 'This is a ZIP archive, not a DS game.' + unpack;
+    if (u8[0] === 0x52 && u8[1] === 0x61 && u8[2] === 0x72 && u8[3] === 0x21) return 'This is a RAR archive, not a DS game.' + unpack;
+    if (u8[0] === 0x37 && u8[1] === 0x7A && u8[2] === 0xBC && u8[3] === 0xAF) return 'This is a 7z archive, not a DS game.' + unpack;
+    // Every DS game header has the checksum of the Nintendo logo (0xCF56) at 0x15C.
+    var logoOk = u8.length >= 0x160 && (u8[0x15C] | (u8[0x15D] << 8)) === 0xCF56;
+    if (!logoOk || blob.size < 0x8000) {
+      return 'This doesn\'t look like a Nintendo DS game (.nds), so it wasn\'t loaded.' +
+        (blob.name ? '\n\nFile: ' + blob.name : '');
+    }
+    return null;
   }
 
   // ---------- load ----------
@@ -81,6 +99,13 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     if (!ready) return;
     $('status').textContent = 'Loading…';
     readHeader(blob).then(function (h) {
+      if (h.error) {
+        $('status').textContent = '';
+        $('btn-continue').hidden = true;
+        KV.del('rom').catch(function () {});
+        alert(h.error + '\n\nPlease open your game again with "Open ROM file…".');
+        throw 'not a game';
+      }
       gameID = h.code[0] === '#' ? name : h.id;
       gameTitle = h.title;
       var size = romSize = blob.size;
@@ -111,7 +136,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
         $('status').textContent = '';
         showPlayer();
         msg(sav ? 'Save loaded' : 'No save yet for this game', 1500);
-      }).catch(function (e) { $('status').textContent = 'Failed: ' + e; });
+      }).catch(function (e) { if (e !== 'not a game') $('status').textContent = 'Failed: ' + e; });
   }
 
   function showPlayer() {
