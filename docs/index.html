@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="DS 한국어">
+  <meta name="theme-color" content="#0e1018">
+  <title>DS 한국어</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <link rel="icon" href="icon-180.png">
+  <link rel="stylesheet" href="app.css">
+  <link rel="stylesheet" href="kr/ui.css">
+</head>
+<body>
+  <div id="home">
+    <div class="home-inner">
+      <div class="logo">가</div>
+      <h1>DS 한국어</h1>
+      <p class="sub">Nintendo DS player with Korean subtitles</p>
+      <div id="status" class="muted">Starting emulator…</div>
+      <button id="btn-continue" class="big primary" hidden></button>
+      <button id="btn-open" class="big" disabled>Open ROM file…</button>
+      <input id="file-rom" type="file" hidden>
+      <p id="ios-hint" class="hint" hidden>
+        Tip: in Safari, tap <b>Share → Add to Home Screen</b> and open it from there.
+        Saves are only kept reliably in the Home Screen app.
+      </p>
+      <p class="muted small">
+        Your ROM and saves stay on this device. Play only games you own.<br>
+        Emulator: <a href="https://github.com/44670/desmume-wasm">desmume-wasm</a> (GPL-2.0), built from source.
+      </p>
+    </div>
+  </div>
+
+  <div id="player" hidden>
+    <canvas id="top" width="256" height="192"></canvas>
+    <canvas id="bottom" width="256" height="192"></canvas>
+    <div id="controls">
+      <div class="btn pill" data-k="l">L</div>
+      <div class="btn pill" data-k="r">R</div>
+      <div class="btn pill small" id="btn-menu">☰</div>
+      <div class="btn pill small" id="btn-ff">»</div>
+      <div class="btn pill small" data-k="select">SELECT</div>
+      <div class="btn pill small" data-k="start">START</div>
+      <div id="dpad"><div class="dpad-h"></div><div class="dpad-v"></div></div>
+      <div class="btn round" data-k="x">X</div>
+      <div class="btn round" data-k="y">Y</div>
+      <div class="btn round" data-k="a">A</div>
+      <div class="btn round" data-k="b">B</div>
+    </div>
+    <div id="msg" hidden></div>
+  </div>
+
+  <div id="menu" hidden>
+    <div class="menu-card">
+      <h2 id="menu-title">Menu</h2>
+      <button class="big primary" data-m="resume">▶ Resume</button>
+      <button class="big" data-m="sound">Sound: on</button>
+      <button class="big" data-m="export">Export save (.dsz)</button>
+      <button class="big" data-m="import">Import save (.dsz / .sav / .dsv)</button>
+      <input id="file-save" type="file" hidden>
+      <button class="big" data-m="home">Close game</button>
+      <p class="muted small">The game saves automatically a few seconds after you save in‑game.</p>
+    </div>
+  </div>
+
+  <script src="kv.js"></script>
+  <script src="emu.js"></script>
+  <script src="kr/table.js"></script>
+  <script src="kr/reader.js"></script>
+  <script src="kr/lookup.js"></script>
+  <script src="kr/ui.js"></script>
+  <script src="build/nds.js"></script>
+</body>
+</html>

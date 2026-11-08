@@ -1,0 +1,77 @@
+/* Korean learning overlay */
+#kr-panel, #kr-pill, #kr-sheet, #kr-toast {
+  -webkit-user-select: none; user-select: none;
+  font-family: 'Apple SD Gothic Neo', -apple-system, 'Noto Sans KR', sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+#kr-panel {
+  position: absolute; z-index: 5; box-sizing: border-box;
+  background: rgba(14, 16, 24, 0.86);
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  color: #f4f1ea; padding: 8px 40px 8px 12px;
+  font-size: 18px; line-height: 1.55; letter-spacing: 0.01em;
+  overflow-y: auto; touch-action: pan-y; -webkit-overflow-scrolling: touch;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  transition: opacity 0.25s;
+}
+#kr-panel.kr-hidden { opacity: 0; pointer-events: none; }
+#kr-panel .kr-menu-btn {
+  position: absolute; top: 4px; right: 4px; width: 32px; height: 32px;
+  border: 0; border-radius: 8px; background: rgba(255, 255, 255, 0.08); color: #f4f1ea;
+  font-size: 15px; line-height: 32px; padding: 0;
+}
+.kr-w {
+  display: inline; padding: 1px 1px; border-radius: 4px;
+  border-bottom: 1px dotted rgba(255, 214, 102, 0.45);
+}
+.kr-w.kr-saved { color: #ffd666; border-bottom-color: #ffd666; }
+.kr-w:active, .kr-w.kr-sel { background: rgba(255, 214, 102, 0.28); }
+.kr-pending { opacity: 0.35; }
+
+#kr-pill {
+  position: absolute; z-index: 5; height: 30px; min-width: 30px; padding: 0 9px;
+  border: 0; border-radius: 15px; background: rgba(14, 16, 24, 0.7); color: #ffd666;
+  font-size: 15px; font-weight: 600; line-height: 30px;
+}
+
+#kr-sheet {
+  position: fixed; inset: 0; z-index: 10; display: flex; flex-direction: column; justify-content: flex-end;
+  background: rgba(0, 0, 0, 0.45);
+}
+#kr-sheet[hidden] { display: none; }
+#kr-sheet .kr-card {
+  background: #16181f; color: #f4f1ea; border-radius: 16px 16px 0 0;
+  max-height: 82vh; overflow-y: auto; touch-action: pan-y; -webkit-overflow-scrolling: touch;
+  padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+  box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.4);
+}
+#kr-sheet .kr-selectable { -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
+.kr-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.kr-word { font-size: 30px; font-weight: 700; flex: 1; word-break: keep-all; }
+.kr-btn {
+  border: 0; border-radius: 10px; padding: 10px 14px; font-size: 15px; font-weight: 600;
+  background: #262a35; color: #f4f1ea; font-family: inherit;
+}
+.kr-btn.kr-primary { background: #ffd666; color: #16181f; }
+.kr-btn.kr-on { background: #3a3220; color: #ffd666; }
+.kr-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.kr-row .kr-btn { flex: 1; text-align: center; text-decoration: none; }
+.kr-hit { padding: 9px 0; border-top: 1px solid #262a35; }
+.kr-hit:first-of-type { border-top: 0; }
+.kr-hit b { font-size: 18px; }
+.kr-hit small { color: #8b90a0; margin-left: 6px; }
+.kr-gloss { color: #c9ccd6; font-size: 15px; margin-top: 2px; }
+.kr-sentence { margin-top: 12px; padding: 10px 12px; background: #1e2129; border-radius: 10px; font-size: 16px; line-height: 1.6; }
+.kr-sentence mark { background: rgba(255, 214, 102, 0.3); color: inherit; border-radius: 3px; }
+.kr-muted { color: #8b90a0; font-size: 13px; }
+.kr-tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+.kr-tabs .kr-btn { flex: 1; }
+.kr-item { padding: 10px 0; border-top: 1px solid #262a35; display: flex; gap: 10px; }
+.kr-item > div { flex: 1; min-width: 0; }
+.kr-item .kr-x { flex: 0 0 auto; background: transparent; color: #8b90a0; font-size: 18px; padding: 4px 8px; }
+.kr-line { padding: 8px 0; border-top: 1px solid #262a35; font-size: 16px; line-height: 1.6; }
+#kr-toast {
+  position: fixed; left: 50%; top: 12px; transform: translateX(-50%); z-index: 11;
+  background: #ffd666; color: #16181f; padding: 8px 14px; border-radius: 20px; font-size: 14px; font-weight: 600;
+  transition: opacity 0.3s; pointer-events: none;
+}
