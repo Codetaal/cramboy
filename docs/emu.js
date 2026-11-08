@@ -37,7 +37,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var standalone = window.navigator.standalone || matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches;
   if (isIOS && !standalone) $('ios-hint').hidden = false;
-  var APP_VERSION = 'dsk-9';
+  var APP_VERSION = 'dsk-10';
   $('ver').textContent = 'Version ' + APP_VERSION;
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
     var hadController = !!navigator.serviceWorker.controller;
@@ -298,11 +298,14 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     unlockAudio();
     var keys = 0, td = 0, bottom = screenCanvas[1].getBoundingClientRect();
     var dp = $('dpad').getBoundingClientRect(), dpCls = '';
+    var menuDown = false, ffDown = false;
     for (var i = 0; i < e.touches.length; i++) {
       var t = e.touches[i], x = t.clientX, y = t.clientY;
       var found = false;
       for (var k in btns) if (hit(btns[k], x, y)) { keys |= 1 << KEYS[k]; found = true; }
-      if (found || hit($('btn-menu'), x, y) || hit($('btn-ff'), x, y)) continue;
+      if (hit($('btn-menu'), x, y)) { menuDown = true; continue; }
+      if (hit($('btn-ff'), x, y)) { ffDown = true; continue; }
+      if (found) continue;
       // D-pad: 8-way by angle from centre, with a generous area.
       var dx = x - (dp.left + dp.width / 2), dy = y - (dp.top + dp.height / 2);
       var onBottom = x >= bottom.left && x <= bottom.right && y >= bottom.top && y <= bottom.bottom;
@@ -324,6 +327,8 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     touchKeys = keys; touchDown = td;
     $('dpad').className = dpCls;
     for (var k2 in btns) btns[k2].classList.toggle('on', !!(keys & (1 << KEYS[k2])));
+    $('btn-menu').classList.toggle('on', menuDown);
+    $('btn-ff').classList.toggle('on', ffDown);
     if (e.type === 'touchstart') {
       var t0 = e.changedTouches[0];
       if (hit($('btn-menu'), t0.clientX, t0.clientY)) openMenu();

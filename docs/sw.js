@@ -1,5 +1,5 @@
 // Offline cache for the app. Bump VERSION (and APP_VERSION in emu.js) whenever any file changes.
-var VERSION = 'dsk-9';
+var VERSION = 'dsk-10';
 var FILES = ['./', './index.html', './app.css', './kv.js', './emu.js', './manifest.json', './icon-180.png', './icon-512.png',
   './build/nds.js', './build/nds.wasm',
   './kr/ui.css', './kr/table.js', './kr/reader.js', './kr/lookup.js', './kr/ui.js', './kr/dict.json'];

@@ -46,9 +46,29 @@ h1 { margin: 0; font-size: 28px; }
 .btn.round { border-radius: 50%; font-size: 20px; }
 .btn.pill { border-radius: 999px; font-size: 15px; }
 .btn.pill.small { font-size: 11px; letter-spacing: 0.04em; }
-.btn.on, #dpad .on { background: var(--btn-on); color: #fff; }
+.btn {
+  /* Release springs back a little slower than the press, so it feels physical. */
+  transition: transform 140ms cubic-bezier(.3, 1.6, .5, 1), background-color 160ms ease, box-shadow 160ms ease, color 160ms ease;
+  will-change: transform;
+}
+.btn.on {
+  background: var(--btn-on); color: #fff;
+  transform: scale(0.9); box-shadow: 0 0 0 3px rgba(255, 214, 102, 0.18);
+  transition-duration: 50ms;
+}
+@media (hover: hover) {
+  .btn:hover:not(.on) { background: rgba(255, 255, 255, 0.18); }
+  #dpad:hover > div { background: rgba(255, 255, 255, 0.14); }
+}
 #btn-ff.active { color: var(--accent); border-color: var(--accent); }
-#dpad { position: absolute; }
+#dpad {
+  position: absolute; --rx: 0deg; --ry: 0deg;
+  transform: perspective(320px) rotateX(var(--rx)) rotateY(var(--ry));
+  transition: transform 120ms cubic-bezier(.3, 1.5, .5, 1);
+}
+/* Tilt toward the pressed direction (diagonals combine). */
+#dpad.u { --rx: 14deg; } #dpad.d { --rx: -14deg; } #dpad.l { --ry: -14deg; } #dpad.r { --ry: 14deg; }
+#dpad.u, #dpad.d, #dpad.l, #dpad.r { transition-duration: 50ms; }
 #dpad > div { position: absolute; background: var(--btn); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 10px; }
 #dpad .dpad-h { left: 0; right: 0; top: 33.3%; height: 33.4%; }
 #dpad .dpad-v { top: 0; bottom: 0; left: 33.3%; width: 33.4%; }
@@ -69,5 +89,6 @@ h1 { margin: 0; font-size: 28px; }
   padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
 }
 #controls.floating .btn, #controls.floating #dpad > div { background: rgba(255, 255, 255, 0.28); border-color: rgba(255, 255, 255, 0.35); color: #fff; }
+#controls.floating .btn.on { background: rgba(255, 214, 102, 0.75); }
 .menu-card { max-height: 90vh; overflow-y: auto; }
 .menu-card h2 { margin: 4px 0 8px; font-size: 18px; }
