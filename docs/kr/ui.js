@@ -266,8 +266,7 @@
         });
       }
     } else {
-      h += '<div class="kr-item"><div><b>Subtitle bar</b><div class="kr-muted">Show the dialogue above the game. When off, tap 가 to see it.</div></div>' +
-        '<button class="kr-btn' + (settings.subs ? ' kr-on' : '') + '" data-act="subs">' + (settings.subs ? 'On' : 'Off') + '</button></div>' +
+      h += '<div class="kr-muted">The subtitle bar can be switched on or off in the game menu (☰).</div>' +
         '<div class="kr-muted" style="margin-top:12px">Reader: ' + reader.stats.strings + ' strings in memory, ' + reader.stats.korean + ' Korean, ' +
         reader.stats.printers + ' being printed.<br>Dictionary: ' + (dict ? Object.keys(dict).length.toLocaleString() + ' entries' : 'loads on first lookup') +
         '.<br>Character table and Pokémon names from PKHeX (GPL‑3.0); dictionary from kengdic (MPL‑2.0).</div>';

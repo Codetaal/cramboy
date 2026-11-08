@@ -37,7 +37,22 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var standalone = window.navigator.standalone || matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches;
   if (isIOS && !standalone) $('ios-hint').hidden = false;
-  if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {});
+  var APP_VERSION = 'dsk-4';
+  $('ver').textContent = 'Version ' + APP_VERSION;
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+    var hadController = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (reg) {
+      reg.update().catch(function () {});
+      // Check again whenever the app comes back to the foreground.
+      document.addEventListener('visibilitychange', function () { if (!document.hidden) reg.update().catch(function () {}); });
+    }).catch(function () {});
+    // A new version finished installing: reload right away on the start screen, otherwise offer it.
+    navigator.serviceWorker.addEventListener('controllerchange', function () {
+      if (!hadController) { hadController = true; return; }
+      if (uiCurrentMode !== 'player') location.reload();
+      else msg('Update ready: open ☰ → Close game to apply it', 6000);
+    });
+  }
 
   $('btn-open').onclick = function () { unlockAudio(); $('file-rom').click(); };
   $('file-rom').onchange = function () {

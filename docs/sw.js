@@ -1,11 +1,19 @@
-// Offline cache for the app shell. Bump VERSION whenever any file changes.
-var VERSION = 'dsk-2';
+// Offline cache for the app. Bump VERSION (and APP_VERSION in emu.js) whenever any file changes.
+var VERSION = 'dsk-4';
 var FILES = ['./', './index.html', './app.css', './kv.js', './emu.js', './manifest.json', './icon-180.png', './icon-512.png',
   './build/nds.js', './build/nds.wasm',
   './kr/ui.css', './kr/table.js', './kr/reader.js', './kr/lookup.js', './kr/ui.js', './kr/dict.json'];
 
 self.addEventListener('install', function (e) {
-  e.waitUntil(caches.open(VERSION).then(function (c) { return c.addAll(FILES); }).then(function () { return self.skipWaiting(); }));
+  // cache: 'reload' bypasses the browser's HTTP cache, so a new version never stores old files.
+  e.waitUntil(caches.open(VERSION).then(function (c) {
+    return Promise.all(FILES.map(function (f) {
+      return fetch(new Request(f, { cache: 'reload' })).then(function (r) {
+        if (!r.ok) throw new Error(f + ' ' + r.status);
+        return c.put(f, r);
+      });
+    }));
+  }).then(function () { return self.skipWaiting(); }));
 });
 self.addEventListener('activate', function (e) {
   e.waitUntil(caches.keys().then(function (keys) {
