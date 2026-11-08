@@ -55,3 +55,24 @@ assert.strictEqual(res.active.text.slice(0, res.active.shown), '야생 피카츄
 const t0 = process.hrtime.bigint(); for (let k = 0; k < 20; k++) r.scan(u32, u16); 
 console.log('scan ms:', Number(process.hrtime.bigint() - t0) / 20 / 1e6);
 console.log('ALL READER TESTS PASSED');
+
+// ---- Gen 5 (Pokémon Black/White): Unicode text, 0xFFFE new line, 0xF000 commands ----
+{
+  const buf5 = new ArrayBuffer(4 << 20), a32 = new Uint32Array(buf5), a16 = new Uint16Array(buf5);
+  const r5 = new Reader(T);
+  r5.scan(a32, a16);
+  const uni = s => [...s].map(c => c.charCodeAt(0));
+  const PAGE = [0xF000, 0xBE01, 0x0000], NL = [0xFFFE];
+  const codes = uni('안녕!').concat(PAGE, NL, uni('하나지방에'), NL, uni('어서 와!'), PAGE);
+  const addr = 0x250000;
+  a32[addr >> 2] = 1600 | (codes.length << 16);           // White uses a 1600-char buffer
+  a32[(addr >> 2) + 1] = Reader.STRING_MAGIC;
+  codes.forEach((c, i) => a16[(addr + 8 >> 1) + i] = c); a16[(addr + 8 >> 1) + codes.length] = 0xFFFF;
+  a32[0x260000 >> 2] = 0x02000000 + addr + 8 + codes.length * 2;   // printer finished
+  const res5 = r5.scan(a32, a16);
+  assert(res5.active, 'Gen 5 dialogue found');
+  const page5 = res5.active.text.slice(0, res5.active.shown).replace(/\n+$/, '').split('\n\n').pop().replace(/^\n+/, '');
+  assert.strictEqual(page5, '하나지방에\n어서 와!');
+  console.log('Gen 5 subtitle:', JSON.stringify(page5));
+  console.log('GEN 5 TESTS PASSED');
+}

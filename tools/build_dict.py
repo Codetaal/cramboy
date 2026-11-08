@@ -20,6 +20,10 @@ counts = {}
 for name, tag in [('Species','Pokémon'),('Moves','move'),('Abilities','ability'),('Types','type'),('Natures','nature')]:
     counts[name] = pair(f'{R}/other/ko/text_{name}_ko.txt', f'{R}/other/en/text_{name}_en.txt', tag)
 counts['Items'] = pair(f'{R}/items/text_Items_ko.txt', f'{R}/items/text_Items_en.txt', 'item')
+# Gen 5 (Unova) place names; BW2's list includes the Black/White places.
+for f in ['00000', '30000', '40000', '60000']:
+    ko = f'{R}/locations/gen5/text_bw2_{f}_ko.txt'
+    if os.path.exists(ko): counts['bw2-'+f] = pair(ko, ko.replace('_ko.txt','_en.txt'), 'place')
 for f in ['00000','02000','03000']:
     ko = f'{R}/locations/gen4/text_hgss_{f}_ko.txt'
     if os.path.exists(ko): counts['loc'+f] = pair(ko, ko.replace('_ko.txt','_en.txt'), 'place')
@@ -28,7 +32,7 @@ extra = {'포켓몬':'Pokémon','포켓몬스터':'Pokémon (Pocket Monsters)','
  '프렌들리숍':'Poké Mart','체육관':'Gym','관장':'Gym Leader','배지':'badge','트레이너':'Trainer','도감':'Pokédex',
  '포켓몬도감':'Pokédex','박사':'Professor; doctor','라이벌':'rival','기술':'move; technique','레벨':'level',
  '진화':'evolution','배틀':'battle','승부':'match; battle','사천왕':'Elite Four','챔피언':'Champion','포켓기어':'PokéGear',
- '경험치':'experience points','상태이상':'status condition','기절':'fainting','도로':'road; route','마을':'village; town','시티':'City','성도':'Johto (region)','관동':'Kanto (region)','연구소':'laboratory; research institute','엄마':'mom'}
+ '경험치':'experience points','상태이상':'status condition','기절':'fainting','도로':'road; route','마을':'village; town','시티':'City','성도':'Johto (region)','관동':'Kanto (region)','연구소':'laboratory; research institute','엄마':'mom','하나지방':'Unova (region)','하나':'Unova; one','포켓몬스터':'Pokémon (Pocket Monsters)'}
 for k, v in extra.items(): add(k, v, front=True)
 # General vocabulary: kengdic
 with open(os.path.expanduser('~/ref/kengdic/kengdic.tsv'), encoding='utf-8') as fh:

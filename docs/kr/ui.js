@@ -153,7 +153,8 @@
 
   function renderPanel() {
     if (!current || !settings.subs) { setPanelVisible(false); return; }
-    var shown = plain(current.text.slice(0, current.shown));
+    // Trailing breaks (White ends each message with a page break) don't start a new page yet.
+    var shown = plain(current.text.slice(0, current.shown)).replace(/\n+$/, '');
     // Show only the current box page: text after the last blank line.
     var pages = shown.split('\n\n');
     var page = pages[pages.length - 1].replace(/^\n+/, '');

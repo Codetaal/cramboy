@@ -1,6 +1,6 @@
 # DS 한국어
 
-A Nintendo DS player for iPhone (web app) that shows Pokémon HeartGold/SoulSilver
+A Nintendo DS player for iPhone (web app) that shows Pokémon HeartGold/SoulSilver and Black/White
 dialogue as tappable Korean subtitles. Tap a word: the game pauses, you get the
 dictionary entry, and ☆ Save keeps it with its sentence. Saved words export to Anki.
 

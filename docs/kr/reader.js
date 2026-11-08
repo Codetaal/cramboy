@@ -1,15 +1,22 @@
-// Korean text reader for Pokémon HeartGold/SoulSilver (and other Gen 4 games).
+// Korean text reader for Pokémon Gen 4 (HeartGold/SoulSilver, D/P/Pt) and Gen 5 (Black/White).
 // Finds live in-game String objects in DS main RAM and works out which one the
 // text printer is currently typing, by looking for a pointer into its characters.
 (function (root) {
   'use strict';
 
-  var STRING_MAGIC = 0xB6F8D2EC;   // pret/pokeheartgold src/pm_string.c
+  // Both generations use the same string object ("strbuf"): u16 maxLen, u16 len, u32 magic, u16 text[].
+  var STRING_MAGIC = 0xB6F8D2EC;   // pret/pokeheartgold src/pm_string.c; same value in Pokémon White
   var RAM_WORDS = 1 << 20;          // 4 MB main RAM = 1M 32-bit words
-  var MAX_STRING = 1024;            // longest message we accept (chars)
+  var MAX_CAPACITY = 8192, MAX_LEN = 2048;
 
-  var HANGUL_MIN = 0x400, HANGUL_MAX = 0xD65;
-  var NEWLINE = 0xE000, SCROLL = 0x25BC, PAGE = 0x25BD, CTRL = 0xFFFE, EOS = 0xFFFF;
+  // Gen 4: own character table, Hangul at 0x400-0xD65.
+  var G4_HANGUL_MIN = 0x400, G4_HANGUL_MAX = 0xD65;
+  var G4_NEWLINE = 0xE000, G4_SCROLL = 0x25BC, G4_PAGE = 0x25BD, G4_CTRL = 0xFFFE;
+  // Gen 5: Unicode text. 0xFFFE = new line, 0xF000 = command (BE00 scroll, BE01 new page).
+  var UNI_HANGUL_MIN = 0xAC00, UNI_HANGUL_MAX = 0xD7A3;
+  var G5_NEWLINE = 0xFFFE, G5_CTRL = 0xF000, G5_SCROLL = 0xBE00, G5_PAGE = 0xBE01;
+  var EOS = 0xFFFF;
+  var G4 = 1, G5 = 2;
 
   function Reader(table) {
     this.table = table;                 // string: code -> char ('\0' = unknown)
@@ -23,20 +30,36 @@
 
   // Decode a run of 16-bit codes into display text.
   // Returns {text, pos} where pos[k] = source code index of text[k].
-  Reader.prototype.decode = function (u16, start, len) {
+  Reader.prototype.decode = function (u16, start, len, mode) {
+    if (!mode) mode = koreanMode(u16, start, len) || G4;
     var t = this.table, out = [], pos = [];
     for (var i = 0; i < len; i++) {
       var c = u16[start + i];
       if (c === EOS) break;
-      if (c === CTRL) {
+      if (mode === G5) {
+        if (c === G5_NEWLINE) { out.push('\n'); pos.push(i); continue; }
+        if (c === G5_CTRL) {
+          var cmd = u16[start + i + 1], n5 = u16[start + i + 2];
+          if (n5 > 16) break;
+          if (cmd === G5_PAGE) { out.push('\n', '\n'); pos.push(i, i); }
+          else if (cmd === G5_SCROLL) { out.push('\n'); pos.push(i); }
+          else { out.push('\u200B'); pos.push(i); }
+          i += 2 + n5;
+          continue;
+        }
+        if (c >= 0xE000 && c <= 0xF8FF) { out.push('·'); pos.push(i); continue; } // private-use symbols
+        out.push(String.fromCharCode(c)); pos.push(i);
+        continue;
+      }
+      if (c === G4_CTRL) {
         var n = u16[start + i + 2];
         if (n > 16) break;                       // garbage: stop
-        out.push('​'); pos.push(i);        // keep an index anchor
+        out.push('\u200B'); pos.push(i);        // keep an index anchor
         i += 2 + n;
         continue;
       }
-      if (c === NEWLINE || c === SCROLL) { out.push('\n'); pos.push(i); continue; }
-      if (c === PAGE) { out.push('\n', '\n'); pos.push(i, i); continue; }
+      if (c === G4_NEWLINE || c === G4_SCROLL) { out.push('\n'); pos.push(i); continue; }
+      if (c === G4_PAGE) { out.push('\n', '\n'); pos.push(i, i); continue; }
       var ch = c < t.length ? t.charAt(c) : '\0';
       if (ch === '\0') { out.push('·'); pos.push(i); continue; }
       out.push(ch); pos.push(i);
@@ -44,12 +67,15 @@
     return { text: out.join(''), pos: pos };
   };
 
-  function hasHangul(u16, start, len) {
+  // Which encoding a string uses, judged by its Hangul: G5 (Unicode), G4 (game table) or 0 (no Korean).
+  function koreanMode(u16, start, len) {
+    var g4 = false;
     for (var i = 0; i < len; i++) {
       var c = u16[start + i];
-      if (c >= HANGUL_MIN && c <= HANGUL_MAX) return true;
+      if (c >= UNI_HANGUL_MIN && c <= UNI_HANGUL_MAX) return G5;
+      if (c >= G4_HANGUL_MIN && c <= G4_HANGUL_MAX) g4 = true;
     }
-    return false;
+    return g4 ? G4 : 0;
   }
 
   // u32/u16: typed views over the 4 MB main RAM (same buffer, word/halfword).
@@ -67,12 +93,13 @@
       if (u32[i] !== STRING_MAGIC) continue;
       var hdr = u32[i - 1];
       var maxsize = hdr & 0xFFFF, size = hdr >>> 16;
-      if (size === 0 || size > maxsize || maxsize > MAX_STRING) continue;
+      if (size === 0 || size > maxsize || maxsize > MAX_CAPACITY || size > MAX_LEN) continue;
       var dataHalf = (i + 1) * 2;
       if (dataHalf + size >= RAM_WORDS * 2) continue;
       total++;
-      if (!hasHangul(u16, dataHalf, size)) continue;
-      var s = { addr: (i - 1) * 4, dataByte: dataHalf * 2, size: size, cursor: -1 };
+      var mode = koreanMode(u16, dataHalf, size);
+      if (!mode) continue;
+      var s = { addr: (i - 1) * 4, dataByte: dataHalf * 2, size: size, cursor: -1, mode: mode };
       list.push(s);
       var w0 = (s.dataByte >> 2), w1 = ((s.dataByte + size * 2) >> 2);
       for (var w = w0; w <= w1; w++) { owner[w] = list.length; this.marked.push(w); }
@@ -115,21 +142,24 @@
       s2.key = key; s2.firstSeen = rec.firstSeen;
       if (isNew && this.scanNo > 1) fresh.push(s2);
       if (s2.cursor >= 0) {
-        // Prefer the most recently created string that is being printed.
+        // Prefer the most recently created string that is being printed; for strings created at
+        // the same moment, keep the one already shown, else the one printed furthest.
+        var curAddr = this.current && this.current.addr;
         if (!best || s2.firstSeen > best.firstSeen ||
-            (s2.firstSeen === best.firstSeen && s2.addr === (this.current && this.current.addr))) best = s2;
+            (s2.firstSeen === best.firstSeen && best.addr !== curAddr &&
+              (s2.addr === curAddr || s2.cursor / s2.size > best.cursor / best.size))) best = s2;
       }
     }
     this.known = seenNow;
 
     var result = { fresh: [], active: null, changed: false };
     for (i = 0; i < fresh.length; i++) {
-      var d = this.decode(u16, fresh[i].dataByte >> 1, fresh[i].size);
+      var d = this.decode(u16, fresh[i].dataByte >> 1, fresh[i].size, fresh[i].mode);
       result.fresh.push(d.text);
     }
 
     if (best) {
-      var dec = this.decode(u16, best.dataByte >> 1, best.size);
+      var dec = this.decode(u16, best.dataByte >> 1, best.size, best.mode);
       // Number of characters already printed.
       var shown = 0;
       while (shown < dec.pos.length && dec.pos[shown] < best.cursor) shown++;
