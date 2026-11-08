@@ -142,12 +142,11 @@
       s2.key = key; s2.firstSeen = rec.firstSeen;
       if (isNew && this.scanNo > 1) fresh.push(s2);
       if (s2.cursor >= 0) {
-        // Prefer the most recently created string that is being printed; for strings created at
-        // the same moment, keep the one already shown, else the one printed furthest.
-        var curAddr = this.current && this.current.addr;
+        // Prefer the most recently created string that is being printed. Strings created at the
+        // same moment are usually two copies of one message (Gen 5 keeps a raw and a printed copy,
+        // and only the printed one's pointer is the live cursor): take the one printed furthest.
         if (!best || s2.firstSeen > best.firstSeen ||
-            (s2.firstSeen === best.firstSeen && best.addr !== curAddr &&
-              (s2.addr === curAddr || s2.cursor / s2.size > best.cursor / best.size))) best = s2;
+            (s2.firstSeen === best.firstSeen && s2.cursor / s2.size > best.cursor / best.size)) best = s2;
       }
     }
     this.known = seenNow;
@@ -164,7 +163,8 @@
       var shown = 0;
       while (shown < dec.pos.length && dec.pos[shown] < best.cursor) shown++;
       var prevCur = this.current;
-      var same = prevCur && prevCur.addr === best.addr && prevCur.key === best.key;
+      // Same message if the text is the same, even if the other copy is the one being followed.
+      var same = prevCur && prevCur.key === best.key;
       this.current = { addr: best.addr, key: best.key, text: dec.text, shown: shown };
       result.changed = !same || prevCur.shown !== shown;
       result.newMessage = !same;

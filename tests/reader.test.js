@@ -76,3 +76,28 @@ console.log('ALL READER TESTS PASSED');
   console.log('Gen 5 subtitle:', JSON.stringify(page5));
   console.log('GEN 5 TESTS PASSED');
 }
+
+// ---- Gen 5: two copies of a message; the old dialogue's address now holds the lagging copy ----
+{
+  const buf = new ArrayBuffer(4 << 20), a32 = new Uint32Array(buf), a16 = new Uint16Array(buf);
+  const r = new Reader(T), uni = s => [...s].map(c => c.charCodeAt(0));
+  const put = (addr, codes, cursor, ptrAt) => {
+    a32[addr >> 2] = 1600 | (codes.length << 16); a32[(addr >> 2) + 1] = Reader.STRING_MAGIC;
+    codes.forEach((c, i) => a16[(addr + 8 >> 1) + i] = c); a16[(addr + 8 >> 1) + codes.length] = 0xFFFF;
+    a32[ptrAt >> 2] = 0x02000000 + addr + 8 + cursor * 2;
+  };
+  r.scan(a32, a16);
+  // message 1: printed copy at B (cursor at end), raw copy at A (page-start pointer)
+  const m1 = uni('하-이!');
+  put(0x2D0000, m1, 1, 0x300000); put(0x2D1000, m1, m1.length, 0x300100);
+  let res = r.scan(a32, a16);
+  assert.strictEqual(res.active.addr, 0x2D1000);
+  // message 2: roles swapped in memory; lagging pointer now in the copy at B's address
+  const m2 = uni('그래! 이 세계에는').concat([0xFFFE], uni('포켓몬스터'));
+  put(0x2D1000, m2, 5, 0x300100); put(0x2D0000, m2, m2.length, 0x300000);
+  res = r.scan(a32, a16);
+  const shown = res.active.text.slice(0, res.active.shown);
+  assert.strictEqual(shown, '그래! 이 세계에는\n포켓몬스터', 'follows the copy printed furthest');
+  console.log('Gen 5 two-copy test:', JSON.stringify(shown));
+  console.log('GEN 5 COPY TESTS PASSED');
+}
