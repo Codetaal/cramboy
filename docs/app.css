@@ -68,4 +68,6 @@ h1 { margin: 0; font-size: 28px; }
   width: 100%; background: var(--card); border-radius: 16px 16px 0 0;
   padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
 }
+#controls.floating .btn, #controls.floating #dpad > div { background: rgba(255, 255, 255, 0.28); border-color: rgba(255, 255, 255, 0.35); color: #fff; }
+.menu-card { max-height: 90vh; overflow-y: auto; }
 .menu-card h2 { margin: 4px 0 8px; font-size: 18px; }

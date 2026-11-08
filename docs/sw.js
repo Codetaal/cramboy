@@ -1,5 +1,5 @@
 // Offline cache for the app shell. Bump VERSION whenever any file changes.
-var VERSION = 'dsk-1';
+var VERSION = 'dsk-2';
 var FILES = ['./', './index.html', './app.css', './kv.js', './emu.js', './manifest.json', './icon-180.png', './icon-512.png',
   './build/nds.js', './build/nds.wasm',
   './kr/ui.css', './kr/table.js', './kr/reader.js', './kr/lookup.js', './kr/ui.js', './kr/dict.json'];

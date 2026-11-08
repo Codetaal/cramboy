@@ -45,7 +45,7 @@
     });
     textBox.addEventListener('click', onWordTap);
     menuBtn.addEventListener('click', function () { openMenu('saved'); });
-    pill.addEventListener('click', function () { openMenu(current ? 'saved' : 'recent'); });
+    pill.addEventListener('click', function () { openMenu('now'); });
     sheet.addEventListener('click', function (e) { if (e.target === sheet) closeSheet(); });
     krLayout();
   }
@@ -55,6 +55,13 @@
   function plain(s) { return s.replace(/​/g, '').replace(/·+/g, '…'); }
 
   // ---------- storage ----------
+  function setSubs(v) {
+    settings.subs = !!v;
+    if (store) store.setItem('settings', { subs: settings.subs }).catch(function () {});
+    if (current && settings.subs) renderPanel(); else setPanelVisible(false);
+  }
+  window.KRSettings = { getSubs: function () { return settings.subs; }, setSubs: setSubs };
+
   function loadSaved() {
     if (!store) return;
     store.getItem('saved').then(function (v) { if (Array.isArray(v)) saved = v; updatePill(); }).catch(function () {});
@@ -117,6 +124,7 @@
       current = null;
       hideTimer = setTimeout(function () { setPanelVisible(false); hideTimer = null; }, HIDE_AFTER_MS);
     }
+    pill.classList.toggle('kr-live', !!current);
     if (settings.debug) pill.textContent = reader.stats.korean + '/' + reader.stats.printers;
   }
 
@@ -218,11 +226,22 @@
   // ---------- menu: saved words / recent text ----------
   function openMenu(tab) {
     var tabs = '<div class="kr-tabs">' +
-      '<button class="kr-btn' + (tab === 'saved' ? ' kr-on' : '') + '" data-tab="saved">★ Saved (' + saved.length + ')</button>' +
-      '<button class="kr-btn' + (tab === 'recent' ? ' kr-on' : '') + '" data-tab="recent">Recent text</button>' +
+      '<button class="kr-btn' + (tab === 'now' ? ' kr-on' : '') + '" data-tab="now">Now</button>' +
+      '<button class="kr-btn' + (tab === 'saved' ? ' kr-on' : '') + '" data-tab="saved">★ ' + saved.length + '</button>' +
+      '<button class="kr-btn' + (tab === 'recent' ? ' kr-on' : '') + '" data-tab="recent">Recent</button>' +
       '<button class="kr-btn' + (tab === 'settings' ? ' kr-on' : '') + '" data-tab="settings">⚙</button></div>';
     var h = tabs;
-    if (tab === 'saved') {
+    if (tab === 'now') {
+      // Current dialogue (what has been typed so far), else the last finished message.
+      var nowText = current ? plain(current.text.slice(0, current.shown)) : (history.length ? history[history.length - 1] : '');
+      var full = current ? plain(current.text) : nowText;
+      if (!nowText.trim()) h += '<div class="kr-muted">No dialogue on screen right now. Older text is under Recent.</div>';
+      else {
+        h += '<div class="kr-now kr-tap" data-s="' + esc(full.replace(/\n+/g, ' ')) + '">' +
+          wordsHTML(nowText.replace(/\n\n+/g, '\n')) + '</div>' +
+          '<div class="kr-muted" style="margin-top:8px">Tap a word to look it up.</div>';
+      }
+    } else if (tab === 'saved') {
       if (!saved.length) h += '<div class="kr-muted">No saved words yet. Tap any word in the subtitles, then ☆ Save.</div>';
       saved.slice().reverse().forEach(function (x) {
         h += '<div class="kr-item"><div><b>' + esc(x.base || x.w) + '</b>' + (x.base && x.base !== x.w ? ' <span class="kr-muted">' + esc(x.w) + '</span>' : '') +
@@ -247,7 +266,7 @@
         });
       }
     } else {
-      h += '<div class="kr-item"><div><b>Live subtitles</b><div class="kr-muted">Show the current dialogue above the game.</div></div>' +
+      h += '<div class="kr-item"><div><b>Subtitle bar</b><div class="kr-muted">Show the dialogue above the game. When off, tap 가 to see it.</div></div>' +
         '<button class="kr-btn' + (settings.subs ? ' kr-on' : '') + '" data-act="subs">' + (settings.subs ? 'On' : 'Off') + '</button></div>' +
         '<div class="kr-muted" style="margin-top:12px">Reader: ' + reader.stats.strings + ' strings in memory, ' + reader.stats.korean + ' Korean, ' +
         reader.stats.printers + ' being printed.<br>Dictionary: ' + (dict ? Object.keys(dict).length.toLocaleString() + ' entries' : 'loads on first lookup') +
@@ -269,11 +288,7 @@
       if (act === 'close') { card.onclick = null; return closeSheet(); }
       if (act === 'export') return exportCSV();
       if (act === 'copy') return copyList();
-      if (act === 'subs') {
-        settings.subs = !settings.subs;
-        if (store) store.setItem('settings', { subs: settings.subs }).catch(function () {});
-        return openMenu('settings');
-      }
+      if (act === 'subs') { setSubs(!settings.subs); return openMenu('settings'); }
     };
   }
 

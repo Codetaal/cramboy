@@ -16,7 +16,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   var touchKeys = 0, keyboardKeys = 0, touchDown = 0, touchX = 0, touchY = 0;
   var fastForward = false, frameNo = 0, lastT = 0, acc = 0;
   var prevSaveFlag = 0, saveDirty = false;
-  var settings = { sound: true };
+  var settings = { sound: true, controls: 'below' };
 
   // ---------- startup ----------
   window.wasmReady = function () {
@@ -32,7 +32,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
       }
     }).catch(function () {});
   };
-  KV.get('settings').then(function (s) { if (s) settings.sound = s.sound !== false; }).catch(function () {});
+  KV.get('settings').then(function (s) { if (s) { settings.sound = s.sound !== false; settings.controls = s.controls === 'floating' ? 'floating' : 'below'; } }).catch(function () {});
 
   var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var standalone = window.navigator.standalone || matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches;
@@ -198,7 +198,17 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
 
   function layout() {
     var W = innerWidth, H = innerHeight, ctl = $('controls'), sw, sh, top;
-    if (H >= W) {
+    var floating = settings.controls === 'floating';
+    $('controls').classList.toggle('floating', floating);
+    if (H >= W && floating) {
+      // Screens as large as possible; semi-transparent controls float over the bottom screen.
+      sh = Math.min(W * 0.75, H / 2); sw = sh * 4 / 3; top = 0;
+      place(screenCanvas[0], (W - sw) / 2, top, sw, sh);
+      place(screenCanvas[1], (W - sw) / 2, top + sh, sw, sh);
+      var fh = Math.max(165, Math.min(230, H * 0.3));
+      ctl.style.top = (H - fh) + 'px'; ctl.style.height = fh + 'px';
+      ctl.style.opacity = 0.45;
+    } else if (H >= W) {
       var ctrlH = Math.max(165, Math.min(240, H * 0.27));
       sh = Math.min(W * 0.75, (H - ctrlH) / 2); sw = sh * 4 / 3; top = 0;
       place(screenCanvas[0], (W - sw) / 2, top, sw, sh);
@@ -256,7 +266,8 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
       // D-pad: 8-way by angle from centre, with a generous area.
       var dx = x - (dp.left + dp.width / 2), dy = y - (dp.top + dp.height / 2);
       var onBottom = x >= bottom.left && x <= bottom.right && y >= bottom.top && y <= bottom.bottom;
-      if (!onBottom && Math.abs(dx) < dp.width * 0.7 && Math.abs(dy) < dp.height * 0.7 && Math.hypot(dx, dy) > dp.width * 0.08) {
+      var zone = settings.controls === 'floating' ? 0.56 : 0.7;   // floating: stay close to the pad so the touchscreen stays usable
+      if ((!onBottom || settings.controls === 'floating') && Math.abs(dx) < dp.width * zone && Math.abs(dy) < dp.height * zone && Math.hypot(dx, dy) > dp.width * 0.08) {
         var a = Math.atan2(dy, dx) * 180 / Math.PI;
         if (a > -67.5 && a < 67.5) { keys |= 1 << KEYS.right; dpCls += ' r'; }
         if (a > 112.5 || a < -112.5) { keys |= 1 << KEYS.left; dpCls += ' l'; }
@@ -310,18 +321,28 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     touchKeys = 0; touchDown = 0;
     checkSave(true);
     $('menu-title').textContent = gameTitle || 'Menu';
-    document.querySelector('[data-m=sound]').textContent = 'Sound: ' + (settings.sound ? 'on' : 'off');
+    menuLabels();
     $('menu').hidden = false;
   }
+  function menuLabels() {
+    document.querySelector('[data-m=sound]').textContent = 'Sound: ' + (settings.sound ? 'on' : 'off');
+    document.querySelector('[data-m=controls]').textContent = 'Controls: ' + (settings.controls === 'floating' ? 'floating over screen' : 'below screens');
+    var subs = window.KRSettings ? KRSettings.getSubs() : true;
+    document.querySelector('[data-m=subs]').textContent = 'Subtitle bar: ' + (subs ? 'on' : 'off (tap 가 for text)');
+  }
+  function saveSettings() { KV.set('settings', settings).catch(function () {}); }
   function closeMenu() { $('menu').hidden = true; emuIsRunning = wasRunning || emuIsGameLoaded; }
   $('menu').addEventListener('click', function (e) {
     if (e.target === $('menu')) return closeMenu();
     var m = e.target.dataset && e.target.dataset.m;
     if (m === 'resume') closeMenu();
     if (m === 'sound') {
-      settings.sound = !settings.sound; KV.set('settings', settings).catch(function () {});
-      e.target.textContent = 'Sound: ' + (settings.sound ? 'on' : 'off');
+      settings.sound = !settings.sound; saveSettings(); menuLabels();
     }
+    if (m === 'controls') {
+      settings.controls = settings.controls === 'floating' ? 'below' : 'floating'; saveSettings(); layout(); menuLabels();
+    }
+    if (m === 'subs' && window.KRSettings) { KRSettings.setSubs(!KRSettings.getSubs()); menuLabels(); }
     if (m === 'export') exportSave();
     if (m === 'import') $('file-save').click();
     if (m === 'home') { checkSave(true); setTimeout(function () { location.reload(); }, 300); }
