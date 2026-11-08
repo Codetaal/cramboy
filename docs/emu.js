@@ -37,7 +37,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var standalone = window.navigator.standalone || matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches;
   if (isIOS && !standalone) $('ios-hint').hidden = false;
-  var APP_VERSION = 'dsk-4';
+  var APP_VERSION = 'dsk-5';
   $('ver').textContent = 'Version ' + APP_VERSION;
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
     var hadController = !!navigator.serviceWorker.controller;
@@ -359,6 +359,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     }
     if (m === 'subs' && window.KRSettings) { KRSettings.setSubs(!KRSettings.getSubs()); menuLabels(); }
     if (m === 'export') exportSave();
+    if (m === 'snapshot') exportSnapshot();
     if (m === 'import') $('file-save').click();
     if (m === 'home') { checkSave(true); setTimeout(function () { location.reload(); }, 300); }
   });
@@ -368,6 +369,29 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
 
   function gzip(u8) { return new Response(new Blob([u8]).stream().pipeThrough(new CompressionStream('gzip'))).arrayBuffer(); }
   function gunzip(u8) { return new Response(new Blob([u8]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer(); }
+
+  // Memory snapshot for adding support for more games: 4 MB main RAM + both screens.
+  // Format (gzip): "DSKSNAP1", u32 JSON length, JSON info, RAM (4 MB), screens (2 x 256x192 RGBA).
+  function exportSnapshot() {
+    var mem = Module._getSymbol(7), fb = Module._getSymbol(4);
+    var ram = Module.HEAPU8.slice(mem, mem + (4 << 20));
+    var screens = Module.HEAPU8.slice(fb, fb + 2 * 196608);
+    var info = new TextEncoder().encode(JSON.stringify({
+      gameID: gameID, title: gameTitle, app: APP_VERSION, time: new Date().toISOString(),
+      reader: window.KRReaderStats ? KRReaderStats() : null
+    }));
+    var head = new Uint8Array(12);
+    head.set(new TextEncoder().encode('DSKSNAP1'));
+    new DataView(head.buffer).setUint32(8, info.length, true);
+    var all = new Uint8Array(head.length + info.length + ram.length + screens.length), o = 0;
+    [head, info, ram, screens].forEach(function (part) { all.set(part, o); o += part.length; });
+    gzip(all).then(function (ab) {
+      var name = 'snapshot-' + gameID.trim().replace(/[^\w-]+/g, '_') + '-' + Date.now() + '.dsksnap';
+      var file = new File([ab], name, { type: 'application/octet-stream' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) return navigator.share({ files: [file] });
+      var a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = name; a.click();
+    }).catch(function (e) { if (e && e.name !== 'AbortError') alert('Snapshot failed: ' + e); });
+  }
 
   function exportSave() {
     var data = copySave();

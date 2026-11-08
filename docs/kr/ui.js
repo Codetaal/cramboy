@@ -60,6 +60,7 @@
     if (store) store.setItem('settings', { subs: settings.subs }).catch(function () {});
     if (current && settings.subs) renderPanel(); else setPanelVisible(false);
   }
+  window.KRReaderStats = function () { return reader.stats; };
   window.KRSettings = { getSubs: function () { return settings.subs; }, setSubs: setSubs };
 
   function loadSaved() {
