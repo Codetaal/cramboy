@@ -28,6 +28,7 @@ a { color: var(--accent); }
 .nav-spacer { flex: 1; }
 .nav-title { flex: 0 1 auto; font-weight: 600; font-size: 17px; opacity: 0; }
 .nav-back { border: 0; background: none; color: var(--accent); font-size: 17px; padding: 0 8px 0 0; flex: 1; text-align: left; }
+.title-sub { margin: -10px 4px 6px; font-size: 15px; color: #8e8e93; }
 .large-title { margin: 2px 4px 14px; font-size: 34px; font-weight: 700; letter-spacing: 0.01em; }
 .sec-h { margin: 22px 16px 7px; font-size: 13px; color: #8e8e93; text-transform: uppercase; letter-spacing: 0.02em; }
 .sec-f { margin: 7px 16px 0; font-size: 13px; line-height: 1.4; color: #8e8e93; }
