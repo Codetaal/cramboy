@@ -23,21 +23,14 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     ready = true;
     $('status').textContent = '';
     $('btn-open').disabled = false;
-    KV.get('rom').then(function (rom) {
-      if (rom && rom.blob) {
-        var b = $('btn-continue');
-        b.textContent = '▶ Continue: ' + (rom.title || rom.name);
-        b.hidden = false;
-        b.onclick = function () { startGame(rom.blob, rom.name); };
-      }
-    }).catch(function () {});
+    loadLibrary().then(renderLibrary).catch(function () {});
   };
   KV.get('settings').then(function (s) { if (s) { settings.sound = s.sound !== false; settings.controls = s.controls === 'floating' ? 'floating' : 'below'; } }).catch(function () {});
 
   var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var standalone = window.navigator.standalone || matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches;
   if (isIOS && !standalone) $('ios-hint').hidden = false;
-  var APP_VERSION = 'dsk-13';
+  var APP_VERSION = 'dsk-14';
   $('ver').textContent = 'Version ' + APP_VERSION;
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
     var hadController = !!navigator.serviceWorker.controller;
@@ -59,22 +52,117 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     var f = this.files[0]; this.value = '';
     if (!f) return;
     readHeader(f).then(function (h) {
-      // Check before storing, so a wrong file never replaces the Continue game.
+      // Check before storing, so a wrong file never ends up in the library.
       if (h.error) { $('status').textContent = ''; alert(h.error); return; }
-      $('status').textContent = 'Storing ROM on this device…';
-      return KV.set('rom', { blob: f, name: f.name, title: h.title }).catch(function () {
-        // Storage full or refused: still play, just won't be remembered.
-      }).then(function () { startGame(f, f.name); });
+      $('status').textContent = 'Storing game on this device…';
+      return addToLibrary(f, h).then(function (entry) {
+        startGame(f, f.name, entry && entry.id);
+      });
     });
   };
+
+  // ---------- game library ----------
+  // KV 'library': [{id, name, title, size, icon, played}], ROM data in KV 'rom:<id>'.
+  var library = [];
+  function loadLibrary() {
+    return KV.get('library').then(function (lib) {
+      library = Array.isArray(lib) ? lib : [];
+      // Older versions kept a single game under 'rom'.
+      return KV.get('rom').then(function (old) {
+        if (!old || !old.blob) return;
+        return readHeader(old.blob).then(function (h) {
+          if (!h.error) return addToLibrary(old.blob, h, old.name);
+        }).then(function () { return KV.del('rom'); });
+      });
+    }).then(function () { return library; });
+  }
+  function saveLibrary() { return KV.set('library', library); }
+  function addToLibrary(blob, h, name) {
+    var id = h.id.trim() + '-' + blob.size;
+    library = library.filter(function (e) { return e.id !== id; });
+    var entry = { id: id, name: name || blob.name || h.title, title: h.banner || h.title, size: blob.size, icon: h.icon, played: Date.now() };
+    library.unshift(entry);
+    return KV.set('rom:' + id, blob).then(saveLibrary).then(function () { renderLibrary(); return entry; }, function () {
+      library = library.filter(function (e) { return e.id !== id; });
+      alert('There wasn\'t enough storage to keep this game in your list. It will still play now, but you\'ll need to open the file again next time.');
+      return null;
+    });
+  }
+  function removeFromLibrary(id) {
+    library = library.filter(function (e) { return e.id !== id; });
+    return KV.del('rom:' + id).then(saveLibrary).then(renderLibrary);
+  }
+  function playFromLibrary(id) {
+    KV.get('rom:' + id).then(function (blob) {
+      if (!blob) { alert('This game\'s file is missing. Please open it again with "Open ROM file…".'); return removeFromLibrary(id); }
+      var e = library.filter(function (x) { return x.id === id; })[0];
+      startGame(blob, e ? e.name : '', id);
+    });
+  }
+  function ago(t) {
+    var d = Math.floor((Date.now() - t) / 86400000);
+    return d <= 0 ? 'today' : d === 1 ? 'yesterday' : d < 30 ? d + ' days ago' : new Date(t).toLocaleDateString();
+  }
+  function renderLibrary() {
+    var box = $('library');
+    library.sort(function (a, b) { return b.played - a.played; });
+    box.innerHTML = '';
+    library.forEach(function (e, i) {
+      var row = document.createElement('div'); row.className = 'game' + (i === 0 ? ' latest' : '');
+      var main = document.createElement('button'); main.className = 'game-main';
+      var img = e.icon ? '<img class="game-icon" alt="" src="' + e.icon + '">' : '<div class="game-icon blank">DS</div>';
+      main.innerHTML = img + '<div class="game-text"><b></b><small></small></div><span class="game-play">▶</span>';
+      main.querySelector('b').textContent = e.title;
+      main.querySelector('small').textContent = 'Played ' + ago(e.played) + ' · ' + (e.size >= 1048576 ? Math.round(e.size / 1048576) + ' MB' : Math.max(1, Math.round(e.size / 1024)) + ' KB');
+      main.onclick = function () { unlockAudio(); playFromLibrary(e.id); };
+      var x = document.createElement('button'); x.className = 'game-x'; x.textContent = '✕'; x.setAttribute('aria-label', 'Remove');
+      x.onclick = function () {
+        if (confirm('Remove "' + e.title + '" from your games?\n\nIts save stays on this device, so you can continue later by opening the file again.')) removeFromLibrary(e.id);
+      };
+      row.appendChild(main); row.appendChild(x); box.appendChild(row);
+    });
+    $('btn-open').textContent = library.length ? 'Add a game…' : 'Open ROM file…';
+  }
 
   function readHeader(blob) {
     return blob.slice(0, 0x200).arrayBuffer().then(function (ab) {
       var u8 = new Uint8Array(ab), id = '', title = '';
       for (var i = 0; i < 0x10; i++) id += u8[i] ? String.fromCharCode(u8[i]) : ' ';
       title = id.slice(0, 12).trim();
-      return { id: id, title: title, code: id.slice(12, 16), error: checkRom(u8, blob) };
+      var h = { id: id, title: title, code: id.slice(12, 16), error: checkRom(u8, blob) };
+      if (h.error) return h;
+      var bannerOff = u8[0x68] | (u8[0x69] << 8) | (u8[0x6A] << 16) | (u8[0x6B] << 24);
+      if (!bannerOff || bannerOff + 0xA40 > blob.size) return h;
+      return blob.slice(bannerOff, bannerOff + 0xA40).arrayBuffer().then(function (bb) {
+        try { readBanner(new Uint8Array(bb), h); } catch (e) {}
+        return h;
+      });
     });
+  }
+
+  // The banner holds the game's 32x32 icon and its title in several languages.
+  function readBanner(b, h) {
+    var ver = b[0] | (b[1] << 8);
+    function str(off) {
+      var s = ''; for (var i = 0; i < 0x80; i++) { var c = b[off + i * 2] | (b[off + i * 2 + 1] << 8); if (!c) break; s += String.fromCharCode(c); }
+      return s;
+    }
+    var t = (ver >= 3 && str(0x940).trim()) || str(0x340).trim();   // Korean title if present, else English
+    if (t) { var lines = t.split('\n'); h.banner = (lines.length > 1 ? lines.slice(0, -1) : lines).join(' ').trim(); }
+    var pal = [];
+    for (var p = 0; p < 16; p++) {
+      var c = b[0x220 + p * 2] | (b[0x221 + p * 2] << 8);
+      pal.push([(c & 31) * 255 / 31, ((c >> 5) & 31) * 255 / 31, ((c >> 10) & 31) * 255 / 31]);
+    }
+    var cv = document.createElement('canvas'); cv.width = cv.height = 32;
+    var g = cv.getContext('2d'), img = g.createImageData(32, 32);
+    for (var ty = 0; ty < 4; ty++) for (var tx = 0; tx < 4; tx++) for (var y = 0; y < 8; y++) for (var x = 0; x < 8; x++) {
+      var byte = b[0x20 + (ty * 4 + tx) * 32 + y * 4 + (x >> 1)], ix = (x & 1) ? byte >> 4 : byte & 15;
+      var o = ((ty * 8 + y) * 32 + tx * 8 + x) * 4, col = pal[ix];
+      img.data[o] = col[0]; img.data[o + 1] = col[1]; img.data[o + 2] = col[2]; img.data[o + 3] = ix ? 255 : 0;
+    }
+    g.putImageData(img, 0, 0);
+    h.icon = cv.toDataURL('image/png');
   }
 
   // Returns a message if this isn't a DS game file, else null.
@@ -94,20 +182,23 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   }
 
   // ---------- load ----------
-  function startGame(blob, name) {
+  function startGame(blob, name, libId) {
     unlockAudio();
     if (!ready) return;
     $('status').textContent = 'Loading…';
     readHeader(blob).then(function (h) {
       if (h.error) {
         $('status').textContent = '';
-        $('btn-continue').hidden = true;
-        KV.del('rom').catch(function () {});
+        if (libId) removeFromLibrary(libId);
         alert(h.error + '\n\nPlease open your game again with "Open ROM file…".');
         throw 'not a game';
       }
       gameID = h.code[0] === '#' ? name : h.id;
       gameTitle = h.title;
+      if (libId) {
+        library.forEach(function (e) { if (e.id === libId) e.played = Date.now(); });
+        saveLibrary().catch(function () {});
+      }
       var size = romSize = blob.size;
       var ptr = Module._prepareRomBuffer(size);
       var CH = 4 << 20, pos = 0;
