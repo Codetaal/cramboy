@@ -17,24 +17,38 @@
 </head>
 <body>
   <div id="home">
-    <div class="home-inner">
-      <img class="logo" src="icon-180.png" alt="">
-      <h1>DS 한국어</h1>
-      <p class="sub">Nintendo DS player with Korean subtitles</p>
-      <div id="status" class="muted">Starting emulator…</div>
-      <div id="library"></div>
-      <button id="btn-open" class="big" disabled>Open ROM file…</button>
+    <div class="ios-page" id="page-home">
+      <div class="nav"><span class="nav-spacer"></span><button class="nav-add" id="nav-add" aria-label="Add a game">+</button></div>
+      <h1 class="large-title">Games</h1>
+      <div class="group">
+        <div class="cell app-card">
+          <img class="app-icon" src="icon-180.png" alt="">
+          <div class="cell-text"><b>DS 한국어</b><small id="status">Starting emulator…</small></div>
+        </div>
+      </div>
+      <div class="sec-h" id="recent-h" hidden>Recent</div>
+      <div class="group" id="recent" hidden></div>
+      <div class="group">
+        <button class="cell add-cell" id="btn-open" disabled><span class="add-plus">+</span><span class="cell-text"><b>Add a game</b></span></button>
+      </div>
       <input id="file-rom" type="file" hidden>
-      <p id="ios-hint" class="hint" hidden>
-        Tip: in Safari, tap <b>Share → Add to Home Screen</b> and open it from there.
-        Saves are only kept reliably in the Home Screen app.
-      </p>
-      <p id="ver" class="muted small"></p>
-      <p class="muted small">
-        Your ROM and saves stay on this device. Play only games you own.<br>
-        Emulator: <a href="https://github.com/44670/desmume-wasm">desmume-wasm</a> (GPL-2.0), built from source.
-      </p>
+      <div class="sec-f" id="recent-f">Swipe left on a game to remove it. Its save stays on this device.</div>
+      <div class="group" id="ios-hint" hidden>
+        <div class="cell hint-cell">In Safari, tap <b>Share → Add to Home Screen</b> and open it from there. Saves are only kept reliably in the Home Screen app.</div>
+      </div>
+      <div class="sec-f foot">
+        <span id="ver"></span><br>
+        Your games and saves stay on this device. Play only games you own.<br>
+        Emulator: <a href="https://github.com/44670/desmume-wasm">desmume-wasm</a> (GPL‑2.0), built from source.
+      </div>
     </div>
+    <div class="ios-page sub-page" id="page-all" hidden>
+      <div class="nav"><button class="nav-back" id="nav-back">‹ Games</button><span class="nav-title">All Games</span><span class="nav-spacer"></span></div>
+      <h1 class="large-title">All Games</h1>
+      <div class="group" id="all-list"></div>
+      <div class="sec-f">Swipe left on a game to remove it. Its save stays on this device.</div>
+    </div>
+    <div id="home-toast" hidden><span id="home-toast-text"></span><button id="home-toast-undo">Undo</button></div>
   </div>
 
   <div id="player" hidden>

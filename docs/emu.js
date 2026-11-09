@@ -18,10 +18,11 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   var prevSaveFlag = 0, saveDirty = false;
   var settings = { sound: true, controls: 'below' };
 
+  var TAGLINE = 'Korean subtitles for your DS games';
   // ---------- startup ----------
   window.wasmReady = function () {
     ready = true;
-    $('status').textContent = '';
+    $('status').textContent = TAGLINE;
     $('btn-open').disabled = false;
     loadLibrary().then(renderLibrary).catch(function () {});
   };
@@ -53,7 +54,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     if (!f) return;
     readHeader(f).then(function (h) {
       // Check before storing, so a wrong file never ends up in the library.
-      if (h.error) { $('status').textContent = ''; alert(h.error); return; }
+      if (h.error) { $('status').textContent = TAGLINE; alert(h.error); return; }
       $('status').textContent = 'Storing game on this device…';
       return addToLibrary(f, h).then(function (entry) {
         startGame(f, f.name, entry && entry.id);
@@ -92,9 +93,26 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     library = library.filter(function (e) { return e.id !== id; });
     return KV.del('rom:' + id).then(saveLibrary).then(renderLibrary);
   }
+  // Remove with a short "Undo" window; the ROM data is kept in memory until then.
+  var undoTimer = null;
+  function removeWithUndo(e) {
+    KV.get('rom:' + e.id).then(function (blob) {
+      removeFromLibrary(e.id);
+      $('home-toast-text').textContent = 'Removed "' + e.title + '"';
+      $('home-toast').hidden = false;
+      clearTimeout(undoTimer);
+      undoTimer = setTimeout(function () { $('home-toast').hidden = true; }, 5000);
+      $('home-toast-undo').onclick = function () {
+        clearTimeout(undoTimer); $('home-toast').hidden = true;
+        if (!blob) return;
+        library.push(e);
+        KV.set('rom:' + e.id, blob).then(saveLibrary).then(renderLibrary).catch(function () {});
+      };
+    });
+  }
   function playFromLibrary(id) {
     KV.get('rom:' + id).then(function (blob) {
-      if (!blob) { alert('This game\'s file is missing. Please open it again with "Open ROM file…".'); return removeFromLibrary(id); }
+      if (!blob) { alert('This game\'s file is missing. Please add it again.'); return removeFromLibrary(id); }
       var e = library.filter(function (x) { return x.id === id; })[0];
       startGame(blob, e ? e.name : '', id);
     });
@@ -103,26 +121,109 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     var d = Math.floor((Date.now() - t) / 86400000);
     return d <= 0 ? 'today' : d === 1 ? 'yesterday' : d < 30 ? d + ' days ago' : new Date(t).toLocaleDateString();
   }
+  function sizeText(n) { return n >= 1048576 ? Math.round(n / 1048576) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB'; }
+
+  var RECENT = 3;
   function renderLibrary() {
-    var box = $('library');
     library.sort(function (a, b) { return b.played - a.played; });
-    box.innerHTML = '';
-    library.forEach(function (e, i) {
-      var row = document.createElement('div'); row.className = 'game' + (i === 0 ? ' latest' : '');
-      var main = document.createElement('button'); main.className = 'game-main';
-      var img = e.icon ? '<img class="game-icon" alt="" src="' + e.icon + '">' : '<div class="game-icon blank">DS</div>';
-      main.innerHTML = img + '<div class="game-text"><b></b><small></small></div><span class="game-play">▶</span>';
-      main.querySelector('b').textContent = e.title;
-      main.querySelector('small').textContent = 'Played ' + ago(e.played) + ' · ' + (e.size >= 1048576 ? Math.round(e.size / 1048576) + ' MB' : Math.max(1, Math.round(e.size / 1024)) + ' KB');
-      main.onclick = function () { unlockAudio(); playFromLibrary(e.id); };
-      var x = document.createElement('button'); x.className = 'game-x'; x.textContent = '✕'; x.setAttribute('aria-label', 'Remove');
-      x.onclick = function () {
-        if (confirm('Remove "' + e.title + '" from your games?\n\nIts save stays on this device, so you can continue later by opening the file again.')) removeFromLibrary(e.id);
-      };
-      row.appendChild(main); row.appendChild(x); box.appendChild(row);
-    });
-    $('btn-open').textContent = library.length ? 'Add a game…' : 'Open ROM file…';
+    var recent = $('recent'), all = $('all-list');
+    recent.innerHTML = ''; all.innerHTML = '';
+    library.slice(0, RECENT).forEach(function (e) { recent.appendChild(gameRow(e)); });
+    if (library.length > RECENT) {
+      var more = document.createElement('button'); more.className = 'cell all-cell';
+      more.innerHTML = '<span class="cell-text"><b>All Games</b></span><span class="count">' + library.length + '</span><span class="chev">›</span>';
+      more.onclick = openAllGames;
+      recent.appendChild(more);
+    }
+    library.forEach(function (e) { all.appendChild(gameRow(e)); });
+    var has = library.length > 0;
+    $('recent').hidden = $('recent-h').hidden = $('recent-f').hidden = !has;
+    if (!all.children.length && !$('page-all').hidden) closeAllGames();
   }
+
+  function gameRow(e) {
+    var wrap = document.createElement('div'); wrap.className = 'swipe';
+    var del = document.createElement('button'); del.className = 'swipe-del'; del.textContent = 'Remove';
+    var cell = document.createElement('div'); cell.className = 'cell';
+    cell.innerHTML = (e.icon ? '<img class="game-icon" alt="" src="' + e.icon + '">' : '<div class="game-icon blank">DS</div>') +
+      '<div class="cell-text"><b></b><small></small></div><span class="chev">›</span>';
+    cell.querySelector('b').textContent = e.title;
+    cell.querySelector('small').textContent = 'Played ' + ago(e.played) + ' · ' + sizeText(e.size);
+    wrap.appendChild(del); wrap.appendChild(cell);
+    attachSwipe(wrap, cell, function () { unlockAudio(); playFromLibrary(e.id); }, function () { removeWithUndo(e); });
+    del.onclick = function () { collapse(wrap, function () { removeWithUndo(e); }); };
+    return wrap;
+  }
+
+  // iOS-style swipe: drag left to reveal "Remove"; release past the middle removes it.
+  var openSwipe = null, REVEAL = 96;
+  function setX(wrap, cell, x, animate) {
+    wrap.classList.toggle('anim', !!animate);
+    cell.style.transform = x ? 'translateX(' + x + 'px)' : '';
+    wrap._x = x;
+  }
+  function closeOpenSwipe(except) {
+    if (openSwipe && openSwipe !== except) { setX(openSwipe, openSwipe.lastChild, 0, true); openSwipe = null; }
+  }
+  function collapse(wrap, done) {
+    var h = wrap.offsetHeight; wrap.style.height = h + 'px';
+    setX(wrap, wrap.lastChild, -wrap.offsetWidth, true);
+    setTimeout(function () { wrap.classList.add('removing'); wrap.style.height = '0px'; wrap.style.opacity = 0; }, 180);
+    setTimeout(done, 430);
+    openSwipe = null;
+  }
+  function attachSwipe(wrap, cell, onTap, onRemove) {
+    var x0 = 0, y0 = 0, start = 0, drag = false, moved = false, id = null;
+    wrap._x = 0;
+    cell.addEventListener('pointerdown', function (ev) {
+      id = ev.pointerId; x0 = ev.clientX; y0 = ev.clientY; start = wrap._x || 0; drag = false; moved = false;
+      closeOpenSwipe(wrap);
+    });
+    cell.addEventListener('pointermove', function (ev) {
+      if (ev.pointerId !== id) return;
+      var dx = ev.clientX - x0, dy = ev.clientY - y0;
+      if (!drag) {
+        if (Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(dy) * 1.2) { drag = true; cell.setPointerCapture(id); }
+        else if (Math.abs(dy) > 8) { id = null; return; }   // vertical: let the page scroll
+        else return;
+      }
+      moved = true;
+      var x = Math.min(0, start + dx);
+      if (x > 0) x = 0;
+      setX(wrap, cell, x, false);
+    });
+    function end(ev) {
+      if (ev.pointerId !== id) return;
+      id = null;
+      if (!drag) return;
+      var x = wrap._x || 0, w = wrap.offsetWidth;
+      if (x < -w * 0.55) collapse(wrap, onRemove);
+      else if (x < -REVEAL / 2) { setX(wrap, cell, -REVEAL, true); openSwipe = wrap; }
+      else { setX(wrap, cell, 0, true); if (openSwipe === wrap) openSwipe = null; }
+    }
+    cell.addEventListener('pointerup', end);
+    cell.addEventListener('pointercancel', end);
+    cell.addEventListener('click', function () {
+      if (moved) { moved = false; return; }
+      if ((wrap._x || 0) !== 0) { setX(wrap, cell, 0, true); openSwipe = null; return; }
+      onTap();
+    });
+  }
+  document.addEventListener('pointerdown', function (ev) {
+    if (openSwipe && !openSwipe.contains(ev.target)) closeOpenSwipe();
+  });
+
+  // All Games page (slides in from the right)
+  function openAllGames() {
+    var pg = $('page-all'); pg.hidden = false; pg.classList.add('off');
+    requestAnimationFrame(function () { requestAnimationFrame(function () { pg.classList.remove('off'); }); });
+  }
+  function closeAllGames() {
+    var pg = $('page-all'); pg.classList.add('off');
+    setTimeout(function () { pg.hidden = true; }, 300);
+  }
+  $('nav-back').onclick = closeAllGames;
+  $('nav-add').onclick = function () { if (!$('btn-open').disabled) $('btn-open').click(); };
 
   function readHeader(blob) {
     return blob.slice(0, 0x200).arrayBuffer().then(function (ab) {
@@ -188,7 +289,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     $('status').textContent = 'Loading…';
     readHeader(blob).then(function (h) {
       if (h.error) {
-        $('status').textContent = '';
+        $('status').textContent = TAGLINE;
         if (libId) removeFromLibrary(libId);
         alert(h.error + '\n\nPlease open your game again with "Open ROM file…".');
         throw 'not a game';
@@ -219,12 +320,12 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
         Module._emuSetOpt(0, 1); // firmware language: English (games use their own language)
         var ret = Module._loadROM(romSize);
         if (ret !== 0) {
-          $('status').textContent = '';
+          $('status').textContent = TAGLINE;
           alert(ret === -1001 ? 'This ROM is encrypted. Please use a decrypted (normal) dump.' : 'Could not load this ROM (error ' + ret + ').');
           return;
         }
         emuIsGameLoaded = true;
-        $('status').textContent = '';
+        $('status').textContent = TAGLINE;
         showPlayer();
         msg(sav ? 'Save loaded' : 'No save yet for this game', 1500);
       }).catch(function (e) { if (e !== 'not a game') $('status').textContent = 'Failed: ' + e; });
