@@ -18,10 +18,7 @@ a { color: var(--accent); }
 /* Home */
 #home { min-height: 100%; display: flex; align-items: center; justify-content: center; padding: 24px 20px calc(24px + env(safe-area-inset-bottom)); }
 .home-inner { width: 100%; max-width: 380px; text-align: center; }
-.logo {
-  width: 72px; height: 72px; margin: 0 auto 12px; border-radius: 18px; background: var(--accent); color: var(--bg);
-  font-size: 44px; font-weight: 800; line-height: 72px;
-}
+.logo { display: block; width: 76px; height: 76px; margin: 0 auto 12px; border-radius: 17px; box-shadow: 0 6px 20px rgba(247, 150, 38, 0.25); }
 h1 { margin: 0; font-size: 28px; }
 .sub { margin: 4px 0 20px; color: var(--muted); }
 #status { min-height: 22px; margin-bottom: 12px; }
