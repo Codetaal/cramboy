@@ -37,7 +37,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var standalone = window.navigator.standalone || matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches;
   if (isIOS && !standalone) $('ios-hint').hidden = false;
-  var APP_VERSION = 'dsk-11';
+  var APP_VERSION = 'dsk-12';
   $('ver').textContent = 'Version ' + APP_VERSION;
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
     var hadController = !!navigator.serviceWorker.controller;
@@ -366,31 +366,48 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     touchKeys = 0; touchDown = 0;
     checkSave(true);
     $('menu-title').textContent = gameTitle || 'Menu';
+    $('m-advanced').hidden = true; $('m-adv-chev').style.transform = '';
     menuLabels();
     $('menu').hidden = false;
   }
   function menuLabels() {
-    document.querySelector('[data-m=sound]').textContent = 'Sound: ' + (settings.sound ? 'on' : 'off');
-    document.querySelector('[data-m=controls]').textContent = 'Controls: ' + (settings.controls === 'floating' ? 'floating over screen' : 'below screens');
-    var subs = window.KRSettings ? KRSettings.getSubs() : true;
-    document.querySelector('[data-m=subs]').textContent = 'Subtitle bar: ' + (subs ? 'on' : 'off (tap 가 for text)');
+    var snd = document.querySelector('[data-m=sound]');
+    snd.textContent = settings.sound ? '🔊' : '🔇'; snd.classList.toggle('off', !settings.sound);
+    setSeg('controls', settings.controls);
+    setSeg('subs', window.KRSettings ? KRSettings.getMode() : 'bar');
+    $('m-words').textContent = window.KRSettings ? '★ ' + KRSettings.savedCount() : '';
+    var st = window.KRReaderStats ? KRReaderStats() : null;
+    $('m-info').innerHTML = 'Version ' + APP_VERSION + ' · ' + (gameID ? gameID.trim() : '') +
+      (st ? '<br>Reader: ' + st.strings + ' strings in memory, ' + st.korean + ' Korean, ' + st.printers + ' being printed' : '') +
+      '<br>The game saves automatically a few seconds after you save in‑game.' +
+      '<br>Emulator: desmume‑wasm (GPL‑2.0). Character table and Pokémon names: PKHeX (GPL‑3.0). Dictionary: kengdic (MPL‑2.0).';
+  }
+  function setSeg(name, v) {
+    Array.prototype.forEach.call(document.querySelectorAll('[data-seg=' + name + '] button'), function (b) { b.classList.toggle('on', b.dataset.v === v); });
   }
   function saveSettings() { KV.set('settings', settings).catch(function () {}); }
   function closeMenu() { $('menu').hidden = true; emuIsRunning = wasRunning || emuIsGameLoaded; }
   $('menu').addEventListener('click', function (e) {
     if (e.target === $('menu')) return closeMenu();
-    var m = e.target.dataset && e.target.dataset.m;
+    var segBtn = e.target.closest('.seg button');
+    if (segBtn) {
+      var seg = segBtn.parentNode.dataset.seg, v = segBtn.dataset.v;
+      if (seg === 'controls') { settings.controls = v; saveSettings(); layout(); }
+      if (seg === 'subs' && window.KRSettings) KRSettings.setMode(v);
+      return menuLabels();
+    }
+    var el = e.target.closest('[data-m]'), m = el && el.dataset.m;
     if (m === 'resume') closeMenu();
-    if (m === 'sound') {
-      settings.sound = !settings.sound; saveSettings(); menuLabels();
-    }
-    if (m === 'controls') {
-      settings.controls = settings.controls === 'floating' ? 'below' : 'floating'; saveSettings(); layout(); menuLabels();
-    }
-    if (m === 'subs' && window.KRSettings) { KRSettings.setSubs(!KRSettings.getSubs()); menuLabels(); }
+    if (m === 'sound') { settings.sound = !settings.sound; saveSettings(); menuLabels(); }
     if (m === 'export') exportSave();
-    if (m === 'snapshot') exportSnapshot();
     if (m === 'import') $('file-save').click();
+    if (m === 'words' && window.KRUI) { closeMenu(); KRUI.open('saved'); }
+    if (m === 'advanced') {
+      var open = $('m-advanced').hidden; $('m-advanced').hidden = !open;
+      $('m-adv-chev').style.transform = open ? 'rotate(90deg)' : '';
+      if (open) setTimeout(function () { $('m-advanced').scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }, 0);
+    }
+    if (m === 'snapshot') exportSnapshot();
     if (m === 'home') { checkSave(true); setTimeout(function () { location.reload(); }, 300); }
   });
   ['touchstart', 'touchmove', 'touchend'].forEach(function (t) {

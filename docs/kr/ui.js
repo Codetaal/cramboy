@@ -17,7 +17,8 @@
   var saved = [];             // [{w, base, gloss, s, t}]
   var history = [];           // finished dialogue messages (newest last)
   var otherText = [];         // other Korean text seen (menus, descriptions)
-  var settings = { subs: true, debug: /krdebug/.test(location.search) };
+  // mode: 'box' = Pokémon-style box over the game's own text, 'bar' = bar at the top, 'off' = only via 가
+  var settings = { mode: 'box', debug: /krdebug/.test(location.search) };
   var frame = 0, views = null, hideTimer = null, current = null;
 
   // ---------- DOM ----------
@@ -26,6 +27,10 @@
   var menuBtn = el('button', { className: 'kr-menu-btn', textContent: '★' });
   panel.appendChild(textBox); panel.appendChild(menuBtn);
   var pill = el('button', { id: 'kr-pill', textContent: '가' });
+  var box = el('div', { id: 'kr-box', className: 'kr-hidden' });
+  var boxText = el('div', { className: 'kr-box-text' });
+  var boxArrow = el('div', { className: 'kr-box-arrow' });
+  box.appendChild(boxText); box.appendChild(boxArrow);
   var sheet = el('div', { id: 'kr-sheet', hidden: true });
   var card = el('div', { className: 'kr-card' });
   sheet.appendChild(card);
@@ -33,17 +38,18 @@
 
   function mount() {
     var player = document.getElementById('player') || document.body;
-    player.appendChild(panel); player.appendChild(pill);
+    player.appendChild(panel); player.appendChild(box); player.appendChild(pill);
     document.body.appendChild(sheet); document.body.appendChild(toastEl);
     // The emulator's window-level touch handler swallows every touch while the game runs.
     // Stop our touches from reaching it so taps and scrolling work here.
-    [panel, pill, sheet].forEach(function (n) {
+    [panel, box, pill, sheet].forEach(function (n) {
       ['touchstart', 'touchmove', 'touchend', 'touchcancel'].forEach(function (t) {
         n.addEventListener(t, function (e) { e.stopPropagation(); }, { passive: true });
       });
       n.addEventListener('mousedown', function (e) { e.stopPropagation(); });
     });
     textBox.addEventListener('click', onWordTap);
+    boxText.addEventListener('click', onWordTap);
     menuBtn.addEventListener('click', function () { openMenu('saved'); });
     pill.addEventListener('click', function () { openMenu('now'); });
     sheet.addEventListener('click', function (e) { if (e.target === sheet) closeSheet(); });
@@ -55,18 +61,24 @@
   function plain(s) { return s.replace(/​/g, '').replace(/·+/g, '…'); }
 
   // ---------- storage ----------
-  function setSubs(v) {
-    settings.subs = !!v;
-    if (store) store.setItem('settings', { subs: settings.subs }).catch(function () {});
-    if (current && settings.subs) renderPanel(); else setPanelVisible(false);
+  function setMode(m) {
+    settings.mode = m === 'bar' || m === 'off' ? m : 'box';
+    if (store) store.setItem('settings', { mode: settings.mode }).catch(function () {});
+    renderPanel();
   }
   window.KRReaderStats = function () { return reader.stats; };
-  window.KRSettings = { getSubs: function () { return settings.subs; }, setSubs: setSubs };
+  window.KRSettings = { getMode: function () { return settings.mode; }, setMode: setMode, savedCount: function () { return saved.length; } };
+  window.KRUI = { open: function (tab) { openMenu(tab || 'now'); } };
 
   function loadSaved() {
     if (!store) return;
     store.getItem('saved').then(function (v) { if (Array.isArray(v)) saved = v; updatePill(); }).catch(function () {});
-    store.getItem('settings').then(function (v) { if (v) settings.subs = v.subs !== false; }).catch(function () {});
+    store.getItem('settings').then(function (v) {
+      if (!v) return;
+      // Older versions stored {subs: true/false} for the bar.
+      settings.mode = v.mode || (v.subs === false ? 'off' : v.subs === true ? 'bar' : 'box');
+      renderPanel();
+    }).catch(function () {});
   }
   function persist() {
     if (!store) return;
@@ -107,6 +119,12 @@
     panel.style.left = r.left + 'px'; panel.style.top = r.top + 'px';
     panel.style.width = r.width + 'px'; panel.style.maxHeight = Math.round(r.height * 0.5) + 'px';
     pill.style.left = (r.left + 6) + 'px'; pill.style.top = (r.top + 6) + 'px';
+    // Both HeartGold and White draw the dialogue box on the top screen at DS pixels
+    // x 4..252, y 146..190, with two 16 px text lines starting at y 152.
+    var k = r.width / 256;
+    box.style.left = (r.left + 4 * k) + 'px'; box.style.top = (r.top + 146 * k) + 'px';
+    box.style.width = (248 * k) + 'px'; box.style.height = (44 * k) + 'px';
+    box.style.setProperty('--k', k);
   };
 
   function handleScan(res) {
@@ -123,6 +141,7 @@
     } else if (res.closed && current) {
       archive(current);
       current = null;
+      box.classList.add('kr-hidden');   // the game's own box has closed too
       hideTimer = setTimeout(function () { setPanelVisible(false); hideTimer = null; }, HIDE_AFTER_MS);
     }
     pill.classList.toggle('kr-live', !!current);
@@ -151,16 +170,36 @@
     }).join('<br>');
   }
 
-  function renderPanel() {
-    if (!current || !settings.subs) { setPanelVisible(false); return; }
+  function currentPage() {
     // Trailing breaks (White ends each message with a page break) don't start a new page yet.
     var shown = plain(current.text.slice(0, current.shown)).replace(/\n+$/, '');
-    // Show only the current box page: text after the last blank line.
+    // Only the current box page: text after the last blank line.
     var pages = shown.split('\n\n');
-    var page = pages[pages.length - 1].replace(/^\n+/, '');
-    textBox.innerHTML = wordsHTML(page);
-    setPanelVisible(page.length > 0);
-    panel.scrollTop = panel.scrollHeight;
+    return pages[pages.length - 1].replace(/^\n+/, '');
+  }
+  function pageFinished() {
+    // The game shows ▼ when the printer has reached a line/page break or the end.
+    var t = current.text, i = current.shown;
+    while (i < t.length && t.charAt(i) === '\u200B') i++;
+    return i >= t.length || t.charAt(i) === '\n';
+  }
+  function renderPanel() {
+    var mode = settings.mode;
+    if (!current || mode !== 'bar') setPanelVisible(false);
+    if (!current || mode !== 'box') box.classList.add('kr-hidden');
+    if (!current || mode === 'off') return;
+    var page = currentPage();
+    if (mode === 'bar') {
+      textBox.innerHTML = wordsHTML(page);
+      setPanelVisible(page.length > 0);
+      panel.scrollTop = panel.scrollHeight;
+    } else {
+      // The game's box holds two lines; when it scrolls, the last two are visible.
+      var lines = page.split('\n');
+      boxText.innerHTML = wordsHTML(lines.slice(-2).join('\n'));
+      boxArrow.style.visibility = pageFinished() ? 'visible' : 'hidden';
+      box.classList.toggle('kr-hidden', page.length === 0);
+    }
   }
 
   function onWordTap(e) {
@@ -230,8 +269,7 @@
     var tabs = '<div class="kr-tabs">' +
       '<button class="kr-btn' + (tab === 'now' ? ' kr-on' : '') + '" data-tab="now">Now</button>' +
       '<button class="kr-btn' + (tab === 'saved' ? ' kr-on' : '') + '" data-tab="saved">★ ' + saved.length + '</button>' +
-      '<button class="kr-btn' + (tab === 'recent' ? ' kr-on' : '') + '" data-tab="recent">Recent</button>' +
-      '<button class="kr-btn' + (tab === 'settings' ? ' kr-on' : '') + '" data-tab="settings">⚙</button></div>';
+      '<button class="kr-btn' + (tab === 'recent' ? ' kr-on' : '') + '" data-tab="recent">Recent</button></div>';
     var h = tabs;
     if (tab === 'now') {
       // Current dialogue (what has been typed so far), else the last finished message.
@@ -267,11 +305,6 @@
           h += '<div class="kr-line kr-tap" data-s="' + esc(s) + '">' + wordsHTML(s) + '</div>';
         });
       }
-    } else {
-      h += '<div class="kr-muted">The subtitle bar can be switched on or off in the game menu (☰).</div>' +
-        '<div class="kr-muted" style="margin-top:12px">Reader: ' + reader.stats.strings + ' strings in memory, ' + reader.stats.korean + ' Korean, ' +
-        reader.stats.printers + ' being printed.<br>Dictionary: ' + (dict ? Object.keys(dict).length.toLocaleString() + ' entries' : 'loads on first lookup') +
-        '.<br>Character table and Pokémon names from PKHeX (GPL‑3.0); dictionary from kengdic (MPL‑2.0).</div>';
     }
     h += '<div class="kr-row"><button class="kr-btn kr-primary" data-act="close">▶ Back to game</button></div>';
     openSheet(h);
@@ -289,7 +322,6 @@
       if (act === 'close') { card.onclick = null; return closeSheet(); }
       if (act === 'export') return exportCSV();
       if (act === 'copy') return copyList();
-      if (act === 'subs') { setSubs(!settings.subs); return openMenu('settings'); }
     };
   }
 

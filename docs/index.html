@@ -58,18 +58,36 @@
 
   <div id="menu" hidden>
     <div class="menu-card">
-      <h2 id="menu-title">Menu</h2>
-      <button class="big primary" data-m="resume">▶ Resume</button>
-      <button class="big" data-m="sound">Sound: on</button>
-      <button class="big" data-m="controls">Controls: below screens</button>
-      <button class="big" data-m="subs">Subtitle bar: on</button>
-      <button class="big" data-m="export">Export save (.dsz)</button>
-      <button class="big" data-m="import">Import save (.dsz / .sav / .dsv)</button>
+      <div class="grab"></div>
+      <div class="m-top">
+        <div id="menu-title" class="m-title">Menu</div>
+        <button class="chip" data-m="sound" aria-label="Sound">🔊</button>
+        <button class="chip resume" data-m="resume">▶ Resume</button>
+      </div>
+      <div class="group">
+        <div class="r"><span class="lab">Subtitles</span>
+          <div class="seg" data-seg="subs"><button data-v="off">Off</button><button data-v="bar">Bar</button><button data-v="box">In box</button></div></div>
+        <div class="r"><span class="lab">Controls</span>
+          <div class="seg" data-seg="controls"><button data-v="below">Below</button><button data-v="floating">Floating</button></div></div>
+      </div>
+      <div class="h">Save data</div>
+      <div class="group">
+        <button class="r" data-m="export"><span class="lab">Export save</span><span class="val">.dsz</span><span class="chev">›</span></button>
+        <button class="r" data-m="import"><span class="lab">Import save</span><span class="val">.dsz .sav .dsv</span><span class="chev">›</span></button>
+      </div>
       <input id="file-save" type="file" hidden>
-      <button class="big" data-m="snapshot">Export memory snapshot</button>
-      <button class="big" data-m="home">Close game</button>
-      <p class="muted small">The game saves automatically a few seconds after you save in‑game.</p>
+      <div class="h">More</div>
+      <div class="group">
+        <button class="r" data-m="words"><span class="lab">Words &amp; text</span><span class="val" id="m-words"></span><span class="chev">›</span></button>
+        <button class="r" data-m="advanced"><span class="lab">Advanced</span><span class="val">snapshot, info</span><span class="chev" id="m-adv-chev">›</span></button>
+        <div id="m-advanced" hidden>
+          <button class="r r-sub" data-m="snapshot"><span class="lab">Export memory snapshot</span><span class="chev">›</span></button>
+          <div class="m-info" id="m-info"></div>
+        </div>
+        <button class="r" data-m="home"><span class="lab danger">Close game</span></button>
+      </div>
     </div>
+  </div>
   </div>
 
   <script src="kv.js"></script>

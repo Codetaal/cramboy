@@ -90,5 +90,24 @@ h1 { margin: 0; font-size: 28px; }
 }
 #controls.floating .btn, #controls.floating #dpad > div { background: rgba(255, 255, 255, 0.28); border-color: rgba(255, 255, 255, 0.35); color: #fff; }
 #controls.floating .btn.on { background: rgba(255, 214, 102, 0.75); }
-.menu-card { max-height: 90vh; overflow-y: auto; }
-.menu-card h2 { margin: 4px 0 8px; font-size: 18px; }
+.menu-card { max-height: 92vh; overflow-y: auto; touch-action: pan-y; }
+.menu-card { background: var(--bg); border-radius: 18px 18px 0 0; padding: 8px 16px calc(16px + env(safe-area-inset-bottom)); }
+.grab { width: 36px; height: 5px; border-radius: 3px; background: #3a3e4a; margin: 0 auto 10px; }
+.m-top { display: flex; gap: 8px; align-items: center; margin-bottom: 14px; }
+.m-title { flex: 1; min-width: 0; font-weight: 700; font-size: 17px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chip { height: 38px; min-width: 46px; padding: 0 14px; border: 0; border-radius: 19px; background: #1e2129; font-size: 15px; font-weight: 600; }
+.chip.off { opacity: 0.5; }
+.chip.resume { background: var(--accent); color: var(--bg); }
+.chip:active, .r:active, .seg button:active { filter: brightness(1.25); }
+.h { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin: 14px 4px 6px; }
+.group { background: var(--card); border-radius: 12px; overflow: hidden; }
+.r { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 48px; padding: 0 14px; border: 0; border-top: 1px solid #2a2e39;
+  background: transparent; font-size: 16px; text-align: left; }
+.group > .r:first-child { border-top: 0; }
+.r .lab { flex: 1; } .r .val { color: var(--muted); font-size: 14px; } .chev { color: #555b6a; font-size: 18px; transition: transform 150ms; }
+.r.r-sub { padding-left: 28px; font-size: 15px; background: #13151b; }
+.m-info { padding: 10px 14px 12px 28px; font-size: 12px; line-height: 1.5; color: var(--muted); background: #13151b; border-top: 1px solid #2a2e39; }
+.danger { color: #ff6b5e; }
+.seg { display: flex; background: var(--bg); border-radius: 9px; padding: 2px; gap: 2px; }
+.seg button { border: 0; background: transparent; color: var(--muted); padding: 7px 10px; border-radius: 7px; font-size: 13px; }
+.seg button.on { background: #2c303c; color: var(--fg); font-weight: 600; }
