@@ -1,4 +1,4 @@
-// DS 한국어 — frontend for desmume-wasm.
+// AniDS — frontend for desmume-wasm.
 // Globals shared with kr/ui.js: Module, screenCanvas, emuIsRunning, emuIsGameLoaded, uiCurrentMode.
 'use strict';
 
@@ -31,7 +31,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var standalone = window.navigator.standalone || matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches;
   if (isIOS && !standalone) $('ios-hint').hidden = false;
-  var APP_VERSION = 'dsk-14';
+  var APP_VERSION = 'anids-15';
   $('ver').textContent = 'Version ' + APP_VERSION;
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
     var hadController = !!navigator.serviceWorker.controller;
@@ -161,6 +161,8 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     wrap.classList.toggle('anim', !!animate);
     cell.style.transform = x ? 'translateX(' + x + 'px)' : '';
     wrap._x = x;
+    if (x) wrap.classList.add('open');
+    else setTimeout(function () { if (!wrap._x) wrap.classList.remove('open'); }, animate ? 270 : 0);
   }
   function closeOpenSwipe(except) {
     if (openSwipe && openSwipe !== except) { setX(openSwipe, openSwipe.lastChild, 0, true); openSwipe = null; }
@@ -223,7 +225,6 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     setTimeout(function () { pg.hidden = true; }, 300);
   }
   $('nav-back').onclick = closeAllGames;
-  $('nav-add').onclick = function () { if (!$('btn-open').disabled) $('btn-open').click(); };
 
   function readHeader(blob) {
     return blob.slice(0, 0x200).arrayBuffer().then(function (ab) {

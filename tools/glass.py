@@ -1,4 +1,4 @@
-# Minimal iOS 27-style (sharper Liquid Glass) icons for DS 한국어.
+# Minimal iOS 27-style (sharper Liquid Glass) icons for AniDS.
 from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageChops
 FONT = '/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc'
 S = 1024

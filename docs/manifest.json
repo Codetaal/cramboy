@@ -1,6 +1,6 @@
 {
-  "name": "DS 한국어",
-  "short_name": "DS 한국어",
+  "name": "AniDS",
+  "short_name": "AniDS",
   "start_url": "./",
   "scope": "./",
   "display": "fullscreen",

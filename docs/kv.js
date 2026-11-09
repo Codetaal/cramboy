@@ -5,6 +5,7 @@
   function db() {
     if (!dbp) {
       dbp = new Promise(function (res, rej) {
+        // Storage name kept from the app's first version: renaming it would lose existing saves.
         var r = indexedDB.open('ds-korean', 1);
         r.onupgradeneeded = function () { r.result.createObjectStore('kv'); };
         r.onsuccess = function () { res(r.result); };
