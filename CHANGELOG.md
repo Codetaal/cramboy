@@ -2,6 +2,9 @@
 
 CheeseLab uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 1.1.2
+- In portrait, the live subtitle bar now sits at the top of the bottom screen, so the main game screen stays clear. In landscape it stays on the top screen.
+
 ## 1.1.1
 - The in-game 가 button is now a translate icon on a soft square, matching the menu buttons.
 - The button no longer shows the saved-word count (it's still in the words sheet).

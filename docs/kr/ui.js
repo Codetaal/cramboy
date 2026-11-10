@@ -129,8 +129,14 @@
     var c = window.screenCanvas && screenCanvas[0];
     if (!c) return;
     var r = c.getBoundingClientRect();
-    panel.style.left = r.left + 'px'; panel.style.top = r.top + 'px';
-    panel.style.width = r.width + 'px'; panel.style.maxHeight = Math.round(r.height * 0.5) + 'px';
+    // Portrait (screens stacked): the bar sits at the top of the bottom screen, so the
+    // game's own screen stays clear. Side by side: the bar stays on the top screen.
+    var c2 = screenCanvas[1], r2 = c2 && c2.getBoundingClientRect();
+    var stacked = r2 && r2.width > 0 && r2.top >= r.bottom - 2;
+    var pr = stacked ? r2 : r;
+    panel.classList.toggle('kr-below', !!stacked);
+    panel.style.left = pr.left + 'px'; panel.style.top = pr.top + 'px';
+    panel.style.width = pr.width + 'px'; panel.style.maxHeight = Math.round(pr.height * 0.5) + 'px';
     pill.style.left = (r.left + 6) + 'px'; pill.style.top = (r.top + 6) + 'px';
     // Both HeartGold and White draw the dialogue box on the top screen at DS pixels
     // x 4..252, y 146..190, with two 16 px text lines starting at y 152.
