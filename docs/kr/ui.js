@@ -137,8 +137,9 @@
     // Both HeartGold and White draw the dialogue box on the top screen at DS pixels
     // x 4..252, y 146..190, with two 16 px text lines starting at y 152.
     var k = r.width / 256;
-    box.style.left = (r.left + 4 * k) + 'px'; box.style.top = (r.top + 146 * k) + 'px';
-    box.style.width = (248 * k) + 'px'; box.style.height = (44 * k) + 'px';
+    // Full width, stuck to the bottom of the top screen, covering the game's box.
+    box.style.left = r.left + 'px'; box.style.top = (r.top + 146 * k) + 'px';
+    box.style.width = r.width + 'px'; box.style.height = (r.height - 146 * k) + 'px';
     box.style.setProperty('--k', k);
   };
 

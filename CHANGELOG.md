@@ -2,6 +2,9 @@
 
 CheeseLab uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 1.1.4
+- In-box subtitles are now full width and stick to the bottom of the top screen, with square corners, top and bottom borders and no side borders.
+
 ## 1.1.3
 - The subtitle bar never shows more than two lines, like the game's own text box.
 - The subtitle bar is slightly see-through, with a blur and soft text shadow so it stays readable.
