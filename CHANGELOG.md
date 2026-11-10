@@ -2,8 +2,13 @@
 
 CheeseLab uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 1.1.3
+- The subtitle bar never shows more than two lines, like the game's own text box.
+- The subtitle bar is slightly see-through, with a blur and soft text shadow so it stays readable.
+- The translate button always stays top-left on the main screen, also in bar mode; the bar sits on the bottom screen in landscape too. The separate star button in the bar is gone.
+
 ## 1.1.2
-- In portrait, the live subtitle bar now sits at the top of the bottom screen, so the main game screen stays clear. In landscape it stays on the top screen.
+- The live subtitle bar now sits at the top of the bottom screen, so the main game screen stays clear.
 
 ## 1.1.1
 - The in-game 가 button is now a translate icon on a soft square, matching the menu buttons.

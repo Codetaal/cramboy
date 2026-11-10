@@ -24,8 +24,7 @@
   // ---------- DOM ----------
   var panel = el('div', { id: 'kr-panel', className: 'kr-hidden' });
   var textBox = el('div', { className: 'kr-text' });
-  var menuBtn = el('button', { className: 'kr-menu-btn', innerHTML: HI('star', 'size-[18px]') });
-  panel.appendChild(textBox); panel.appendChild(menuBtn);
+  panel.appendChild(textBox);
   var pill = el('button', { id: 'kr-pill', ariaLabel: 'Korean words', innerHTML: HI('language') });
   var box = el('div', { id: 'kr-box', className: 'kr-hidden' });
   var boxText = el('div', { className: 'kr-box-text' });
@@ -63,7 +62,6 @@
     });
     textBox.addEventListener('click', onWordTap);
     boxText.addEventListener('click', onWordTap);
-    menuBtn.addEventListener('click', function () { openMenu('saved'); });
     pill.addEventListener('click', function () { openMenu('now'); });
     sheet.addEventListener('click', function (e) { if (e.target === sheet) closeSheet(); });
     krLayout();
@@ -129,14 +127,12 @@
     var c = window.screenCanvas && screenCanvas[0];
     if (!c) return;
     var r = c.getBoundingClientRect();
-    // Portrait (screens stacked): the bar sits at the top of the bottom screen, so the
-    // game's own screen stays clear. Side by side: the bar stays on the top screen.
+    // The bar always sits at the top of the bottom screen (below in portrait, to the right
+    // in landscape), so it never covers the main screen or the translate button.
     var c2 = screenCanvas[1], r2 = c2 && c2.getBoundingClientRect();
-    var stacked = r2 && r2.width > 0 && r2.top >= r.bottom - 2;
-    var pr = stacked ? r2 : r;
-    panel.classList.toggle('kr-below', !!stacked);
+    var pr = r2 && r2.width > 0 ? r2 : r;
     panel.style.left = pr.left + 'px'; panel.style.top = pr.top + 'px';
-    panel.style.width = pr.width + 'px'; panel.style.maxHeight = Math.round(pr.height * 0.5) + 'px';
+    panel.style.width = pr.width + 'px'; panel.style.maxHeight = '';
     pill.style.left = (r.left + 6) + 'px'; pill.style.top = (r.top + 6) + 'px';
     // Both HeartGold and White draw the dialogue box on the top screen at DS pixels
     // x 4..252, y 146..190, with two 16 px text lines starting at y 152.
@@ -175,7 +171,6 @@
   // ---------- subtitle panel ----------
   function setPanelVisible(v) {
     panel.classList.toggle('kr-hidden', !v);
-    pill.style.display = v ? 'none' : '';
   }
 
   // Turn text into tappable word spans.
@@ -209,7 +204,8 @@
     if (!current || mode === 'off') return;
     var page = currentPage();
     if (mode === 'bar') {
-      textBox.innerHTML = wordsHTML(page);
+      // At most two lines, like the game's own box: the last two lines typed so far.
+      textBox.innerHTML = wordsHTML(page.split('\n').slice(-2).join('\n'));
       setPanelVisible(page.length > 0);
       panel.scrollTop = panel.scrollHeight;
     } else {
