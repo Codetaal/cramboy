@@ -103,3 +103,19 @@
   animation: kr-bob 0.9s ease-in-out infinite;
 }
 @keyframes kr-bob { 50% { transform: translateY(calc(1.5px * var(--k, 1.46))); } }
+
+/* Light appearance for the word sheets (the subtitle bar and 가 button stay dark over the game). */
+@media (prefers-color-scheme: light) {
+  #kr-sheet .kr-card { background: #f2f2f7; color: #000; box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.15); }
+  .kr-btn { background: #fff; color: #000; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06); }
+  .kr-btn.kr-primary { background: #ffd666; color: #16181f; }
+  .kr-btn.kr-on { background: #fff1c7; color: #8a5a00; }
+  .kr-hit, .kr-item, .kr-line { border-top-color: #e0e0e5; }
+  .kr-hit small, .kr-muted, .kr-item .kr-x { color: #8a8a8e; }
+  .kr-gloss { color: #3c3c43; }
+  .kr-sentence { background: #fff; }
+  .kr-sentence mark { background: rgba(255, 196, 0, 0.35); }
+  .kr-w { border-bottom-color: rgba(168, 111, 0, 0.45); }
+  .kr-w.kr-saved { color: #a86f00; border-bottom-color: #a86f00; }
+  #kr-sheet { background: rgba(0, 0, 0, 0.3); }
+}
