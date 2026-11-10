@@ -2,6 +2,12 @@
 
 CheeseLab uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 1.1.0
+- New look built with Tailwind CSS: cards, amber accent buttons and badges, and cleaner light and dark modes.
+- All icons are Heroicons (MIT), including the sound toggle, menu and word sheets.
+- Word sheets redesigned: Save star button, dictionary card with particle badges, highlighted sentence, and a segmented Now / Saved / Recent switch.
+- Much smaller hand-written CSS; styles are built with `npm run build:css`.
+
 ## 1.0.5 (2026-11-10)
 
 - All icons are now Heroicons (menu, fast forward, sound on/off, play, arrows, add, stars, links, close)

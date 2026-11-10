@@ -1,99 +1,29 @@
+/* CheeseLab: the start screen, menu and word sheets are styled with Tailwind (tw.css).
+   This file keeps the player and the behaviour rules Tailwind can't express. */
 :root {
-  color-scheme: dark;
-  --ios-bg: #000; --ios-cell: #1c1c1e; --ios-press: #2c2c2e; --ios-sep: #38383a;
-  --ios-label2: #8e8e93; --ios-chev: #5a5a5f; --ios-hint: #c7c7cc; --tint: #ffd666;
-  --chip: #1e2129; --sub-row: #13151b; --seg-on: #2c303c; --grab: #3a3e4a;
-  --bg: #0e1018; --card: #16181f; --line: #262a35; --fg: #f4f1ea; --muted: #8b90a0; --accent: #ffd666;
+  --bg: #0e1018; --fg: #f4f1ea; --muted: #8b90a0; --accent: #ffd666;
   --btn: rgba(255, 255, 255, 0.10); --btn-on: rgba(255, 214, 102, 0.45);
 }
-* { box-sizing: border-box; }
+[hidden] { display: none !important; }   /* Tailwind display classes must not beat the hidden attribute */
 html, body {
-  margin: 0; height: 100%; background: var(--bg); color: var(--fg);
-  font-family: -apple-system, 'Apple SD Gothic Neo', system-ui, sans-serif;
+  height: 100%;
   -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
   -webkit-tap-highlight-color: transparent; overscroll-behavior: none;
 }
 body.playing { position: fixed; inset: 0; overflow: hidden; touch-action: none; }
-button { font: inherit; color: inherit; }
-a { color: var(--accent); }
-.muted { color: var(--muted); }
-.small { font-size: 13px; line-height: 1.5; }
 
-/* Home: iOS-style grouped lists (dark mode colours, yellow accent) */
-#home { min-height: 100%; background: var(--ios-bg); overflow-x: hidden; }
-.ios-page {
-  max-width: 560px; margin: 0 auto;
-  padding: calc(env(safe-area-inset-top) + 6px) 16px calc(28px + env(safe-area-inset-bottom));
-}
-.sub-page { position: fixed; inset: 0; overflow-y: auto; background: var(--ios-bg); z-index: 2; max-width: none; transition: transform 300ms cubic-bezier(.2, .8, .2, 1); }
-.sub-page > * { max-width: 528px; margin-left: auto; margin-right: auto; }
+/* Start screen behaviour */
+.sub-page { transition: transform 300ms cubic-bezier(.2, .8, .2, 1); }
 .sub-page.off { transform: translateX(100%); }
-.nav { display: flex; align-items: center; height: 44px; }
-.nav-spacer { flex: 1; }
-.nav-title { flex: 0 1 auto; font-weight: 600; font-size: 17px; opacity: 0; }
-.nav-back { border: 0; background: none; color: var(--tint); font-size: 17px; padding: 0 8px 0 0; flex: 1; text-align: left; }
-.title-sub { margin: -10px 4px 6px; font-size: 15px; color: var(--ios-label2); }
-.title-sub:empty { display: none; }
-.large-title { margin: 2px 4px 14px; font-size: 34px; font-weight: 700; letter-spacing: 0.01em; }
-.sec-h { margin: 22px 16px 7px; font-size: 13px; color: var(--ios-label2); text-transform: uppercase; letter-spacing: 0.02em; }
-.sec-f { margin: 7px 16px 0; font-size: 13px; line-height: 1.4; color: var(--ios-label2); }
-.sec-f.foot { margin-top: 34px; text-align: center; font-size: 12px; }
-.support { margin: 26px 16px 0; text-align: center; font-size: 14px; line-height: 1.45; color: var(--ios-label2); }
-.support a { color: var(--tint); font-weight: 600; text-decoration: none; }
-.group { background: var(--ios-cell); border-radius: 12px; overflow: hidden; margin-top: 10px; }
-.sec-h + .group { margin-top: 0; }
-.cell {
-  position: relative; display: flex; align-items: center; gap: 12px; width: 100%; min-height: 60px;
-  padding: 8px 16px; border: 0; background: var(--ios-cell); text-align: left; font-size: 17px;
-}
-.cell-text { flex: 1; min-width: 0; }
-.cell-text b { display: block; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.cell-text small { display: block; margin-top: 2px; color: var(--ios-label2); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-/* hairline separators, inset to the text like iOS */
-.group > * + * .cell::before, .group > .cell + .cell::before, .group > .swipe + .cell::before {
-  content: ''; position: absolute; top: 0; right: 0; left: 72px; border-top: 0.5px solid var(--ios-sep);
-}
-.add-cell::before { left: 60px !important; }
-.cell:active { background: var(--ios-press); }
-.app-card { min-height: 84px; }
-.app-card:active { background: var(--ios-cell); }
-.app-icon { width: 58px; height: 58px; border-radius: 13px; }
-.app-card b { font-size: 20px; }
-/* Rounded tile behind the icon; the DS icon itself keeps square corners so no pixels get cut off */
-.game-icon { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; flex: 0 0 44px;
-  border-radius: 10px; background: var(--icon-tile, #2c2c2e); }
-.game-icon img { display: block; width: 36px; height: 36px; border-radius: 0; image-rendering: pixelated; }
-.game-icon.blank { display: flex; align-items: center; justify-content: center; color: var(--ios-label2); font-size: 12px; background: var(--ios-press); }
-.chev { color: var(--ios-chev); font-size: 22px; line-height: 1; margin-left: 4px; }
-.cell .count { color: var(--ios-label2); font-size: 17px; }
-.add-plus { width: 30px; height: 30px; flex: 0 0 30px; border-radius: 15px; background: var(--accent); color: #000; font-size: 22px; font-weight: 600; line-height: 29px; text-align: center; }
-.add-cell { min-height: 52px; color: var(--tint); }
-.add-cell b { font-weight: 500; }
-.add-cell:disabled { opacity: 0.45; }
-.hint-cell { display: block; font-size: 14px; line-height: 1.45; color: var(--ios-hint); }
-.all-cell { min-height: 48px; }
-.all-cell b { font-weight: 400; }
-/* swipe to delete */
-.swipe { position: relative; overflow: hidden; background: var(--ios-cell); }
 .swipe-del { visibility: hidden; }
 .swipe.open .swipe-del { visibility: visible; }
 .swipe .cell { touch-action: pan-y; will-change: transform; }
 .swipe.anim .cell { transition: transform 260ms cubic-bezier(.2, .8, .2, 1); }
-.swipe-del {
-  position: absolute; top: 0; right: 0; bottom: 0; width: 100%; border: 0; background: #ff453a; color: #fff;
-  font-size: 17px; font-weight: 500; text-align: right; padding-right: 20px;
-}
 .swipe.removing { transition: height 240ms ease, opacity 240ms ease; overflow: hidden; }
-#home-toast {
-  position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(20px + env(safe-area-inset-bottom)); z-index: 5;
-  display: flex; align-items: center; gap: 14px; max-width: calc(100% - 32px);
-  background: var(--ios-press); padding: 10px 10px 10px 16px; border-radius: 14px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5); font-size: 15px;
-}
-#home-toast[hidden] { display: none; }
-#home-toast-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-#home-toast-undo { border: 0; background: none; color: var(--tint); font-weight: 600; font-size: 15px; padding: 4px 6px; }
-.muted { color: var(--muted); }
-.small { font-size: 13px; line-height: 1.5; }
+.menu-card { touch-action: pan-y; -webkit-overflow-scrolling: touch; }
+
+/* Heroicons: default size; Tailwind size-* classes override (zero specificity here) */
+:where(.hi) { width: 1.15em; height: 1.15em; flex: 0 0 auto; }
 
 /* Player */
 #player { position: fixed; inset: 0; background: #000; }
@@ -141,70 +71,6 @@ a { color: var(--accent); }
   position: absolute; left: 50%; transform: translateX(-50%); bottom: 12px; z-index: 6;
   background: rgba(22, 24, 31, 0.92); padding: 6px 12px; border-radius: 12px; font-size: 13px; color: var(--muted);
 }
-
-/* Menu */
-#menu { position: fixed; inset: 0; z-index: 20; background: rgba(0, 0, 0, 0.55); display: flex; align-items: flex-end; }
-#menu[hidden] { display: none; }
-.menu-card {
-  width: 100%; background: var(--card); border-radius: 16px 16px 0 0;
-  padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
-}
 #controls.floating .btn, #controls.floating #dpad > div { background: rgba(255, 255, 255, 0.28); border-color: rgba(255, 255, 255, 0.35); color: #fff; }
 #controls.floating .btn.on { background: rgba(255, 214, 102, 0.75); }
-.menu-card { max-height: 92vh; overflow-y: auto; touch-action: pan-y; }
-.menu-card { background: var(--bg); border-radius: 18px 18px 0 0; padding: 8px 16px calc(16px + env(safe-area-inset-bottom)); }
-.grab { width: 36px; height: 5px; border-radius: 3px; background: var(--grab); margin: 0 auto 10px; }
-.m-top { display: flex; gap: 8px; align-items: center; margin-bottom: 14px; }
-.m-title { flex: 1; min-width: 0; font-weight: 700; font-size: 17px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.chip { height: 38px; min-width: 46px; padding: 0 14px; border: 0; border-radius: 19px; background: var(--chip); font-size: 15px; font-weight: 600; }
-.chip.off { opacity: 0.5; }
-.chip.resume { background: var(--accent); color: #16181f; }
-.chip:active, .r:active, .seg button:active { filter: brightness(1.25); }
-.h { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin: 14px 4px 6px; }
-.group { background: var(--card); border-radius: 12px; overflow: hidden; }
-.r { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 48px; padding: 0 14px; border: 0; border-top: 1px solid var(--line);
-  background: transparent; font-size: 16px; text-align: left; }
-.group > .r:first-child { border-top: 0; }
-.r .lab { flex: 1; } .r .val { color: var(--muted); font-size: 14px; } .chev { color: var(--ios-chev); font-size: 18px; transition: transform 150ms; }
-.r.r-sub { padding-left: 28px; font-size: 15px; background: var(--sub-row); }
-.m-info { padding: 10px 14px 12px 28px; font-size: 12px; line-height: 1.5; color: var(--muted); background: var(--sub-row); border-top: 1px solid var(--line); }
-.danger { color: #ff6b5e; }
-.seg { display: flex; background: var(--bg); border-radius: 9px; padding: 2px; gap: 2px; }
-.seg button { border: 0; background: transparent; color: var(--muted); padding: 7px 10px; border-radius: 7px; font-size: 13px; }
-.seg button.on { background: var(--seg-on); color: var(--fg); font-weight: 600; }
-
-/* Light appearance: follows the iPhone's Light/Dark setting. The game screen stays black. */
-@media (prefers-color-scheme: light) {
-  :root {
-    color-scheme: light;
-    --bg: #f2f2f7; --card: #fff; --line: #e5e5ea; --fg: #000; --muted: #8a8a8e;
-    --ios-bg: #f2f2f7; --ios-cell: #fff; --ios-press: #e5e5ea; --ios-sep: #c6c6c8;
-    --ios-label2: #8a8a8e; --ios-chev: #c4c4c7; --ios-hint: #3c3c43; --tint: #a86f00;
-    --chip: #e9e9ee; --sub-row: #f7f7fa; --seg-on: #fff; --grab: #c7c7cc;
-  }
-  .seg button.on { box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12); }
-  .game-icon.blank { background: #e5e5ea; }
-  .game-icon { --icon-tile: #ececf1; }
-  #home-toast { background: #fff; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15); }
-  #menu { background: rgba(0, 0, 0, 0.35); }
-  #player { color: #f4f1ea; }
-  a { color: var(--tint); }
-}
-
-/* Heroicons */
-.hi { width: 1.15em; height: 1.15em; flex: 0 0 auto; vertical-align: -0.2em; }
-.chev { display: inline-flex; align-items: center; }
-.chev .hi { width: 18px; height: 18px; vertical-align: 0; }
-.add-plus { display: inline-flex; align-items: center; justify-content: center; }
-.add-plus .hi { width: 20px; height: 20px; }
-.nav-back { display: inline-flex; align-items: center; gap: 2px; }
-.nav-back .hi { width: 22px; height: 22px; margin-left: -6px; }
-.btn.pill .hi { width: 18px; height: 18px; }
-.chip { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
-.chip .hi { width: 20px; height: 20px; }
-.chip.resume .hi { width: 16px; height: 16px; }
-.r .val .hi { width: 14px; height: 14px; vertical-align: -0.15em; }
-/* Optical alignment: centre icons on the letters, not on the full line (which includes descender space) */
-.r .val { display: inline-flex; align-items: center; gap: 4px; }
-.r .val .hi { vertical-align: 0; }
-.chev { line-height: 0; height: 18px; }   /* box = icon size, so the row centres the arrow itself */
+#player .btn.pill .hi { width: 18px; height: 18px; }

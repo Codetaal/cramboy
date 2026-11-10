@@ -31,7 +31,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var standalone = window.navigator.standalone || matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches;
   if (isIOS && !standalone) $('ios-hint').hidden = false;
-  var APP_VERSION = '1.0.5';   // semantic version; keep in sync with sw.js
+  var APP_VERSION = '1.1.0';   // semantic version; keep in sync with sw.js
   $('ver').textContent = 'Version ' + APP_VERSION;
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
     var hadController = !!navigator.serviceWorker.controller;
@@ -130,8 +130,10 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     recent.innerHTML = ''; all.innerHTML = '';
     library.slice(0, RECENT).forEach(function (e) { recent.appendChild(gameRow(e)); });
     if (library.length > RECENT) {
-      var more = document.createElement('button'); more.className = 'cell all-cell';
-      more.innerHTML = '<span class="cell-text"><b>All Games</b></span><span class="count">' + library.length + '</span><span class="chev">' + HI('chevron-right') + '</span>';
+      var more = document.createElement('button');
+      more.className = 'all-cell flex w-full items-center gap-2 px-4 py-3.5 text-left active:bg-zinc-50 dark:active:bg-zinc-800';
+      more.innerHTML = '<span class="flex-1">All Games</span>' +
+        '<span class="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">' + library.length + '</span>' + HI('chevron-right', 'size-5 shrink-0 text-zinc-300 dark:text-zinc-600');
       more.onclick = openAllGames;
       recent.appendChild(more);
     }
@@ -142,13 +144,20 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   }
 
   function gameRow(e) {
-    var wrap = document.createElement('div'); wrap.className = 'swipe';
-    var del = document.createElement('button'); del.className = 'swipe-del'; del.textContent = 'Remove';
-    var cell = document.createElement('div'); cell.className = 'cell';
-    cell.innerHTML = (e.icon ? '<span class="game-icon"><img alt="" src="' + e.icon + '"></span>' : '<div class="game-icon blank">DS</div>') +
-      '<div class="cell-text"><b></b><small></small></div><span class="chev">' + HI('chevron-right') + '</span>';
-    cell.querySelector('b').textContent = e.title;
-    cell.querySelector('small').textContent = 'Played ' + ago(e.played) + ' · ' + sizeText(e.size);
+    // Hook classes (swipe, swipe-del, cell) drive the swipe behaviour; the rest is Tailwind styling.
+    var wrap = document.createElement('div'); wrap.className = 'swipe relative overflow-hidden bg-white dark:bg-zinc-900';
+    var del = document.createElement('button');
+    del.className = 'swipe-del absolute inset-y-0 right-0 w-full bg-red-500 pr-5 text-right font-medium text-white';
+    del.textContent = 'Remove';
+    var cell = document.createElement('div');
+    cell.className = 'cell relative flex items-center gap-3 bg-white px-4 py-3 active:bg-zinc-50 dark:bg-zinc-900 dark:active:bg-zinc-800';
+    // The DS icon keeps square corners inside a rounded tile, so no pixels get cut off
+    var tile = 'grid size-11 shrink-0 place-items-center rounded-xl bg-zinc-100 ring-1 ring-inset ring-zinc-900/5 dark:bg-zinc-800 dark:ring-white/10';
+    cell.innerHTML = (e.icon ? '<span class="' + tile + '"><img class="size-9 [image-rendering:pixelated]" alt="" src="' + e.icon + '"></span>'
+                             : '<span class="' + tile + ' text-xs font-medium text-zinc-400 dark:text-zinc-500">DS</span>') +
+      '<div class="min-w-0 flex-1"><p class="g-title truncate font-semibold"></p><p class="g-sub truncate text-sm text-zinc-500 dark:text-zinc-400"></p></div>' + HI('chevron-right', 'size-5 shrink-0 text-zinc-300 dark:text-zinc-600');
+    cell.querySelector('.g-title').textContent = e.title;
+    cell.querySelector('.g-sub').textContent = 'Played ' + ago(e.played) + ' · ' + sizeText(e.size);
     wrap.appendChild(del); wrap.appendChild(cell);
     attachSwipe(wrap, cell, function () { unlockAudio(); playFromLibrary(e.id); }, function () { removeWithUndo(e); });
     del.onclick = function () { collapse(wrap, function () { removeWithUndo(e); }); };
@@ -565,10 +574,10 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   }
   function menuLabels() {
     var snd = document.querySelector('[data-m=sound]');
-    snd.innerHTML = HI(settings.sound ? 'speaker-wave' : 'speaker-x-mark'); snd.classList.toggle('off', !settings.sound);
+    snd.innerHTML = HI(settings.sound ? 'speaker-wave' : 'speaker-x-mark', 'size-5'); snd.classList.toggle('opacity-60', !settings.sound);
     setSeg('controls', settings.controls);
     setSeg('subs', window.KRSettings ? KRSettings.getMode() : 'bar');
-    $('m-words').innerHTML = window.KRSettings ? HI('star') + ' ' + KRSettings.savedCount() : '';
+    $('m-words').innerHTML = window.KRSettings ? HI('star', 'size-4 text-amber-500') + KRSettings.savedCount() : '';
     var st = window.KRReaderStats ? KRReaderStats() : null;
     $('m-info').innerHTML = 'Version ' + APP_VERSION + ' · ' + (gameID ? gameID.trim() : '') +
       (st ? '<br>Reader: ' + st.strings + ' strings in memory, ' + st.korean + ' Korean, ' + st.printers + ' being printed' : '') +
@@ -576,7 +585,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
       '<br>Emulator: desmume‑wasm (GPL‑2.0). Character table and Pokémon names: PKHeX (GPL‑3.0). Dictionary: kengdic (MPL‑2.0). Icons: Heroicons (MIT).';
   }
   function setSeg(name, v) {
-    Array.prototype.forEach.call(document.querySelectorAll('[data-seg=' + name + '] button'), function (b) { b.classList.toggle('on', b.dataset.v === v); });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-seg=' + name + '] button'), function (b) { b.setAttribute('aria-pressed', b.dataset.v === v ? 'true' : 'false'); });
   }
   function saveSettings() { KV.set('settings', settings).catch(function () {}); }
   function closeMenu() { $('menu').hidden = true; emuIsRunning = wasRunning || emuIsGameLoaded; }

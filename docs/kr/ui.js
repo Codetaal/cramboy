@@ -24,15 +24,28 @@
   // ---------- DOM ----------
   var panel = el('div', { id: 'kr-panel', className: 'kr-hidden' });
   var textBox = el('div', { className: 'kr-text' });
-  var menuBtn = el('button', { className: 'kr-menu-btn', innerHTML: HI('star') });
+  var menuBtn = el('button', { className: 'kr-menu-btn', innerHTML: HI('star', 'size-[18px]') });
   panel.appendChild(textBox); panel.appendChild(menuBtn);
   var pill = el('button', { id: 'kr-pill', textContent: '가' });
   var box = el('div', { id: 'kr-box', className: 'kr-hidden' });
   var boxText = el('div', { className: 'kr-box-text' });
   var boxArrow = el('div', { className: 'kr-box-arrow' });
   box.appendChild(boxText); box.appendChild(boxArrow);
-  var sheet = el('div', { id: 'kr-sheet', hidden: true });
-  var card = el('div', { className: 'kr-card' });
+  var sheet = el('div', { id: 'kr-sheet', className: 'fixed inset-0 z-30 flex flex-col justify-end bg-black/40', hidden: true });
+  var card = el('div', { className: 'kr-card max-h-[82vh] overflow-y-auto rounded-t-3xl bg-zinc-50 px-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-5 text-zinc-900 shadow-2xl dark:bg-zinc-950 dark:text-white' });
+  // Tailwind class sets for the sheets
+  var C = {
+    btn: 'flex items-center justify-center gap-1.5 rounded-xl bg-white px-3.5 py-2.5 font-semibold text-zinc-800 shadow-sm ring-1 ring-zinc-900/5 active:scale-[0.98] dark:bg-zinc-800 dark:text-zinc-100 dark:ring-white/10',
+    primary: 'flex w-full items-center justify-center gap-2 rounded-xl bg-amber-400 px-4 py-3 font-semibold text-amber-950 shadow-sm active:scale-[0.98] active:bg-amber-300',
+    saved: 'flex items-center gap-1.5 rounded-xl bg-amber-100 px-3.5 py-2 font-semibold text-amber-900 ring-1 ring-amber-300 active:scale-95 dark:bg-amber-400/15 dark:text-amber-300 dark:ring-amber-400/30',
+    save: 'flex items-center gap-1.5 rounded-xl bg-amber-400 px-3.5 py-2 font-semibold text-amber-950 shadow-sm active:scale-95',
+    card: 'rounded-2xl bg-white p-4 shadow-sm ring-1 ring-zinc-900/5 dark:bg-zinc-900 dark:ring-white/10',
+    list: 'divide-y divide-zinc-100 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-zinc-900/5 dark:divide-white/5 dark:bg-zinc-900 dark:ring-white/10',
+    muted: 'text-sm text-zinc-500 dark:text-zinc-400',
+    badge: 'ml-1.5 rounded-full bg-zinc-100 px-2 py-0.5 align-middle text-xs font-medium text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400',
+    tab: 'flex flex-1 items-center justify-center gap-1 rounded-lg py-2 text-sm font-semibold text-zinc-500 aria-pressed:bg-white aria-pressed:text-zinc-900 aria-pressed:shadow-sm dark:text-zinc-400 dark:aria-pressed:bg-zinc-700 dark:aria-pressed:text-white',
+    mark: 'rounded bg-amber-200 px-0.5 text-inherit dark:bg-amber-400/30',
+  };
   sheet.appendChild(card);
   var toastEl = el('div', { id: 'kr-toast', style: 'opacity:0' });
 
@@ -224,30 +237,36 @@
   function openWord(raw, sentence, span) {
     var word = KRLookup.clean(raw);
     if (span) span.classList.add('kr-sel');
-    openSheet('<div class="kr-muted">Looking up…</div>');
+    openSheet('<p class="' + C.muted + '">Looking up…</p>');
     loadDict().then(function (d) { showWord(word, raw, sentence, KRLookup.lookup(d, raw, 3)); })
       .catch(function () { showWord(word, raw, sentence, null); });
   }
 
   function showWord(word, raw, sentence, hits) {
-    var savedNow = isSaved(word);
-    var h = '<div class="kr-head"><div class="kr-word kr-selectable">' + esc(word) + '</div>' +
-      '<button class="kr-btn ' + (savedNow ? 'kr-on' : 'kr-primary') + '" data-act="save">' + (savedNow ? HI('star') + ' Saved' : HI('star-outline') + ' Save') + '</button></div>';
-    if (hits === null) h += '<div class="kr-muted">Dictionary not available offline yet. Use the links below.</div>';
-    else if (!hits.length) h += '<div class="kr-muted">Not in the offline dictionary. Try Naver below, or long‑press the word above → Look Up.</div>';
-    else hits.forEach(function (x) {
-      h += '<div class="kr-hit"><b class="kr-selectable">' + esc(x.word) + '</b>' +
-        (x.how ? '<small>' + esc(x.how) + '</small>' : '') + '<div class="kr-gloss">' + esc(x.gloss) + '</div></div>';
-    });
+    var savedNow = isSaved(word), OUT = HI('arrow-top-right-on-square', 'size-4 text-zinc-400');
+    var h = '<div class="flex items-center gap-3"><div class="kr-selectable flex-1 break-keep text-[30px] font-bold">' + esc(word) + '</div>' +
+      '<button class="' + (savedNow ? C.saved : C.save) + '" data-act="save">' +
+      (savedNow ? HI('star', 'size-5') + 'Saved' : HI('star-outline', 'size-5') + 'Save') + '</button></div>';
+    if (hits === null) h += '<p class="mt-3 ' + C.muted + '">Dictionary not available offline yet. Use the links below.</p>';
+    else if (!hits.length) h += '<p class="mt-3 ' + C.muted + '">Not in the offline dictionary. Try Naver below, or long‑press the word above → Look Up.</p>';
+    else {
+      h += '<div class="mt-3 ' + C.list + '">';
+      hits.forEach(function (x) {
+        h += '<div class="px-4 py-3"><p class="text-lg font-bold"><span class="kr-selectable">' + esc(x.word) + '</span>' +
+          (x.how ? '<span class="' + C.badge + '">' + esc(x.how) + '</span>' : '') + '</p>' +
+          '<p class="mt-0.5 text-zinc-600 dark:text-zinc-300">' + esc(x.gloss) + '</p></div>';
+      });
+      h += '</div>';
+    }
     if (sentence) {
-      var marked = esc(sentence).split(esc(raw)).join('<mark>' + esc(raw) + '</mark>');
-      h += '<div class="kr-sentence kr-selectable">' + marked + '</div>';
+      var marked = esc(sentence).split(esc(raw)).join('<mark class="' + C.mark + '">' + esc(raw) + '</mark>');
+      h += '<p class="kr-selectable mt-3 ' + C.card + ' leading-relaxed text-zinc-800 dark:text-zinc-200">' + marked + '</p>';
     }
     var base = hits && hits[0] ? hits[0].word : word;
-    h += '<div class="kr-row">' +
-      '<a class="kr-btn" target="_blank" href="https://korean.dict.naver.com/koendict/#/search?query=' + encodeURIComponent(base) + '">Naver ' + HI('arrow-top-right-on-square') + '</a>' +
-      (sentence ? '<a class="kr-btn" target="_blank" href="https://papago.naver.com/?sk=ko&tk=en&st=' + encodeURIComponent(sentence) + '">Sentence ' + HI('arrow-top-right-on-square') + '</a>' : '') +
-      '</div><div class="kr-row"><button class="kr-btn kr-primary" data-act="close">' + HI('play') + ' Back to game</button></div>';
+    h += '<div class="mt-3 grid ' + (sentence ? 'grid-cols-2' : 'grid-cols-1') + ' gap-2">' +
+      '<a class="' + C.btn + '" target="_blank" href="https://korean.dict.naver.com/koendict/#/search?query=' + encodeURIComponent(base) + '">Naver ' + OUT + '</a>' +
+      (sentence ? '<a class="' + C.btn + '" target="_blank" href="https://papago.naver.com/?sk=ko&tk=en&st=' + encodeURIComponent(sentence) + '">Sentence ' + OUT + '</a>' : '') +
+      '</div><button class="mt-2 ' + C.primary + '" data-act="close">' + HI('play', 'size-5') + 'Back to game</button>';
     card.onclick = null;
     openSheet(h);
     card.querySelector('[data-act=close]').onclick = closeSheet;
@@ -266,47 +285,46 @@
 
   // ---------- menu: saved words / recent text ----------
   function openMenu(tab) {
-    var tabs = '<div class="kr-tabs">' +
-      '<button class="kr-btn' + (tab === 'now' ? ' kr-on' : '') + '" data-tab="now">Now</button>' +
-      '<button class="kr-btn' + (tab === 'saved' ? ' kr-on' : '') + '" data-tab="saved">' + HI('star') + ' ' + saved.length + '</button>' +
-      '<button class="kr-btn' + (tab === 'recent' ? ' kr-on' : '') + '" data-tab="recent">Recent</button></div>';
-    var h = tabs;
+    var tb = function (id, label) { return '<button class="' + C.tab + '" data-tab="' + id + '" aria-pressed="' + (tab === id) + '">' + label + '</button>'; };
+    var h = '<div class="flex rounded-xl bg-zinc-100 p-1 dark:bg-zinc-800">' + tb('now', 'Now') +
+      tb('saved', HI('star', 'size-4 text-amber-500') + saved.length) + tb('recent', 'Recent') + '</div>';
     if (tab === 'now') {
       // Current dialogue (what has been typed so far), else the last finished message.
       var nowText = current ? plain(current.text.slice(0, current.shown)) : (history.length ? history[history.length - 1] : '');
       var full = current ? plain(current.text) : nowText;
-      if (!nowText.trim()) h += '<div class="kr-muted">No dialogue on screen right now. Older text is under Recent.</div>';
+      if (!nowText.trim()) h += '<p class="mt-4 ' + C.muted + '">No dialogue on screen right now. Older text is under Recent.</p>';
       else {
-        h += '<div class="kr-now kr-tap" data-s="' + esc(full.replace(/\n+/g, ' ')) + '">' +
+        h += '<div class="kr-now mt-4 ' + C.card + '" data-s="' + esc(full.replace(/\n+/g, ' ')) + '">' +
           wordsHTML(nowText.replace(/\n\n+/g, '\n')) + '</div>' +
-          '<div class="kr-muted" style="margin-top:8px">Tap a word to look it up.</div>';
+          '<p class="mt-2 px-1 ' + C.muted + '">Tap a word to look it up.</p>';
       }
     } else if (tab === 'saved') {
-      if (!saved.length) h += '<div class="kr-muted">No saved words yet. Tap any word in the subtitles, then Save.</div>';
-      saved.slice().reverse().forEach(function (x) {
-        h += '<div class="kr-item"><div><b>' + esc(x.base || x.w) + '</b>' + (x.base && x.base !== x.w ? ' <span class="kr-muted">' + esc(x.w) + '</span>' : '') +
-          '<div class="kr-gloss">' + esc(x.gloss || '—') + '</div>' +
-          (x.s ? '<div class="kr-muted">' + esc(x.s) + '</div>' : '') + '</div>' +
-          '<button class="kr-btn kr-x" data-del="' + x.t + '" aria-label="Remove">' + HI('x-mark') + '</button></div>';
-      });
-      if (saved.length) h += '<div class="kr-row"><button class="kr-btn" data-act="export">Export for Anki (CSV)</button><button class="kr-btn" data-act="copy">Copy list</button></div>';
+      if (!saved.length) h += '<p class="mt-4 ' + C.muted + '">No saved words yet. Tap any word in the subtitles, then Save.</p>';
+      else {
+        h += '<div class="mt-4 ' + C.list + '">';
+        saved.slice().reverse().forEach(function (x) {
+          h += '<div class="flex items-start gap-2 px-4 py-3"><div class="min-w-0 flex-1"><p class="font-bold">' + esc(x.base || x.w) +
+            (x.base && x.base !== x.w ? ' <span class="font-normal ' + C.muted + '">' + esc(x.w) + '</span>' : '') + '</p>' +
+            '<p class="text-zinc-600 dark:text-zinc-300">' + esc(x.gloss || '—') + '</p>' +
+            (x.s ? '<p class="mt-0.5 truncate ' + C.muted + '">' + esc(x.s) + '</p>' : '') + '</div>' +
+            '<button class="-mr-2 grid size-9 shrink-0 place-items-center rounded-full text-zinc-400 active:bg-zinc-100 dark:active:bg-zinc-800" data-del="' + x.t + '" aria-label="Remove">' + HI('x-mark', 'size-5') + '</button></div>';
+        });
+        h += '</div><div class="mt-3 grid grid-cols-2 gap-2"><button class="' + C.btn + '" data-act="export">Export for Anki</button><button class="' + C.btn + '" data-act="copy">Copy list</button></div>';
+      }
     } else if (tab === 'recent') {
       var lines = history.slice().reverse();
       if (current) lines.unshift(plain(current.text));
-      if (!lines.length && !otherText.length) h += '<div class="kr-muted">Nothing yet. Talk to someone in the game.</div>';
-      lines.forEach(function (t) {
-        var s = t.replace(/\n+/g, ' ');
-        h += '<div class="kr-line kr-tap" data-s="' + esc(s) + '">' + wordsHTML(t.replace(/\n+/g, ' ')) + '</div>';
-      });
-      if (otherText.length) {
-        h += '<div class="kr-muted" style="margin-top:14px">Other text on screen (menus, descriptions)</div>';
-        otherText.slice().reverse().slice(0, 60).forEach(function (t) {
-          var s = t.replace(/\n+/g, ' ');
-          h += '<div class="kr-line kr-tap" data-s="' + esc(s) + '">' + wordsHTML(s) + '</div>';
-        });
-      }
+      if (!lines.length && !otherText.length) h += '<p class="mt-4 ' + C.muted + '">Nothing yet. Talk to someone in the game.</p>';
+      var block = function (arr) {
+        return '<div class="mt-2 ' + C.list + '">' + arr.map(function (t) {
+          var s1 = t.replace(/\n+/g, ' ');
+          return '<div class="px-4 py-2.5 leading-relaxed" data-s="' + esc(s1) + '">' + wordsHTML(s1) + '</div>';
+        }).join('') + '</div>';
+      };
+      if (lines.length) h += '<div class="mt-2">' + block(lines) + '</div>';
+      if (otherText.length) h += '<p class="mt-4 px-1 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Other text on screen</p>' + block(otherText.slice().reverse().slice(0, 60));
     }
-    h += '<div class="kr-row"><button class="kr-btn kr-primary" data-act="close">' + HI('play') + ' Back to game</button></div>';
+    h += '<button class="mt-4 ' + C.primary + '" data-act="close">' + HI('play', 'size-5') + 'Back to game</button>';
     openSheet(h);
     card.onclick = function (e) {
       var b = e.target.closest('[data-tab],[data-act],[data-del],.kr-w');
@@ -347,7 +365,7 @@
     (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(function () { toast('Copied'); }, function () { toast('Copy failed'); });
   }
 
-  function updatePill() { if (!settings.debug) pill.innerHTML = saved.length ? '가 ' + HI('star') + saved.length : '가'; }
+  function updatePill() { if (!settings.debug) pill.innerHTML = saved.length ? '가 ' + HI('star', 'size-3.5') + saved.length : '가'; }
   var toastTimer = null;
   function toast(msg) {
     toastEl.textContent = msg; toastEl.style.opacity = 1;

@@ -38,42 +38,15 @@
 .kr-now { font-size: 22px; line-height: 1.7; padding: 6px 2px; }
 .kr-now .kr-w { padding: 2px 2px; }
 
-#kr-sheet {
-  position: fixed; inset: 0; z-index: 10; display: flex; flex-direction: column; justify-content: flex-end;
-  background: rgba(0, 0, 0, 0.45);
-}
+/* Word sheets are styled with Tailwind (see kr/ui.js); only behaviour rules live here. */
 #kr-sheet[hidden] { display: none; }
-#kr-sheet .kr-card {
-  background: #16181f; color: #f4f1ea; border-radius: 16px 16px 0 0;
-  max-height: 82vh; overflow-y: auto; touch-action: pan-y; -webkit-overflow-scrolling: touch;
-  padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
-  box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.4);
-}
+#kr-sheet .kr-card { touch-action: pan-y; -webkit-overflow-scrolling: touch; }
 #kr-sheet .kr-selectable { -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
-.kr-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-.kr-word { font-size: 30px; font-weight: 700; flex: 1; word-break: keep-all; }
-.kr-btn {
-  border: 0; border-radius: 10px; padding: 10px 14px; font-size: 15px; font-weight: 600;
-  background: #262a35; color: #f4f1ea; font-family: inherit;
+#kr-sheet a { text-decoration: none; }
+@media (prefers-color-scheme: light) {
+  #kr-sheet .kr-w { border-bottom-color: rgba(168, 111, 0, 0.45); }
+  #kr-sheet .kr-w.kr-saved { color: #a86f00; border-bottom-color: #a86f00; }
 }
-.kr-btn.kr-primary { background: #ffd666; color: #16181f; }
-.kr-btn.kr-on { background: #3a3220; color: #ffd666; }
-.kr-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
-.kr-row .kr-btn { flex: 1; text-align: center; text-decoration: none; }
-.kr-hit { padding: 9px 0; border-top: 1px solid #262a35; }
-.kr-hit:first-of-type { border-top: 0; }
-.kr-hit b { font-size: 18px; }
-.kr-hit small { color: #8b90a0; margin-left: 6px; }
-.kr-gloss { color: #c9ccd6; font-size: 15px; margin-top: 2px; }
-.kr-sentence { margin-top: 12px; padding: 10px 12px; background: #1e2129; border-radius: 10px; font-size: 16px; line-height: 1.6; }
-.kr-sentence mark { background: rgba(255, 214, 102, 0.3); color: inherit; border-radius: 3px; }
-.kr-muted { color: #8b90a0; font-size: 13px; }
-.kr-tabs { display: flex; gap: 6px; margin-bottom: 12px; }
-.kr-tabs .kr-btn { flex: 1; }
-.kr-item { padding: 10px 0; border-top: 1px solid #262a35; display: flex; gap: 10px; }
-.kr-item > div { flex: 1; min-width: 0; }
-.kr-item .kr-x { flex: 0 0 auto; background: transparent; color: #8b90a0; font-size: 18px; padding: 4px 8px; }
-.kr-line { padding: 8px 0; border-top: 1px solid #262a35; font-size: 16px; line-height: 1.6; }
 #kr-toast {
   position: fixed; left: 50%; top: 12px; transform: translateX(-50%); z-index: 11;
   background: #ffd666; color: #16181f; padding: 8px 14px; border-radius: 20px; font-size: 14px; font-weight: 600;
@@ -104,32 +77,7 @@
 }
 @keyframes kr-bob { 50% { transform: translateY(calc(1.5px * var(--k, 1.46))); } }
 
-/* Light appearance for the word sheets (the subtitle bar and 가 button stay dark over the game). */
-@media (prefers-color-scheme: light) {
-  #kr-sheet .kr-card { background: #f2f2f7; color: #000; box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.15); }
-  .kr-btn { background: #fff; color: #000; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06); }
-  .kr-btn.kr-primary { background: #ffd666; color: #16181f; }
-  .kr-btn.kr-on { background: #fff1c7; color: #8a5a00; }
-  .kr-hit, .kr-item, .kr-line { border-top-color: #e0e0e5; }
-  .kr-hit small, .kr-muted, .kr-item .kr-x { color: #8a8a8e; }
-  .kr-gloss { color: #3c3c43; }
-  .kr-sentence { background: #fff; }
-  .kr-sentence mark { background: rgba(255, 196, 0, 0.35); }
-  .kr-w { border-bottom-color: rgba(168, 111, 0, 0.45); }
-  .kr-w.kr-saved { color: #a86f00; border-bottom-color: #a86f00; }
-  #kr-sheet { background: rgba(0, 0, 0, 0.3); }
-}
-
-/* Heroicons in the word sheets */
-.kr-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
-.kr-btn .hi { width: 18px; height: 18px; }
-.kr-head .kr-btn .hi { width: 18px; height: 18px; }
-.kr-row a.kr-btn .hi { width: 15px; height: 15px; opacity: 0.8; }
-.kr-item .kr-x { display: inline-flex; align-items: center; }
-.kr-item .kr-x .hi { width: 18px; height: 18px; }
+/* Heroicons on the game screen */
 #kr-pill { display: inline-flex; align-items: center; gap: 3px; }
-#kr-pill .hi { width: 13px; height: 13px; }
 #kr-panel .kr-menu-btn { display: inline-flex; align-items: center; justify-content: center; }
-#kr-panel .kr-menu-btn .hi { width: 18px; height: 18px; }
-/* Optical alignment of icons next to text (measured: 0.5-0.7 px low before) */
-.kr-btn .hi, #kr-pill .hi { position: relative; top: -0.03em; }
+#kr-pill .hi { position: relative; top: -0.03em; }

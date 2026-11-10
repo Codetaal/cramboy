@@ -14,39 +14,46 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-180.png">
   <link rel="icon" href="icon-180.png">
+  <link rel="stylesheet" href="tw.css">
   <link rel="stylesheet" href="app.css">
   <link rel="stylesheet" href="kr/ui.css">
 </head>
-<body>
-  <div id="home">
-    <div class="ios-page" id="page-home">
-      <div class="nav"></div>
-      <h1 class="large-title">CheeseLab</h1>
-      <div class="title-sub" id="status"></div>
-      <div class="sec-h" id="recent-h" hidden>Recent</div>
-      <div class="group" id="recent" hidden></div>
-      <div class="group">
-        <button class="cell add-cell" id="btn-open" disabled><span class="add-plus"><span data-hi="plus"></span></span><span class="cell-text"><b>Add a game</b></span></button>
-      </div>
+<body class="bg-zinc-50 font-sans text-zinc-900 antialiased dark:bg-zinc-950 dark:text-white">
+  <div id="home" class="min-h-full overflow-x-hidden">
+    <div id="page-home" class="mx-auto max-w-xl px-4 pb-[calc(2rem+env(safe-area-inset-bottom))] pt-[calc(env(safe-area-inset-top)+3.5rem)]">
+      <h1 class="text-[34px] font-bold tracking-tight">CheeseLab</h1>
+      <div id="status" class="mt-1 text-[15px] text-zinc-500 dark:text-zinc-400 empty:hidden"></div>
+      <h2 id="recent-h" class="mt-5 px-1 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400" hidden>Recent</h2>
+      <div id="recent" class="mt-2 divide-y divide-zinc-100 dark:divide-white/5 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-zinc-900/5 dark:bg-zinc-900 dark:ring-white/10" hidden></div>
+      <button id="btn-open" class="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl bg-amber-400 px-4 py-3.5 font-semibold text-amber-950 shadow-sm ring-1 ring-inset ring-amber-500/20 transition active:scale-[0.98] active:bg-amber-300 disabled:opacity-50" disabled>
+        <span data-hi="plus" data-hi-class="size-5"></span>Add a game</button>
       <input id="file-rom" type="file" hidden>
-      <div class="sec-f" id="recent-f">Swipe left on a game to remove it. Its save stays on this device.</div>
-      <div class="group" id="ios-hint" hidden>
-        <div class="cell hint-cell">In Safari, tap <b>Share → Add to Home Screen</b> and open it from there. Saves are only kept reliably in the Home Screen app.</div>
-      </div>
-      <div class="support">If you like using this app, consider <a href="https://www.buymeacoffee.com/cheeselab" target="_blank" rel="noopener">buying me some cheese</a> to keep the updates rolling.</div>
-      <div class="sec-f foot">
+      <p id="recent-f" class="mt-3 px-1 text-sm text-zinc-500 dark:text-zinc-400">Swipe left on a game to remove it. Its save stays on this device.</p>
+      <div id="ios-hint" class="mt-4 rounded-2xl bg-amber-50 p-4 text-sm leading-relaxed text-amber-900 ring-1 ring-amber-200 dark:bg-amber-400/10 dark:text-amber-100 dark:ring-amber-400/20" hidden>
+        In Safari, tap <b>Share → Add to Home Screen</b> and open it from there. Saves are only kept reliably in the Home Screen app.</div>
+      <p class="mt-10 text-center text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">If you like using this app, consider
+        <a class="font-semibold text-amber-600 underline decoration-amber-600/30 underline-offset-2 dark:text-amber-400 dark:decoration-amber-400/30" href="https://www.buymeacoffee.com/cheeselab" target="_blank" rel="noopener">buying me some cheese</a> to keep the updates rolling.</p>
+      <p class="mt-8 text-center text-xs leading-relaxed text-zinc-400 dark:text-zinc-500">
         <span id="ver"></span><br>
         Your games and saves stay on this device. Play only games you own.<br>
-        Emulator: <a href="https://github.com/44670/desmume-wasm">desmume-wasm</a> (GPL‑2.0), built from source.
+        Emulator: <a class="underline underline-offset-2" href="https://github.com/44670/desmume-wasm">desmume-wasm</a> (GPL‑2.0), built from source.
+      </p>
+    </div>
+    <div id="page-all" class="sub-page fixed inset-0 z-10 overflow-y-auto bg-zinc-50 dark:bg-zinc-950" hidden>
+      <div class="mx-auto max-w-xl px-4 pb-[calc(2rem+env(safe-area-inset-bottom))] pt-[env(safe-area-inset-top)]">
+        <div class="flex h-11 items-center">
+          <button id="nav-back" class="-ml-2 flex items-center gap-0.5 rounded-lg px-1 py-1 text-[17px] text-amber-600 active:opacity-60 dark:text-amber-400">
+            <span data-hi="chevron-left" data-hi-class="size-6"></span>Games</button>
+        </div>
+        <h1 class="mt-1 text-[34px] font-bold tracking-tight">All Games</h1>
+        <div id="all-list" class="mt-4 divide-y divide-zinc-100 dark:divide-white/5 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-zinc-900/5 dark:bg-zinc-900 dark:ring-white/10"></div>
+        <p class="mt-3 px-1 text-sm text-zinc-500 dark:text-zinc-400">Swipe left on a game to remove it. Its save stays on this device.</p>
       </div>
     </div>
-    <div class="ios-page sub-page" id="page-all" hidden>
-      <div class="nav"><button class="nav-back" id="nav-back"><span data-hi="chevron-left"></span>Games</button><span class="nav-title">All Games</span><span class="nav-spacer"></span></div>
-      <h1 class="large-title">All Games</h1>
-      <div class="group" id="all-list"></div>
-      <div class="sec-f">Swipe left on a game to remove it. Its save stays on this device.</div>
+    <div id="home-toast" class="fixed bottom-[calc(1.25rem+env(safe-area-inset-bottom))] left-1/2 z-30 flex max-w-[calc(100%-2rem)] -translate-x-1/2 items-center gap-3 rounded-2xl bg-zinc-900 py-2 pl-4 pr-2 text-[15px] text-white shadow-xl ring-1 ring-white/10 dark:bg-zinc-800" hidden>
+      <span id="home-toast-text" class="truncate"></span>
+      <button id="home-toast-undo" class="rounded-lg px-2 py-1 font-semibold text-amber-400 active:bg-white/10">Undo</button>
     </div>
-    <div id="home-toast" hidden><span id="home-toast-text"></span><button id="home-toast-undo">Undo</button></div>
   </div>
 
   <div id="player" hidden>
@@ -68,38 +75,37 @@
     <div id="msg" hidden></div>
   </div>
 
-  <div id="menu" hidden>
-    <div class="menu-card">
-      <div class="grab"></div>
-      <div class="m-top">
-        <div id="menu-title" class="m-title">Menu</div>
-        <button class="chip" data-m="sound" aria-label="Sound"><span data-hi="speaker-wave"></span></button>
-        <button class="chip resume" data-m="resume"><span data-hi="play"></span>Resume</button>
+  <div id="menu" class="fixed inset-0 z-20 flex items-end bg-black/40" hidden>
+    <div class="menu-card max-h-[92vh] w-full overflow-y-auto rounded-t-3xl bg-zinc-50 px-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-2 shadow-2xl dark:bg-zinc-950">
+      <div class="mx-auto mb-3 h-1.5 w-10 rounded-full bg-zinc-300 dark:bg-zinc-700"></div>
+      <div class="flex items-center gap-2">
+        <div id="menu-title" class="min-w-0 flex-1 truncate text-lg font-bold">Menu</div>
+        <button class="grid size-10 place-items-center rounded-full bg-white text-zinc-700 shadow-sm ring-1 ring-zinc-900/5 active:scale-95 dark:bg-zinc-800 dark:text-zinc-200 dark:ring-white/10" data-m="sound" aria-label="Sound"></button>
+        <button class="flex items-center gap-1.5 rounded-full bg-amber-400 px-4 py-2.5 font-semibold text-amber-950 shadow-sm active:scale-95 active:bg-amber-300" data-m="resume">
+          <span data-hi="play" data-hi-class="size-4"></span>Resume</button>
       </div>
-      <div class="group">
-        <div class="r"><span class="lab">Subtitles</span>
-          <div class="seg" data-seg="subs"><button data-v="off">Off</button><button data-v="bar">Bar</button><button data-v="box">In box</button></div></div>
-        <div class="r"><span class="lab">Controls</span>
-          <div class="seg" data-seg="controls"><button data-v="below">Below</button><button data-v="floating">Floating</button></div></div>
+      <div class="mt-4 divide-y divide-zinc-100 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-zinc-900/5 dark:divide-white/5 dark:bg-zinc-900 dark:ring-white/10">
+        <div class="flex items-center gap-2 px-4 py-2.5"><span class="flex-1">Subtitles</span><div class="seg flex rounded-lg bg-zinc-100 p-0.5 text-[13px] dark:bg-zinc-800" data-seg="subs"><button class="rounded-md px-2.5 py-1.5 text-zinc-500 aria-pressed:bg-white aria-pressed:font-semibold aria-pressed:text-zinc-900 aria-pressed:shadow-sm dark:text-zinc-400 dark:aria-pressed:bg-zinc-600 dark:aria-pressed:text-white" data-v="off" aria-pressed="false">Off</button><button class="rounded-md px-2.5 py-1.5 text-zinc-500 aria-pressed:bg-white aria-pressed:font-semibold aria-pressed:text-zinc-900 aria-pressed:shadow-sm dark:text-zinc-400 dark:aria-pressed:bg-zinc-600 dark:aria-pressed:text-white" data-v="bar" aria-pressed="false">Bar</button><button class="rounded-md px-2.5 py-1.5 text-zinc-500 aria-pressed:bg-white aria-pressed:font-semibold aria-pressed:text-zinc-900 aria-pressed:shadow-sm dark:text-zinc-400 dark:aria-pressed:bg-zinc-600 dark:aria-pressed:text-white" data-v="box" aria-pressed="false">In box</button></div></div>
+        <div class="flex items-center gap-2 px-4 py-2.5"><span class="flex-1">Controls</span><div class="seg flex rounded-lg bg-zinc-100 p-0.5 text-[13px] dark:bg-zinc-800" data-seg="controls"><button class="rounded-md px-2.5 py-1.5 text-zinc-500 aria-pressed:bg-white aria-pressed:font-semibold aria-pressed:text-zinc-900 aria-pressed:shadow-sm dark:text-zinc-400 dark:aria-pressed:bg-zinc-600 dark:aria-pressed:text-white" data-v="below" aria-pressed="false">Below</button><button class="rounded-md px-2.5 py-1.5 text-zinc-500 aria-pressed:bg-white aria-pressed:font-semibold aria-pressed:text-zinc-900 aria-pressed:shadow-sm dark:text-zinc-400 dark:aria-pressed:bg-zinc-600 dark:aria-pressed:text-white" data-v="floating" aria-pressed="false">Floating</button></div></div>
       </div>
-      <div class="h">Save data</div>
-      <div class="group">
-        <button class="r" data-m="export"><span class="lab">Export save</span><span class="val">.dsz</span><span class="chev"><span data-hi="chevron-right"></span></span></button>
-        <button class="r" data-m="import"><span class="lab">Import save</span><span class="val">.dsz .sav .dsv</span><span class="chev"><span data-hi="chevron-right"></span></span></button>
+      <h3 class="mt-4 px-1 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Save data</h3>
+      <div class="mt-2 divide-y divide-zinc-100 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-zinc-900/5 dark:divide-white/5 dark:bg-zinc-900 dark:ring-white/10">
+        <button class="flex w-full items-center gap-2 px-4 py-3 text-left active:bg-zinc-50 dark:active:bg-zinc-800" data-m="export"><span class="flex-1">Export save</span><span class="text-sm text-zinc-500 dark:text-zinc-400">.dsz</span><span data-hi="chevron-right" data-hi-class="size-5 shrink-0 text-zinc-300 dark:text-zinc-600"></span></button>
+        <button class="flex w-full items-center gap-2 px-4 py-3 text-left active:bg-zinc-50 dark:active:bg-zinc-800" data-m="import"><span class="flex-1">Import save</span><span class="text-sm text-zinc-500 dark:text-zinc-400">.dsz .sav .dsv</span><span data-hi="chevron-right" data-hi-class="size-5 shrink-0 text-zinc-300 dark:text-zinc-600"></span></button>
       </div>
       <input id="file-save" type="file" hidden>
-      <div class="h">More</div>
-      <div class="group">
-        <button class="r" data-m="words"><span class="lab">Words &amp; text</span><span class="val" id="m-words"></span><span class="chev"><span data-hi="chevron-right"></span></span></button>
-        <button class="r" data-m="advanced"><span class="lab">Advanced</span><span class="val">snapshot, info</span><span class="chev" id="m-adv-chev"><span data-hi="chevron-right"></span></span></button>
-        <div id="m-advanced" hidden>
-          <button class="r r-sub" data-m="snapshot"><span class="lab">Export memory snapshot</span><span class="chev"><span data-hi="chevron-right"></span></span></button>
-          <div class="m-info" id="m-info"></div>
+      <h3 class="mt-4 px-1 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">More</h3>
+      <div class="mt-2 divide-y divide-zinc-100 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-zinc-900/5 dark:divide-white/5 dark:bg-zinc-900 dark:ring-white/10">
+        <button class="flex w-full items-center gap-2 px-4 py-3 text-left active:bg-zinc-50 dark:active:bg-zinc-800" data-m="words"><span class="flex-1">Words &amp; text</span><span class="flex items-center gap-1 text-sm text-zinc-500 dark:text-zinc-400" id="m-words"></span><span data-hi="chevron-right" data-hi-class="size-5 shrink-0 text-zinc-300 dark:text-zinc-600"></span></button>
+        <button class="flex w-full items-center gap-2 px-4 py-3 text-left active:bg-zinc-50 dark:active:bg-zinc-800" data-m="advanced"><span class="flex-1">Advanced</span><span class="text-sm text-zinc-500 dark:text-zinc-400">snapshot, info</span>
+          <span id="m-adv-chev" class="inline-flex transition-transform duration-150"><span data-hi="chevron-right" data-hi-class="size-5 shrink-0 text-zinc-300 dark:text-zinc-600"></span></span></button>
+        <div id="m-advanced" class="bg-zinc-50/60 dark:bg-white/[0.02]" hidden>
+          <button class="flex w-full items-center gap-2 px-4 py-3 text-left active:bg-zinc-50 dark:active:bg-zinc-800 pl-7 text-[15px]" data-m="snapshot"><span class="flex-1">Export memory snapshot</span><span data-hi="chevron-right" data-hi-class="size-5 shrink-0 text-zinc-300 dark:text-zinc-600"></span></button>
+          <div id="m-info" class="border-t border-zinc-100 px-4 pb-3 pl-7 pt-2.5 text-xs leading-relaxed text-zinc-500 dark:border-white/5 dark:text-zinc-400"></div>
         </div>
-        <button class="r" data-m="home"><span class="lab danger">Close game</span></button>
+        <button class="flex w-full items-center gap-2 px-4 py-3 text-left active:bg-zinc-50 dark:active:bg-zinc-800 text-red-500" data-m="home">Close game</button>
       </div>
     </div>
-  </div>
   </div>
 
   <script src="kv.js"></script>

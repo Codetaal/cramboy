@@ -32,6 +32,9 @@ for symbols the upstream tree leaves undefined. `docs/emu.js` is a new frontend.
 ## Tests
 `node tests/reader.test.js` and `node tests/lookup.test.js`.
 
+Styles use Tailwind CSS: after changing classes in `docs/index.html`, `docs/emu.js` or
+`docs/kr/ui.js`, run `npm install` once and then `npm run build:css` to regenerate `docs/tw.css`.
+
 ## Licences
 GPL-3.0-or-later (see LICENSE). Includes desmume (GPL-2.0-or-later), PKHeX data
-(GPL-3.0), kengdic (MPL-2.0 / LGPL-2.0+) and Heroicons (MIT, notice in docs/icons.js). Play only games you own.
+(GPL-3.0), kengdic (MPL-2.0 / LGPL-2.0+) and Heroicons (MIT, notice in docs/icons.js) and Tailwind CSS (MIT). Play only games you own.
