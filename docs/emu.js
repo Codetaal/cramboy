@@ -31,7 +31,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var standalone = window.navigator.standalone || matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches;
   if (isIOS && !standalone) $('ios-hint').hidden = false;
-  var APP_VERSION = '1.0.1';   // semantic version; keep in sync with sw.js
+  var APP_VERSION = '1.0.2';   // semantic version; keep in sync with sw.js
   $('ver').textContent = 'Version ' + APP_VERSION;
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
     var hadController = !!navigator.serviceWorker.controller;
@@ -145,7 +145,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     var wrap = document.createElement('div'); wrap.className = 'swipe';
     var del = document.createElement('button'); del.className = 'swipe-del'; del.textContent = 'Remove';
     var cell = document.createElement('div'); cell.className = 'cell';
-    cell.innerHTML = (e.icon ? '<img class="game-icon" alt="" src="' + e.icon + '">' : '<div class="game-icon blank">DS</div>') +
+    cell.innerHTML = (e.icon ? '<span class="game-icon"><img alt="" src="' + e.icon + '"></span>' : '<div class="game-icon blank">DS</div>') +
       '<div class="cell-text"><b></b><small></small></div><span class="chev">›</span>';
     cell.querySelector('b').textContent = e.title;
     cell.querySelector('small').textContent = 'Played ' + ago(e.played) + ' · ' + sizeText(e.size);

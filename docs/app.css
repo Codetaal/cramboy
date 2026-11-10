@@ -58,7 +58,10 @@ a { color: var(--accent); }
 .app-card:active { background: var(--ios-cell); }
 .app-icon { width: 58px; height: 58px; border-radius: 13px; }
 .app-card b { font-size: 20px; }
-.game-icon { width: 44px; height: 44px; flex: 0 0 44px; border-radius: 10px; image-rendering: pixelated; background: #fff; }
+/* Rounded tile behind the icon; the DS icon itself keeps square corners so no pixels get cut off */
+.game-icon { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; flex: 0 0 44px;
+  border-radius: 10px; background: var(--icon-tile, #2c2c2e); }
+.game-icon img { display: block; width: 36px; height: 36px; border-radius: 0; image-rendering: pixelated; }
 .game-icon.blank { display: flex; align-items: center; justify-content: center; color: var(--ios-label2); font-size: 12px; background: var(--ios-press); }
 .chev { color: var(--ios-chev); font-size: 22px; line-height: 1; margin-left: 4px; }
 .cell .count { color: var(--ios-label2); font-size: 17px; }
@@ -180,6 +183,7 @@ a { color: var(--accent); }
   }
   .seg button.on { box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12); }
   .game-icon.blank { background: #e5e5ea; }
+  .game-icon { --icon-tile: #ececf1; }
   #home-toast { background: #fff; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15); }
   #menu { background: rgba(0, 0, 0, 0.35); }
   #player { color: #f4f1ea; }

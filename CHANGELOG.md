@@ -2,6 +2,10 @@
 
 CheeseLab DS uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 1.0.2 (2026-11-10)
+
+- Game icons in the list are no longer cut off at the corners
+
 ## 1.0.1 (2026-11-10)
 
 - Support link on the start screen
