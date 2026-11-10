@@ -1,4 +1,4 @@
-# Working on CheeseLab DS
+# Working on CheeseLab
 
 ## Release workflow (agreed with the owner)
 1. Make changes locally and test them (browser tests with Playwright).

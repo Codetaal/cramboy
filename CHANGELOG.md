@@ -1,6 +1,11 @@
 # Changelog
 
-CheeseLab DS uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
+CheeseLab uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
+
+## 1.0.4 (2026-11-10)
+
+- Renamed the app to CheeseLab
+- The gold CheeseLab flask is the app icon again; the blue DS icon is kept in docs/icons/unused
 
 ## 1.0.3 (2026-11-10)
 

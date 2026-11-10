@@ -1,4 +1,4 @@
-# Minimal iOS 27-style (sharper Liquid Glass) icons for CheeseLab DS.
+# Minimal iOS 27-style (sharper Liquid Glass) icons for CheeseLab.
 from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageChops
 FONT = '/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc'
 S = 1024

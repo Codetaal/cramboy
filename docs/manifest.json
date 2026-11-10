@@ -1,6 +1,6 @@
 {
-  "name": "CheeseLab DS",
-  "short_name": "CheeseLab DS",
+  "name": "CheeseLab",
+  "short_name": "CheeseLab",
   "start_url": "./",
   "scope": "./",
   "display": "fullscreen",
