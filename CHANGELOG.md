@@ -2,6 +2,10 @@
 
 CheeseLab uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 1.2.1
+- In-box subtitles: the dotted underline on the second line is no longer cut off.
+- The menu button turns amber while the menu is open, and fast forward stays amber while it's on.
+
 ## 1.2.0
 - The in-box subtitles can be moved and resized: drag the grip on the top edge to move the box anywhere, and the corner handle to resize it.
 - Text size follows the box height (always two lines) and only shrinks when a line would not fit the width.

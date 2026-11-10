@@ -58,7 +58,7 @@
   background: #fbfbfb; border: calc(2.2px * var(--k, 1.46)) solid #6f7378; border-radius: calc(6px * var(--k, 1.46));
   box-shadow: inset 0 0 0 calc(1.4px * var(--k, 1.46)) #d8dadc;
   /* Text starts where the game's own text starts (x = 13 DS pixels). */
-  padding: calc(8px * var(--k, 1.46)) calc(20px * var(--k, 1.46)) 0 calc(11px * var(--k, 1.46));
+  padding: calc(6px * var(--k, 1.46)) calc(20px * var(--k, 1.46)) 0 calc(11px * var(--k, 1.46));
   color: #4a4a4a; font-family: 'Apple SD Gothic Neo', -apple-system, 'Noto Sans KR', sans-serif; font-weight: 700;
   font-size: calc(11.6px * var(--k, 1.46)); line-height: calc(16px * var(--k, 1.46)); letter-spacing: 0.01em;
   text-shadow: calc(0.9px * var(--k, 1.46)) calc(0.9px * var(--k, 1.46)) 0 #cfcfd2;
@@ -92,7 +92,8 @@
   border-right: 2.5px solid #9aa0a6; border-bottom: 2.5px solid #9aa0a6; border-bottom-right-radius: 3px;
 }
 #kr-box { overflow: visible; }
-#kr-box .kr-box-text { overflow: hidden; }
+/* Room below the second line so its dotted underline isn't clipped */
+#kr-box .kr-box-text { overflow: hidden; padding-bottom: calc(4px * var(--k, 1.46)); }
 #kr-box.kr-dragging { box-shadow: inset 0 0 0 calc(1.4px * var(--k, 1.46)) #d8dadc, 0 6px 20px rgba(0, 0, 0, 0.35); }
 @keyframes kr-bob { 50% { transform: translateY(calc(1.5px * var(--k, 1.46))); } }
 

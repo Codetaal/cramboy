@@ -74,3 +74,6 @@ body.playing { position: fixed; inset: 0; overflow: hidden; touch-action: none; 
 #controls.floating .btn, #controls.floating #dpad > div { background: rgba(255, 255, 255, 0.28); border-color: rgba(255, 255, 255, 0.35); color: #fff; }
 #controls.floating .btn.on { background: rgba(255, 214, 102, 0.75); }
 #player .btn.pill .hi { width: 18px; height: 18px; }
+/* Toggled buttons: menu while open, fast forward while on */
+#player .btn.active { background: #ffd666; color: #16181f; box-shadow: 0 0 0 3px rgba(255, 214, 102, 0.3); }
+#controls.floating .btn.active { background: #ffd666; }
