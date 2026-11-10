@@ -26,7 +26,7 @@
       <div class="sec-h" id="recent-h" hidden>Recent</div>
       <div class="group" id="recent" hidden></div>
       <div class="group">
-        <button class="cell add-cell" id="btn-open" disabled><span class="add-plus">+</span><span class="cell-text"><b>Add a game</b></span></button>
+        <button class="cell add-cell" id="btn-open" disabled><span class="add-plus"><span data-hi="plus"></span></span><span class="cell-text"><b>Add a game</b></span></button>
       </div>
       <input id="file-rom" type="file" hidden>
       <div class="sec-f" id="recent-f">Swipe left on a game to remove it. Its save stays on this device.</div>
@@ -41,7 +41,7 @@
       </div>
     </div>
     <div class="ios-page sub-page" id="page-all" hidden>
-      <div class="nav"><button class="nav-back" id="nav-back">‹ Games</button><span class="nav-title">All Games</span><span class="nav-spacer"></span></div>
+      <div class="nav"><button class="nav-back" id="nav-back"><span data-hi="chevron-left"></span>Games</button><span class="nav-title">All Games</span><span class="nav-spacer"></span></div>
       <h1 class="large-title">All Games</h1>
       <div class="group" id="all-list"></div>
       <div class="sec-f">Swipe left on a game to remove it. Its save stays on this device.</div>
@@ -55,8 +55,8 @@
     <div id="controls">
       <div class="btn pill" data-k="l">L</div>
       <div class="btn pill" data-k="r">R</div>
-      <div class="btn pill small" id="btn-menu">☰</div>
-      <div class="btn pill small" id="btn-ff">»</div>
+      <div class="btn pill small" id="btn-menu" aria-label="Menu"><span data-hi="bars-3"></span></div>
+      <div class="btn pill small" id="btn-ff" aria-label="Fast forward"><span data-hi="forward"></span></div>
       <div class="btn pill small" data-k="select">SELECT</div>
       <div class="btn pill small" data-k="start">START</div>
       <div id="dpad"><div class="dpad-h"></div><div class="dpad-v"></div></div>
@@ -73,8 +73,8 @@
       <div class="grab"></div>
       <div class="m-top">
         <div id="menu-title" class="m-title">Menu</div>
-        <button class="chip" data-m="sound" aria-label="Sound">🔊</button>
-        <button class="chip resume" data-m="resume">▶ Resume</button>
+        <button class="chip" data-m="sound" aria-label="Sound"><span data-hi="speaker-wave"></span></button>
+        <button class="chip resume" data-m="resume"><span data-hi="play"></span>Resume</button>
       </div>
       <div class="group">
         <div class="r"><span class="lab">Subtitles</span>
@@ -84,16 +84,16 @@
       </div>
       <div class="h">Save data</div>
       <div class="group">
-        <button class="r" data-m="export"><span class="lab">Export save</span><span class="val">.dsz</span><span class="chev">›</span></button>
-        <button class="r" data-m="import"><span class="lab">Import save</span><span class="val">.dsz .sav .dsv</span><span class="chev">›</span></button>
+        <button class="r" data-m="export"><span class="lab">Export save</span><span class="val">.dsz</span><span class="chev"><span data-hi="chevron-right"></span></span></button>
+        <button class="r" data-m="import"><span class="lab">Import save</span><span class="val">.dsz .sav .dsv</span><span class="chev"><span data-hi="chevron-right"></span></span></button>
       </div>
       <input id="file-save" type="file" hidden>
       <div class="h">More</div>
       <div class="group">
-        <button class="r" data-m="words"><span class="lab">Words &amp; text</span><span class="val" id="m-words"></span><span class="chev">›</span></button>
-        <button class="r" data-m="advanced"><span class="lab">Advanced</span><span class="val">snapshot, info</span><span class="chev" id="m-adv-chev">›</span></button>
+        <button class="r" data-m="words"><span class="lab">Words &amp; text</span><span class="val" id="m-words"></span><span class="chev"><span data-hi="chevron-right"></span></span></button>
+        <button class="r" data-m="advanced"><span class="lab">Advanced</span><span class="val">snapshot, info</span><span class="chev" id="m-adv-chev"><span data-hi="chevron-right"></span></span></button>
         <div id="m-advanced" hidden>
-          <button class="r r-sub" data-m="snapshot"><span class="lab">Export memory snapshot</span><span class="chev">›</span></button>
+          <button class="r r-sub" data-m="snapshot"><span class="lab">Export memory snapshot</span><span class="chev"><span data-hi="chevron-right"></span></span></button>
           <div class="m-info" id="m-info"></div>
         </div>
         <button class="r" data-m="home"><span class="lab danger">Close game</span></button>
@@ -103,6 +103,7 @@
   </div>
 
   <script src="kv.js"></script>
+  <script src="icons.js"></script>
   <script src="emu.js"></script>
   <script src="kr/table.js"></script>
   <script src="kr/reader.js"></script>

@@ -34,4 +34,4 @@ for symbols the upstream tree leaves undefined. `docs/emu.js` is a new frontend.
 
 ## Licences
 GPL-3.0-or-later (see LICENSE). Includes desmume (GPL-2.0-or-later), PKHeX data
-(GPL-3.0) and kengdic (MPL-2.0 / LGPL-2.0+). Play only games you own.
+(GPL-3.0), kengdic (MPL-2.0 / LGPL-2.0+) and Heroicons (MIT, notice in docs/icons.js). Play only games you own.

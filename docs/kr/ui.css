@@ -119,3 +119,17 @@
   .kr-w.kr-saved { color: #a86f00; border-bottom-color: #a86f00; }
   #kr-sheet { background: rgba(0, 0, 0, 0.3); }
 }
+
+/* Heroicons in the word sheets */
+.kr-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.kr-btn .hi { width: 18px; height: 18px; }
+.kr-head .kr-btn .hi { width: 18px; height: 18px; }
+.kr-row a.kr-btn .hi { width: 15px; height: 15px; opacity: 0.8; }
+.kr-item .kr-x { display: inline-flex; align-items: center; }
+.kr-item .kr-x .hi { width: 18px; height: 18px; }
+#kr-pill { display: inline-flex; align-items: center; gap: 3px; }
+#kr-pill .hi { width: 13px; height: 13px; }
+#kr-panel .kr-menu-btn { display: inline-flex; align-items: center; justify-content: center; }
+#kr-panel .kr-menu-btn .hi { width: 18px; height: 18px; }
+/* Optical alignment of icons next to text (measured: 0.5-0.7 px low before) */
+.kr-btn .hi, #kr-pill .hi { position: relative; top: -0.03em; }

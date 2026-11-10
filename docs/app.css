@@ -190,3 +190,21 @@ a { color: var(--accent); }
   #player { color: #f4f1ea; }
   a { color: var(--tint); }
 }
+
+/* Heroicons */
+.hi { width: 1.15em; height: 1.15em; flex: 0 0 auto; vertical-align: -0.2em; }
+.chev { display: inline-flex; align-items: center; }
+.chev .hi { width: 18px; height: 18px; vertical-align: 0; }
+.add-plus { display: inline-flex; align-items: center; justify-content: center; }
+.add-plus .hi { width: 20px; height: 20px; }
+.nav-back { display: inline-flex; align-items: center; gap: 2px; }
+.nav-back .hi { width: 22px; height: 22px; margin-left: -6px; }
+.btn.pill .hi { width: 18px; height: 18px; }
+.chip { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.chip .hi { width: 20px; height: 20px; }
+.chip.resume .hi { width: 16px; height: 16px; }
+.r .val .hi { width: 14px; height: 14px; vertical-align: -0.15em; }
+/* Optical alignment: centre icons on the letters, not on the full line (which includes descender space) */
+.r .val { display: inline-flex; align-items: center; gap: 4px; }
+.r .val .hi { vertical-align: 0; }
+.chev { line-height: 0; height: 18px; }   /* box = icon size, so the row centres the arrow itself */

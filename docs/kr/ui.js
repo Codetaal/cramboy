@@ -24,7 +24,7 @@
   // ---------- DOM ----------
   var panel = el('div', { id: 'kr-panel', className: 'kr-hidden' });
   var textBox = el('div', { className: 'kr-text' });
-  var menuBtn = el('button', { className: 'kr-menu-btn', textContent: '★' });
+  var menuBtn = el('button', { className: 'kr-menu-btn', innerHTML: HI('star') });
   panel.appendChild(textBox); panel.appendChild(menuBtn);
   var pill = el('button', { id: 'kr-pill', textContent: '가' });
   var box = el('div', { id: 'kr-box', className: 'kr-hidden' });
@@ -232,7 +232,7 @@
   function showWord(word, raw, sentence, hits) {
     var savedNow = isSaved(word);
     var h = '<div class="kr-head"><div class="kr-word kr-selectable">' + esc(word) + '</div>' +
-      '<button class="kr-btn ' + (savedNow ? 'kr-on' : 'kr-primary') + '" data-act="save">' + (savedNow ? '★ Saved' : '☆ Save') + '</button></div>';
+      '<button class="kr-btn ' + (savedNow ? 'kr-on' : 'kr-primary') + '" data-act="save">' + (savedNow ? HI('star') + ' Saved' : HI('star-outline') + ' Save') + '</button></div>';
     if (hits === null) h += '<div class="kr-muted">Dictionary not available offline yet. Use the links below.</div>';
     else if (!hits.length) h += '<div class="kr-muted">Not in the offline dictionary. Try Naver below, or long‑press the word above → Look Up.</div>';
     else hits.forEach(function (x) {
@@ -245,9 +245,9 @@
     }
     var base = hits && hits[0] ? hits[0].word : word;
     h += '<div class="kr-row">' +
-      '<a class="kr-btn" target="_blank" href="https://korean.dict.naver.com/koendict/#/search?query=' + encodeURIComponent(base) + '">Naver ↗</a>' +
-      (sentence ? '<a class="kr-btn" target="_blank" href="https://papago.naver.com/?sk=ko&tk=en&st=' + encodeURIComponent(sentence) + '">Sentence ↗</a>' : '') +
-      '</div><div class="kr-row"><button class="kr-btn kr-primary" data-act="close">▶ Back to game</button></div>';
+      '<a class="kr-btn" target="_blank" href="https://korean.dict.naver.com/koendict/#/search?query=' + encodeURIComponent(base) + '">Naver ' + HI('arrow-top-right-on-square') + '</a>' +
+      (sentence ? '<a class="kr-btn" target="_blank" href="https://papago.naver.com/?sk=ko&tk=en&st=' + encodeURIComponent(sentence) + '">Sentence ' + HI('arrow-top-right-on-square') + '</a>' : '') +
+      '</div><div class="kr-row"><button class="kr-btn kr-primary" data-act="close">' + HI('play') + ' Back to game</button></div>';
     card.onclick = null;
     openSheet(h);
     card.querySelector('[data-act=close]').onclick = closeSheet;
@@ -257,7 +257,7 @@
         toast('Removed');
       } else {
         saved.push({ w: word, base: base, gloss: hits && hits[0] ? hits[0].gloss : '', s: sentence || '', t: Date.now() });
-        toast('Saved ★ ' + base);
+        toast('Saved: ' + base);
       }
       persist(); updatePill();
       showWord(word, raw, sentence, hits);
@@ -268,7 +268,7 @@
   function openMenu(tab) {
     var tabs = '<div class="kr-tabs">' +
       '<button class="kr-btn' + (tab === 'now' ? ' kr-on' : '') + '" data-tab="now">Now</button>' +
-      '<button class="kr-btn' + (tab === 'saved' ? ' kr-on' : '') + '" data-tab="saved">★ ' + saved.length + '</button>' +
+      '<button class="kr-btn' + (tab === 'saved' ? ' kr-on' : '') + '" data-tab="saved">' + HI('star') + ' ' + saved.length + '</button>' +
       '<button class="kr-btn' + (tab === 'recent' ? ' kr-on' : '') + '" data-tab="recent">Recent</button></div>';
     var h = tabs;
     if (tab === 'now') {
@@ -282,12 +282,12 @@
           '<div class="kr-muted" style="margin-top:8px">Tap a word to look it up.</div>';
       }
     } else if (tab === 'saved') {
-      if (!saved.length) h += '<div class="kr-muted">No saved words yet. Tap any word in the subtitles, then ☆ Save.</div>';
+      if (!saved.length) h += '<div class="kr-muted">No saved words yet. Tap any word in the subtitles, then Save.</div>';
       saved.slice().reverse().forEach(function (x) {
         h += '<div class="kr-item"><div><b>' + esc(x.base || x.w) + '</b>' + (x.base && x.base !== x.w ? ' <span class="kr-muted">' + esc(x.w) + '</span>' : '') +
           '<div class="kr-gloss">' + esc(x.gloss || '—') + '</div>' +
           (x.s ? '<div class="kr-muted">' + esc(x.s) + '</div>' : '') + '</div>' +
-          '<button class="kr-btn kr-x" data-del="' + x.t + '">✕</button></div>';
+          '<button class="kr-btn kr-x" data-del="' + x.t + '" aria-label="Remove">' + HI('x-mark') + '</button></div>';
       });
       if (saved.length) h += '<div class="kr-row"><button class="kr-btn" data-act="export">Export for Anki (CSV)</button><button class="kr-btn" data-act="copy">Copy list</button></div>';
     } else if (tab === 'recent') {
@@ -306,7 +306,7 @@
         });
       }
     }
-    h += '<div class="kr-row"><button class="kr-btn kr-primary" data-act="close">▶ Back to game</button></div>';
+    h += '<div class="kr-row"><button class="kr-btn kr-primary" data-act="close">' + HI('play') + ' Back to game</button></div>';
     openSheet(h);
     card.onclick = function (e) {
       var b = e.target.closest('[data-tab],[data-act],[data-del],.kr-w');
@@ -347,7 +347,7 @@
     (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(function () { toast('Copied'); }, function () { toast('Copy failed'); });
   }
 
-  function updatePill() { if (!settings.debug) pill.textContent = saved.length ? '가 ★' + saved.length : '가'; }
+  function updatePill() { if (!settings.debug) pill.innerHTML = saved.length ? '가 ' + HI('star') + saved.length : '가'; }
   var toastTimer = null;
   function toast(msg) {
     toastEl.textContent = msg; toastEl.style.opacity = 1;

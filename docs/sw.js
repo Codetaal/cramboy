@@ -1,7 +1,7 @@
 // Offline cache for the app. Bump the version here and APP_VERSION in emu.js whenever any file changes
 // (semantic versioning: patch = fixes, minor = features, major = big changes).
-var VERSION = 'cheeselab-v1.0.4';
-var FILES = ['./', './index.html', './app.css', './kv.js', './emu.js', './manifest.json', './icon-180.png', './icon-512.png',
+var VERSION = 'cheeselab-v1.0.5';
+var FILES = ['./', './index.html', './app.css', './kv.js', './icons.js', './emu.js', './manifest.json', './icon-180.png', './icon-512.png',
   './build/nds.js', './build/nds.wasm',
   './kr/ui.css', './kr/table.js', './kr/reader.js', './kr/lookup.js', './kr/ui.js', './kr/dict.json'];
 

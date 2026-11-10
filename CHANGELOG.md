@@ -2,6 +2,11 @@
 
 CheeseLab uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 1.0.5 (2026-11-10)
+
+- All icons are now Heroicons (menu, fast forward, sound on/off, play, arrows, add, stars, links, close)
+- Icons optically aligned with the text next to them (row arrows, stars, buttons)
+
 ## 1.0.4 (2026-11-10)
 
 - Renamed the app to CheeseLab

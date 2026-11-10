@@ -31,7 +31,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var standalone = window.navigator.standalone || matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches;
   if (isIOS && !standalone) $('ios-hint').hidden = false;
-  var APP_VERSION = '1.0.4';   // semantic version; keep in sync with sw.js
+  var APP_VERSION = '1.0.5';   // semantic version; keep in sync with sw.js
   $('ver').textContent = 'Version ' + APP_VERSION;
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
     var hadController = !!navigator.serviceWorker.controller;
@@ -44,7 +44,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     navigator.serviceWorker.addEventListener('controllerchange', function () {
       if (!hadController) { hadController = true; return; }
       if (uiCurrentMode !== 'player') location.reload();
-      else msg('Update ready: open ☰ → Close game to apply it', 6000);
+      else msg('Update ready: open the menu → Close game to apply it', 6000);
     });
   }
 
@@ -131,7 +131,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     library.slice(0, RECENT).forEach(function (e) { recent.appendChild(gameRow(e)); });
     if (library.length > RECENT) {
       var more = document.createElement('button'); more.className = 'cell all-cell';
-      more.innerHTML = '<span class="cell-text"><b>All Games</b></span><span class="count">' + library.length + '</span><span class="chev">›</span>';
+      more.innerHTML = '<span class="cell-text"><b>All Games</b></span><span class="count">' + library.length + '</span><span class="chev">' + HI('chevron-right') + '</span>';
       more.onclick = openAllGames;
       recent.appendChild(more);
     }
@@ -146,7 +146,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     var del = document.createElement('button'); del.className = 'swipe-del'; del.textContent = 'Remove';
     var cell = document.createElement('div'); cell.className = 'cell';
     cell.innerHTML = (e.icon ? '<span class="game-icon"><img alt="" src="' + e.icon + '"></span>' : '<div class="game-icon blank">DS</div>') +
-      '<div class="cell-text"><b></b><small></small></div><span class="chev">›</span>';
+      '<div class="cell-text"><b></b><small></small></div><span class="chev">' + HI('chevron-right') + '</span>';
     cell.querySelector('b').textContent = e.title;
     cell.querySelector('small').textContent = 'Played ' + ago(e.played) + ' · ' + sizeText(e.size);
     wrap.appendChild(del); wrap.appendChild(cell);
@@ -565,15 +565,15 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   }
   function menuLabels() {
     var snd = document.querySelector('[data-m=sound]');
-    snd.textContent = settings.sound ? '🔊' : '🔇'; snd.classList.toggle('off', !settings.sound);
+    snd.innerHTML = HI(settings.sound ? 'speaker-wave' : 'speaker-x-mark'); snd.classList.toggle('off', !settings.sound);
     setSeg('controls', settings.controls);
     setSeg('subs', window.KRSettings ? KRSettings.getMode() : 'bar');
-    $('m-words').textContent = window.KRSettings ? '★ ' + KRSettings.savedCount() : '';
+    $('m-words').innerHTML = window.KRSettings ? HI('star') + ' ' + KRSettings.savedCount() : '';
     var st = window.KRReaderStats ? KRReaderStats() : null;
     $('m-info').innerHTML = 'Version ' + APP_VERSION + ' · ' + (gameID ? gameID.trim() : '') +
       (st ? '<br>Reader: ' + st.strings + ' strings in memory, ' + st.korean + ' Korean, ' + st.printers + ' being printed' : '') +
       '<br>The game saves automatically a few seconds after you save in‑game.' +
-      '<br>Emulator: desmume‑wasm (GPL‑2.0). Character table and Pokémon names: PKHeX (GPL‑3.0). Dictionary: kengdic (MPL‑2.0).';
+      '<br>Emulator: desmume‑wasm (GPL‑2.0). Character table and Pokémon names: PKHeX (GPL‑3.0). Dictionary: kengdic (MPL‑2.0). Icons: Heroicons (MIT).';
   }
   function setSeg(name, v) {
     Array.prototype.forEach.call(document.querySelectorAll('[data-seg=' + name + '] button'), function (b) { b.classList.toggle('on', b.dataset.v === v); });
