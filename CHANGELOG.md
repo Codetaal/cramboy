@@ -1,0 +1,17 @@
+# Changelog
+
+CheeseLab DS uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
+
+## 1.0.0 (2026-11-10)
+
+First release as CheeseLab DS.
+
+- DS emulator (desmume-wasm, built from source) as an iPhone Home Screen web app, works offline
+- Korean subtitles read live from game memory for Pokémon HeartGold/SoulSilver (Gen 4) and Black/White (Gen 5)
+- Subtitle modes: in the game's own text box, as a bar, or off (tap 가)
+- Tap a word: offline dictionary with particle and verb-ending handling; save words with their sentence; export to Anki
+- iOS-style start screen with a game library (3 recent, All Games, swipe to remove, undo)
+- Light and dark mode, following the iPhone setting
+- Controls below the screens or floating, with press animations
+- Save export/import (.dsz/.sav/.dsv) and memory snapshots for adding new games
+- Checks that opened files are DS games
