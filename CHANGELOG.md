@@ -2,6 +2,12 @@
 
 CheeseLab DS uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 1.0.3 (2026-11-10)
+
+- New CheeseLab DS icon: the CheeseLab flask on a blue sky with a round gold "DS" badge in the top corner
+- CheeseLab master logo saved in docs/icons/cheeselab-logo-512.png
+- Removed the slogan from the start screen
+
 ## 1.0.2 (2026-11-10)
 
 - Game icons in the list are no longer cut off at the corners

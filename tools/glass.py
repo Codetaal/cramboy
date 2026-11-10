@@ -87,5 +87,5 @@ if __name__ == '__main__':
             ic = opts[v].resize((size, size), Image.LANCZOS)
             sheet.paste(ic, (px, py), rmask((size, size), (0, 0, size - 1, size - 1), rad))
         sd.text((x + 15, 305), v, font=lab, fill=(60, 60, 67))
-    sheet.save('/tmp/claude-0/-home-claude/98a3ce9f-4b3b-5bc0-a689-3b647516e234/scratchpad/glass-options.png')
+    sheet.save('glass-options.png')
     print('ok')

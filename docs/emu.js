@@ -18,7 +18,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   var prevSaveFlag = 0, saveDirty = false;
   var settings = { sound: true, controls: 'below' };
 
-  var TAGLINE = 'Korean subtitles for your DS games';
+  var TAGLINE = '';   // no slogan; the line only shows status messages
   // ---------- startup ----------
   window.wasmReady = function () {
     ready = true;
@@ -31,7 +31,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var standalone = window.navigator.standalone || matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches;
   if (isIOS && !standalone) $('ios-hint').hidden = false;
-  var APP_VERSION = '1.0.2';   // semantic version; keep in sync with sw.js
+  var APP_VERSION = '1.0.3';   // semantic version; keep in sync with sw.js
   $('ver').textContent = 'Version ' + APP_VERSION;
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
     var hadController = !!navigator.serviceWorker.controller;
