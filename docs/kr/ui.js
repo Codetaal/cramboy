@@ -138,8 +138,9 @@
     // x 4..252, y 146..190, with two 16 px text lines starting at y 152.
     var k = r.width / 256;
     // Full width, stuck to the bottom of the top screen, covering the game's box.
-    box.style.left = r.left + 'px'; box.style.top = (r.top + 146 * k) + 'px';
-    box.style.width = r.width + 'px'; box.style.height = (r.height - 146 * k) + 'px';
+    // Starts 4 DS pixels above the game's box so its top edge line can't peek out.
+    box.style.left = r.left + 'px'; box.style.top = (r.top + 142 * k) + 'px';
+    box.style.width = r.width + 'px'; box.style.height = (r.height - 142 * k) + 'px';
     box.style.setProperty('--k', k);
   };
 

@@ -2,6 +2,10 @@
 
 CheeseLab uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 1.1.5
+- In-box subtitles keep full width but get their rounded corners and side borders back.
+- The box starts a few pixels higher, so the edge of the game's own text box no longer peeks out above it.
+
 ## 1.1.4
 - In-box subtitles are now full width and stick to the bottom of the top screen, with square corners, top and bottom borders and no side borders.
 
