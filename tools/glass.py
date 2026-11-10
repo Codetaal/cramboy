@@ -1,4 +1,4 @@
-# Minimal iOS 27-style (sharper Liquid Glass) icons for AniDS.
+# Minimal iOS 27-style (sharper Liquid Glass) icons for CheeseLab DS.
 from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageChops
 FONT = '/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc'
 S = 1024
@@ -78,7 +78,7 @@ def option(v):
 if __name__ == '__main__':
     import sys
     opts = {v: option(v) for v in 'ABC'}
-    for v, im in opts.items(): im.save(f'/root/icons/glass-{v}.png')
+    for v, im in opts.items(): im.save(f'glass-{v}.png')
     sheet = Image.new('RGB', (3 * 310 + 30, 430), (242, 242, 247)); sd = ImageDraw.Draw(sheet)
     lab = ImageFont.truetype(FONT, 40)
     for i, v in enumerate('ABC'):

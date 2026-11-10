@@ -1,4 +1,4 @@
-// Korean subtitle + vocabulary overlay for AniDS.
+// Korean subtitle + vocabulary overlay for CheeseLab DS.
 // Hooks: app.js calls krOnFrame() after each emulated frame and krLayout() after layout changes.
 (function () {
   'use strict';

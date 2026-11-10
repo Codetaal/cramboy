@@ -1,6 +1,6 @@
 {
-  "name": "AniDS",
-  "short_name": "AniDS",
+  "name": "CheeseLab DS",
+  "short_name": "CheeseLab DS",
   "start_url": "./",
   "scope": "./",
   "display": "fullscreen",
