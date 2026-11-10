@@ -2,6 +2,10 @@
 
 CheeseLab DS uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 1.0.1 (2026-11-10)
+
+- Support link on the start screen
+
 ## 1.0.0 (2026-11-10)
 
 First release as CheeseLab DS.

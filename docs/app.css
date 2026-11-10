@@ -36,7 +36,9 @@ a { color: var(--accent); }
 .large-title { margin: 2px 4px 14px; font-size: 34px; font-weight: 700; letter-spacing: 0.01em; }
 .sec-h { margin: 22px 16px 7px; font-size: 13px; color: var(--ios-label2); text-transform: uppercase; letter-spacing: 0.02em; }
 .sec-f { margin: 7px 16px 0; font-size: 13px; line-height: 1.4; color: var(--ios-label2); }
-.sec-f.foot { margin-top: 26px; text-align: center; font-size: 12px; }
+.sec-f.foot { margin-top: 34px; text-align: center; font-size: 12px; }
+.support { margin: 26px 16px 0; text-align: center; font-size: 14px; line-height: 1.45; color: var(--ios-label2); }
+.support a { color: var(--tint); font-weight: 600; text-decoration: none; }
 .group { background: var(--ios-cell); border-radius: 12px; overflow: hidden; margin-top: 10px; }
 .sec-h + .group { margin-top: 0; }
 .cell {
