@@ -335,8 +335,8 @@
     }
     var base = hits && hits[0] ? hits[0].word : word;
     h += '<div class="mt-3 grid ' + (sentence ? 'grid-cols-2' : 'grid-cols-1') + ' gap-2">' +
-      '<a class="' + C.btn + '" target="_blank" href="https://korean.dict.naver.com/koendict/#/search?query=' + encodeURIComponent(base) + '">Naver ' + OUT + '</a>' +
-      (sentence ? '<a class="' + C.btn + '" target="_blank" href="https://papago.naver.com/?sk=ko&tk=en&st=' + encodeURIComponent(sentence) + '">Sentence ' + OUT + '</a>' : '') +
+      '<a class="' + C.btn + '" target="_blank" rel="noopener" href="https://korean.dict.naver.com/koendict/#/search?query=' + encodeURIComponent(base) + '">Naver ' + OUT + '</a>' +
+      (sentence ? '<a class="' + C.btn + '" target="_blank" rel="noopener" href="https://translate.google.com/?sl=ko&tl=en&op=translate&text=' + encodeURIComponent(sentence) + '">Google ' + OUT + '</a>' : '') +
       '</div><button class="mt-2 ' + C.primary + '" data-act="close">' + HI('play', 'size-5') + 'Back to game</button>';
     card.onclick = null;
     openSheet(h);

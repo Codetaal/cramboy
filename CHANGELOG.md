@@ -2,6 +2,9 @@
 
 CheeseLab uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 1.2.3
+- The word sheet's sentence link now opens Google Translate (Korean to English) and is labelled "Google".
+
 ## 1.2.2
 - Loading a game now shows a floating card with the game's icon, name and a progress bar, instead of a status line that pushed the start screen down.
 - The movable subtitle box no longer snaps up and down, only to the left and right edges.
