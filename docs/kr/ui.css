@@ -70,11 +70,30 @@
 #kr-box .kr-w.kr-saved { color: #b07a00; border-bottom-color: #e2a400; }
 #kr-box .kr-w:active, #kr-box .kr-w.kr-sel { background: rgba(255, 214, 102, 0.55); }
 .kr-box-arrow {
-  position: absolute; right: calc(12px * var(--k, 1.46)); bottom: calc(7px * var(--k, 1.46));
+  position: absolute; right: calc(12px * var(--k, 1.46) + 14px); bottom: calc(7px * var(--k, 1.46));
   border-left: calc(5px * var(--k, 1.46)) solid transparent; border-right: calc(5px * var(--k, 1.46)) solid transparent;
   border-top: calc(5.5px * var(--k, 1.46)) solid #e0503c;
   animation: kr-bob 0.9s ease-in-out infinite;
 }
+/* Move grip (top centre) and resize handle (bottom-right corner) */
+.kr-box-grip {
+  position: absolute; left: 50%; top: -12px; width: 64px; height: 26px; margin-left: -32px;
+  touch-action: none; cursor: grab;
+}
+.kr-box-grip::after {
+  content: ''; position: absolute; left: 50%; top: 10px; width: 40px; height: 6px; margin-left: -20px;
+  border-radius: 3px; background: #6f7378; box-shadow: 0 0 0 1.5px #fbfbfb;
+}
+.kr-box-size {
+  position: absolute; right: -2px; bottom: -2px; width: 30px; height: 30px; touch-action: none; cursor: nwse-resize;
+}
+.kr-box-size::after {
+  content: ''; position: absolute; right: 7px; bottom: 7px; width: 11px; height: 11px;
+  border-right: 2.5px solid #9aa0a6; border-bottom: 2.5px solid #9aa0a6; border-bottom-right-radius: 3px;
+}
+#kr-box { overflow: visible; }
+#kr-box .kr-box-text { overflow: hidden; }
+#kr-box.kr-dragging { box-shadow: inset 0 0 0 calc(1.4px * var(--k, 1.46)) #d8dadc, 0 6px 20px rgba(0, 0, 0, 0.35); }
 @keyframes kr-bob { 50% { transform: translateY(calc(1.5px * var(--k, 1.46))); } }
 
 /* Heroicons on the game screen */

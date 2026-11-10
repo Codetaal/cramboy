@@ -29,7 +29,12 @@
   var box = el('div', { id: 'kr-box', className: 'kr-hidden' });
   var boxText = el('div', { className: 'kr-box-text' });
   var boxArrow = el('div', { className: 'kr-box-arrow' });
-  box.appendChild(boxText); box.appendChild(boxArrow);
+  var boxGrip = el('div', { className: 'kr-box-grip', ariaLabel: 'Move subtitle box' });
+  var boxSize = el('div', { className: 'kr-box-size', ariaLabel: 'Resize subtitle box' });
+  box.appendChild(boxText); box.appendChild(boxArrow); box.appendChild(boxGrip); box.appendChild(boxSize);
+  // User-placed box per orientation, in DS pixels relative to the top screen's top-left.
+  var boxGeo = {};
+  var BOX_DEFAULT = { x: 0, y: 142, w: 256, h: 50 };
   var sheet = el('div', { id: 'kr-sheet', className: 'fixed inset-0 z-30 flex flex-col justify-end bg-black/40', hidden: true });
   var card = el('div', { className: 'kr-card max-h-[82vh] overflow-y-auto rounded-t-3xl bg-zinc-50 px-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-5 text-zinc-900 shadow-2xl dark:bg-zinc-950 dark:text-white' });
   // Tailwind class sets for the sheets
@@ -62,6 +67,7 @@
     });
     textBox.addEventListener('click', onWordTap);
     boxText.addEventListener('click', onWordTap);
+    dragBox(boxGrip, 'move'); dragBox(boxSize, 'size');
     pill.addEventListener('click', function () { openMenu('now'); });
     sheet.addEventListener('click', function (e) { if (e.target === sheet) closeSheet(); });
     krLayout();
@@ -74,12 +80,16 @@
   // ---------- storage ----------
   function setMode(m) {
     settings.mode = m === 'bar' || m === 'off' ? m : 'box';
-    if (store) store.setItem('settings', { mode: settings.mode }).catch(function () {});
+    saveSettings();
     renderPanel();
   }
+  function saveSettings() {
+    if (store) store.setItem('settings', { mode: settings.mode, box: boxGeo }).catch(function () {});
+  }
+  function resetBox() { boxGeo = {}; saveSettings(); krLayout(); toast('Subtitle box reset'); }
   window.KRReaderStats = function () { return reader.stats; };
   window.KRSettings = { getMode: function () { return settings.mode; }, setMode: setMode, savedCount: function () { return saved.length; } };
-  window.KRUI = { open: function (tab) { openMenu(tab || 'now'); } };
+  window.KRUI = { open: function (tab) { openMenu(tab || 'now'); }, resetBox: resetBox };
 
   function loadSaved() {
     if (!store) return;
@@ -88,6 +98,8 @@
       if (!v) return;
       // Older versions stored {subs: true/false} for the bar.
       settings.mode = v.mode || (v.subs === false ? 'off' : v.subs === true ? 'bar' : 'box');
+      if (v.box && typeof v.box === 'object') boxGeo = v.box;
+      krLayout();
       renderPanel();
     }).catch(function () {});
   }
@@ -123,6 +135,65 @@
     }
   };
 
+  // ---------- movable in-box subtitles ----------
+  function screens() {
+    var r = screenCanvas[0].getBoundingClientRect(), b = screenCanvas[1] && screenCanvas[1].getBoundingClientRect();
+    return { top: r, bottom: b && b.width ? b : null, k: r.width / 256, key: b && b.width && b.left >= r.right - 2 ? 'landscape' : 'portrait' };
+  }
+  function placeBox() {
+    var s = screens(), g = boxGeo[s.key] || BOX_DEFAULT, k = s.k;
+    // Default: full width at the bottom of the top screen, starting 4 DS pixels above the
+    // game's own box (y 146) so its edge line can't peek out.
+    box.style.left = (s.top.left + g.x * k) + 'px'; box.style.top = (s.top.top + g.y * k) + 'px';
+    box.style.width = (g.w * k) + 'px'; box.style.height = (g.h * k) + 'px';
+    // Text size follows the box height (always two lines, like the game's box)...
+    boxK = k * g.h / BOX_DEFAULT.h;
+    fitBox();
+  }
+  var boxK = 1.46;
+  function fitBox() {
+    // ...and shrinks only when a line would be cut off at the right.
+    box.style.setProperty('--k', boxK);
+    for (var i = 0; i < 3 && boxText.scrollWidth > boxText.clientWidth + 1; i++) {
+      var cur = parseFloat(box.style.getPropertyValue('--k'));
+      box.style.setProperty('--k', cur * boxText.clientWidth / boxText.scrollWidth);
+    }
+  }
+  function dragBox(handle, kind) {
+    var start = null;
+    handle.addEventListener('pointerdown', function (e) {
+      e.preventDefault(); e.stopPropagation();
+      var b = box.getBoundingClientRect();
+      start = { x: e.clientX, y: e.clientY, l: b.left, t: b.top, w: b.width, h: b.height };
+      box.classList.add('kr-dragging');
+      try { handle.setPointerCapture(e.pointerId); } catch (_) {}
+    });
+    handle.addEventListener('pointermove', function (e) {
+      if (!start) return;
+      e.preventDefault();
+      var s = screens(), k = s.k, W = innerWidth, H = innerHeight, SNAP = 12;
+      var dx = e.clientX - start.x, dy = e.clientY - start.y, l = start.l, t = start.t, w = start.w, h = start.h;
+      var xs = [0, s.top.left, s.top.right], ys = [0, H, s.top.top, s.top.bottom];
+      if (s.bottom) { xs.push(s.bottom.left, s.bottom.right); ys.push(s.bottom.top, s.bottom.bottom); }
+      var snap = function (v, list) { for (var i = 0; i < list.length; i++) if (Math.abs(v - list[i]) < SNAP) return list[i]; return null; };
+      if (kind === 'move') {
+        l = Math.max(0, Math.min(W - w, l + dx)); t = Math.max(0, Math.min(H - h, t + dy));
+        var sl = snap(l, xs), sr = snap(l + w, xs), st = snap(t, ys), sb = snap(t + h, ys);
+        if (sl !== null) l = sl; else if (sr !== null) l = sr - w;
+        if (st !== null) t = st; else if (sb !== null) t = sb - h;
+      } else {
+        w = Math.max(110 * k, Math.min(W - l, w + dx)); h = Math.max(28 * k, Math.min(H - t, 120 * k, h + dy));
+        var sr2 = snap(l + w, xs), sb2 = snap(t + h, ys);
+        if (sr2 !== null && sr2 - l >= 110 * k) w = sr2 - l;
+        if (sb2 !== null && sb2 - t >= 28 * k) h = sb2 - t;
+      }
+      boxGeo[s.key] = { x: (l - s.top.left) / k, y: (t - s.top.top) / k, w: w / k, h: h / k };
+      placeBox();
+    });
+    var end = function () { if (!start) return; start = null; box.classList.remove('kr-dragging'); saveSettings(); };
+    handle.addEventListener('pointerup', end); handle.addEventListener('pointercancel', end);
+  }
+
   window.krLayout = function () {
     var c = window.screenCanvas && screenCanvas[0];
     if (!c) return;
@@ -138,10 +209,7 @@
     // x 4..252, y 146..190, with two 16 px text lines starting at y 152.
     var k = r.width / 256;
     // Full width, stuck to the bottom of the top screen, covering the game's box.
-    // Starts 4 DS pixels above the game's box so its top edge line can't peek out.
-    box.style.left = r.left + 'px'; box.style.top = (r.top + 142 * k) + 'px';
-    box.style.width = r.width + 'px'; box.style.height = (r.height - 142 * k) + 'px';
-    box.style.setProperty('--k', k);
+    placeBox();
   };
 
   function handleScan(res) {
@@ -216,6 +284,7 @@
       boxText.innerHTML = wordsHTML(lines.slice(-2).join('\n'));
       boxArrow.style.visibility = pageFinished() ? 'visible' : 'hidden';
       box.classList.toggle('kr-hidden', page.length === 0);
+      if (boxGeo[screens().key]) fitBox();
     }
   }
 
