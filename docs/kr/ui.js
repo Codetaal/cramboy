@@ -26,7 +26,7 @@
   var textBox = el('div', { className: 'kr-text' });
   var menuBtn = el('button', { className: 'kr-menu-btn', innerHTML: HI('star', 'size-[18px]') });
   panel.appendChild(textBox); panel.appendChild(menuBtn);
-  var pill = el('button', { id: 'kr-pill', textContent: '가' });
+  var pill = el('button', { id: 'kr-pill', ariaLabel: 'Korean words', innerHTML: HI('language') });
   var box = el('div', { id: 'kr-box', className: 'kr-hidden' });
   var boxText = el('div', { className: 'kr-box-text' });
   var boxArrow = el('div', { className: 'kr-box-arrow' });
@@ -365,7 +365,7 @@
     (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(function () { toast('Copied'); }, function () { toast('Copy failed'); });
   }
 
-  function updatePill() { if (!settings.debug) pill.innerHTML = saved.length ? '가 ' + HI('star', 'size-3.5') + saved.length : '가'; }
+  function updatePill() { if (!settings.debug) pill.innerHTML = HI('language'); }
   var toastTimer = null;
   function toast(msg) {
     toastEl.textContent = msg; toastEl.style.opacity = 1;

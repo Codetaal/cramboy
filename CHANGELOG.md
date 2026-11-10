@@ -2,6 +2,10 @@
 
 CheeseLab uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 1.1.1
+- The in-game 가 button is now a translate icon on a soft square, matching the menu buttons.
+- The button no longer shows the saved-word count (it's still in the words sheet).
+
 ## 1.1.0
 - New look built with Tailwind CSS: cards, amber accent buttons and badges, and cleaner light and dark modes.
 - All icons are Heroicons (MIT), including the sound toggle, menu and word sheets.
