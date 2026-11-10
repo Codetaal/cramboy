@@ -173,19 +173,17 @@
       e.preventDefault();
       var s = screens(), k = s.k, W = innerWidth, H = innerHeight, SNAP = 12;
       var dx = e.clientX - start.x, dy = e.clientY - start.y, l = start.l, t = start.t, w = start.w, h = start.h;
-      var xs = [0, s.top.left, s.top.right], ys = [0, H, s.top.top, s.top.bottom];
-      if (s.bottom) { xs.push(s.bottom.left, s.bottom.right); ys.push(s.bottom.top, s.bottom.bottom); }
+      var xs = [0, W, s.top.left, s.top.right];
+      if (s.bottom) xs.push(s.bottom.left, s.bottom.right);
       var snap = function (v, list) { for (var i = 0; i < list.length; i++) if (Math.abs(v - list[i]) < SNAP) return list[i]; return null; };
       if (kind === 'move') {
         l = Math.max(0, Math.min(W - w, l + dx)); t = Math.max(0, Math.min(H - h, t + dy));
-        var sl = snap(l, xs), sr = snap(l + w, xs), st = snap(t, ys), sb = snap(t + h, ys);
-        if (sl !== null) l = sl; else if (sr !== null) l = sr - w;
-        if (st !== null) t = st; else if (sb !== null) t = sb - h;
+        var sl = snap(l, xs), sr = snap(l + w, xs);
+        if (sl !== null) l = sl; else if (sr !== null) l = sr - w;   // snaps left/right only
       } else {
         w = Math.max(110 * k, Math.min(W - l, w + dx)); h = Math.max(28 * k, Math.min(H - t, 120 * k, h + dy));
-        var sr2 = snap(l + w, xs), sb2 = snap(t + h, ys);
+        var sr2 = snap(l + w, xs);
         if (sr2 !== null && sr2 - l >= 110 * k) w = sr2 - l;
-        if (sb2 !== null && sb2 - t >= 28 * k) h = sb2 - t;
       }
       boxGeo[s.key] = { x: (l - s.top.left) / k, y: (t - s.top.top) / k, w: w / k, h: h / k };
       placeBox();

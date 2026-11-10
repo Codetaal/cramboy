@@ -2,6 +2,10 @@
 
 CheeseLab uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 1.2.2
+- Loading a game now shows a floating card with the game's icon, name and a progress bar, instead of a status line that pushed the start screen down.
+- The movable subtitle box no longer snaps up and down, only to the left and right edges.
+
 ## 1.2.1
 - In-box subtitles: the dotted underline on the second line is no longer cut off.
 - The menu button turns amber while the menu is open, and fast forward stays amber while it's on.

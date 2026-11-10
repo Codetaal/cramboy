@@ -31,7 +31,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var standalone = window.navigator.standalone || matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches;
   if (isIOS && !standalone) $('ios-hint').hidden = false;
-  var APP_VERSION = '1.2.1';   // semantic version; keep in sync with sw.js
+  var APP_VERSION = '1.2.2';   // semantic version; keep in sync with sw.js
   $('ver').textContent = 'Version ' + APP_VERSION;
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
     var hadController = !!navigator.serviceWorker.controller;
@@ -55,7 +55,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     readHeader(f).then(function (h) {
       // Check before storing, so a wrong file never ends up in the library.
       if (h.error) { $('status').textContent = TAGLINE; alert(h.error); return; }
-      $('status').textContent = 'Storing game on this device…';
+      loader(0, h.banner || h.title || f.name, h.icon || null); $('loader-pct').textContent = 'Storing on this device…';
       return addToLibrary(f, h).then(function (entry) {
         startGame(f, f.name, entry && entry.id);
       });
@@ -296,16 +296,17 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   function startGame(blob, name, libId) {
     unlockAudio();
     if (!ready) return;
-    $('status').textContent = 'Loading…';
+    if ($('loader').hidden) loader(0, name, null);
     readHeader(blob).then(function (h) {
       if (h.error) {
-        $('status').textContent = TAGLINE;
+        loader(false);
         if (libId) removeFromLibrary(libId);
         alert(h.error + '\n\nPlease open your game again with "Open ROM file…".');
         throw 'not a game';
       }
       gameID = h.code[0] === '#' ? name : h.id;
       gameTitle = h.title;
+      loader(0, h.banner || h.title || name, h.icon);
       if (libId) {
         library.forEach(function (e) { if (e.id === libId) e.played = Date.now(); });
         saveLibrary().catch(function () {});
@@ -318,7 +319,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
         return blob.slice(pos, pos + CH).arrayBuffer().then(function (ab) {
           Module.HEAPU8.set(new Uint8Array(ab), ptr + pos);
           pos += CH;
-          $('status').textContent = 'Loading… ' + Math.min(100, Math.round(pos / size * 100)) + '%';
+          loader(Math.min(100, Math.round(pos / size * 100)));
           return next();
         });
       }
@@ -330,15 +331,27 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
         Module._emuSetOpt(0, 1); // firmware language: English (games use their own language)
         var ret = Module._loadROM(romSize);
         if (ret !== 0) {
-          $('status').textContent = TAGLINE;
+          loader(false);
           alert(ret === -1001 ? 'This ROM is encrypted. Please use a decrypted (normal) dump.' : 'Could not load this ROM (error ' + ret + ').');
           return;
         }
         emuIsGameLoaded = true;
-        $('status').textContent = TAGLINE;
         showPlayer();
+        loader(false);
         msg(sav ? 'Save loaded' : 'No save yet for this game', 1500);
-      }).catch(function (e) { if (e !== 'not a game') $('status').textContent = 'Failed: ' + e; });
+      }).catch(function (e) { loader(false); if (e !== 'not a game') $('status').textContent = 'Failed: ' + e; });
+  }
+
+  // Floating loading card: loader(percent, title, icon) shows/updates it, loader(false) hides it.
+  function loader(pct, title, icon) {
+    var box = $('loader');
+    if (pct === false) { box.hidden = true; return; }
+    box.hidden = false;
+    if (title !== undefined) $('loader-title').textContent = title || '';
+    if (icon) $('loader-icon').innerHTML = '<img class="size-12 [image-rendering:pixelated]" alt="" src="' + icon + '">';
+    else if (icon === null) $('loader-icon').textContent = 'DS';
+    $('loader-pct').textContent = pct ? 'Loading… ' + pct + '%' : 'Loading…';
+    $('loader-bar').style.width = (pct || 0) + '%';
   }
 
   function showPlayer() {
