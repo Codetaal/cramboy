@@ -2,6 +2,9 @@
 
 CheeseLab uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 1.3.4
+- No message when a game starts; the game's own title screen shows Continue when there is a save.
+
 ## 1.3.3
 - No more "Game saved" pop-ups: the in-game save is backed up quietly, and you only get a message if a backup fails.
 - When a game starts with an existing in-game save, the message says "Your last in-game save is ready" (no message for a game without a save).
