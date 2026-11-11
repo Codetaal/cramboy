@@ -2,6 +2,9 @@
 
 CheeseLab uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 1.2.4
+- Portrait: the translate button moved into the empty centre of the controls, between menu/fast forward and SELECT, and is a bit larger. Landscape is unchanged.
+
 ## 1.2.3
 - The word sheet's sentence link now opens Google Translate (Korean to English) and is labelled "Google".
 

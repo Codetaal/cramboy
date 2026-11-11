@@ -202,7 +202,11 @@
     var pr = r2 && r2.width > 0 ? r2 : r;
     panel.style.left = pr.left + 'px'; panel.style.top = pr.top + 'px';
     panel.style.width = pr.width + 'px'; panel.style.maxHeight = '';
-    pill.style.left = (r.left + 6) + 'px'; pill.style.top = (r.top + 6) + 'px';
+    // Portrait: centred in the gap between menu/fast forward and SELECT. Landscape: top-left of the top screen.
+    var spot = window.krPillSpot;
+    pill.classList.toggle('kr-big', !!spot);
+    if (spot) { pill.style.left = (spot.x - 22) + 'px'; pill.style.top = (spot.y - 22) + 'px'; }
+    else { pill.style.left = (r.left + 6) + 'px'; pill.style.top = (r.top + 6) + 'px'; }
     // Both HeartGold and White draw the dialogue box on the top screen at DS pixels
     // x 4..252, y 146..190, with two 16 px text lines starting at y 152.
     var k = r.width / 256;

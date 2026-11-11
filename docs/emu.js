@@ -31,7 +31,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var standalone = window.navigator.standalone || matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches;
   if (isIOS && !standalone) $('ios-hint').hidden = false;
-  var APP_VERSION = '1.2.3';   // semantic version; keep in sync with sw.js
+  var APP_VERSION = '1.2.4';   // semantic version; keep in sync with sw.js
   $('ver').textContent = 'Version ' + APP_VERSION;
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
     var hadController = !!navigator.serviceWorker.controller;
@@ -497,6 +497,8 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     place($('btn-ff'), mid + 3, 6, colW / 2 - 3, h);
     place(btns.select, mid - colW / 2, ch - 2 * h - 18, colW, h);
     place(btns.start, mid - colW / 2, ch - h - 10, colW, h);
+    // Portrait: the translate button goes in the empty centre gap of the controls.
+    window.krPillSpot = H >= W ? { x: C.left + mid, y: C.top + (6 + h + ch - 2 * h - 18) / 2 } : null;
     if (window.krLayout) krLayout();
   }
   addEventListener('resize', function () { if (uiCurrentMode === 'player') setTimeout(layout, 50); });
