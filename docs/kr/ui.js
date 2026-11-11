@@ -36,7 +36,7 @@
   var boxGeo = {};
   var BOX_DEFAULT = { x: 0, y: 142, w: 256, h: 50 };
   var sheet = el('div', { id: 'kr-sheet', className: 'fixed inset-0 z-30 flex flex-col justify-end bg-black/40', hidden: true });
-  var card = el('div', { className: 'kr-card h-[var(--sheet-h,auto)] max-h-[var(--sheet-max,92vh)] overflow-y-auto rounded-t-3xl bg-zinc-50 px-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-2 text-zinc-900 shadow-2xl dark:bg-zinc-950 dark:text-white' });
+  var card = el('div', { className: 'kr-card h-[var(--sheet-h,auto)] max-h-[var(--sheet-max,92vh)] flex flex-col [&>*]:shrink-0 overflow-y-auto rounded-t-3xl bg-zinc-50 px-4 pt-2 text-zinc-900 shadow-2xl dark:bg-zinc-950 dark:text-white' });
   // Tailwind class sets for the sheets
   var C = {
     btn: 'flex items-center justify-center gap-1.5 rounded-xl bg-white px-3.5 py-2.5 font-semibold text-zinc-800 shadow-sm ring-1 ring-zinc-900/5 active:scale-[0.98] dark:bg-zinc-800 dark:text-zinc-100 dark:ring-white/10',
@@ -301,7 +301,14 @@
   function pause() { wasRunning = !!window.emuIsRunning; window.emuIsRunning = false; }
   function resume() { if (wasRunning && window.uiCurrentMode === 'player' && window.emuIsGameLoaded) window.emuIsRunning = true; wasRunning = false; }
   var GRAB = '<div class="mx-auto mb-3 h-1.5 w-10 rounded-full bg-zinc-300 dark:bg-zinc-700"></div>'; // same handle as the menu
-  function openSheet(html) { if (sheet.hidden) pause(); card.innerHTML = GRAB + html; sheet.hidden = false; card.scrollTop = 0; }
+  // "Back to game" stays pinned to the bottom of the sheet while the content above it scrolls.
+  var BACK = '<div class="sticky bottom-0 -mx-4 mt-auto bg-gradient-to-t from-zinc-50 from-70% to-zinc-50/0 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-5 dark:from-zinc-950 dark:to-zinc-950/0">' +
+    '<button class="' + C.primary + '" data-act="close">' + HI('play', 'size-5') + 'Back to game</button></div>';
+  function openSheet(html, withBack) {
+    if (sheet.hidden) pause();
+    card.innerHTML = GRAB + html + (withBack ? BACK : '<div class="pb-[calc(1.5rem+env(safe-area-inset-bottom))]"></div>');
+    sheet.hidden = false; card.scrollTop = 0;
+  }
   function closeSheet() {
     sheet.hidden = true; resume(); menuTab = null;
     Array.prototype.forEach.call(document.querySelectorAll('.kr-sel'), function (n) { n.classList.remove('kr-sel'); });
@@ -348,9 +355,9 @@
     h += '<div class="mt-3 grid ' + (sentence ? 'grid-cols-2' : 'grid-cols-1') + ' gap-2">' +
       '<a class="' + C.btn + '" target="_blank" rel="noopener" href="https://korean.dict.naver.com/koendict/#/search?query=' + encodeURIComponent(base) + '">Naver ' + OUT + '</a>' +
       (sentence ? '<a class="' + C.btn + '" target="_blank" rel="noopener" href="https://translate.google.com/?sl=ko&tl=en&op=translate&text=' + encodeURIComponent(sentence) + '">Google ' + OUT + '</a>' : '') +
-      '</div><button class="mt-3 ' + C.primary + '" data-act="close">' + HI('play', 'size-5') + 'Back to game</button>';
+      '</div>';
     card.onclick = null;
-    openSheet(h);
+    openSheet(h, true);
     card.querySelector('[data-act=close]').onclick = closeSheet;
     card.querySelector('[data-act=back]').onclick = function () { openMenu(wordBack); };
     card.querySelector('[data-act=save]').onclick = function () {
@@ -408,8 +415,7 @@
       if (lines.length) h += block(lines);
       if (otherText.length) h += '<p class="mt-3 px-1 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Other text on screen</p>' + block(otherText.slice().reverse().slice(0, 60));
     }
-    h += '<button class="mt-3 ' + C.primary + '" data-act="close">' + HI('play', 'size-5') + 'Back to game</button>';
-    openSheet(h);
+    openSheet(h, true);
     card.onclick = function (e) {
       var b = e.target.closest('[data-tab],[data-act],[data-del],.kr-w');
       if (!b) return;

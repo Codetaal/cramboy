@@ -31,7 +31,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var standalone = window.navigator.standalone || matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches;
   if (isIOS && !standalone) $('ios-hint').hidden = false;
-  var APP_VERSION = '1.3.2';   // semantic version; keep in sync with sw.js
+  var APP_VERSION = '1.3.3';   // semantic version; keep in sync with sw.js
   $('ver').textContent = 'Version ' + APP_VERSION;
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
     var hadController = !!navigator.serviceWorker.controller;
@@ -332,7 +332,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
         emuIsGameLoaded = true;
         showPlayer();
         loader(false);
-        toast(sav ? 'Save loaded' : 'No save yet for this game', { icon: sav ? 'ok' : 'info' });
+        if (sav) toast('Your last in-game save is ready', { icon: 'info', ms: 3000 });
       }).catch(function (e) { loader(false); if (e !== 'not a game') $('status').textContent = 'Failed: ' + e; });
   }
 
@@ -396,7 +396,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     // Persist once the game has stopped writing (flag went 1 -> 0), or when forced.
     if (saveDirty && (force || (flag === 0 && prevSaveFlag === 1))) {
       var data = copySave();
-      if (data) KV.set('sav-' + gameID, data).then(function () { toast('Game saved', { icon: 'ok' }); }, function () { toast('Saving failed', { icon: 'warn' }); });
+      if (data) KV.set('sav-' + gameID, data).then(null, function () { toast('Couldn\'t back up your in-game save', { icon: 'warn' }); });
       saveDirty = false;
     }
     prevSaveFlag = flag;
