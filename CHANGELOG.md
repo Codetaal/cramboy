@@ -2,6 +2,11 @@
 
 CheeseLab uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 1.3.5
+- Landscape: L / R, menu and fast forward sit just above the D-pad and face buttons instead of at the screen's top edge.
+- Landscape: the translate button moved into the empty band above the top screen, clear of the L button.
+- After rotating the phone, the layout is redone a few times, because iPhone reports the new screen size a little late (this misplaced the subtitles and buttons).
+
 ## 1.3.4
 - No message when a game starts; the game's own title screen shows Continue when there is a save.
 

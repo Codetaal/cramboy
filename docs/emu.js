@@ -31,7 +31,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var standalone = window.navigator.standalone || matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches;
   if (isIOS && !standalone) $('ios-hint').hidden = false;
-  var APP_VERSION = '1.3.4';   // semantic version; keep in sync with sw.js
+  var APP_VERSION = '1.3.5';   // semantic version; keep in sync with sw.js
   $('ver').textContent = 'Version ' + APP_VERSION;
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
     var hadController = !!navigator.serviceWorker.controller;
@@ -482,12 +482,15 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     place(btns.y, ax - D / 2, cy - b / 2, b, b);
     place(btns.a, ax + D / 2 - b, cy - b / 2, b, b);
     var pw = Math.min(84, D * 0.75), ph = 30;
-    place(btns.l, pad, 4, pw, ph);
-    place(btns.r, cw - pad - pw, 4, pw, ph);
+    // L / R and menu / fast forward sit just above the D-pad and face buttons. In portrait that is
+    // the top of the controls; in landscape it keeps them away from the screen's top edge.
+    var rowY = H >= W ? 4 : Math.max(4, dpadRect.y - ph - 12);
+    place(btns.l, pad, rowY, pw, ph);
+    place(btns.r, cw - pad - pw, rowY, pw, ph);
     // Centre column between the D-pad and the face buttons.
     var colW = Math.min(84, cw - 2 * (pad + D) - 12), mid = cw / 2, h = 26;
-    place($('btn-menu'), mid - colW / 2, 6, colW / 2 - 3, h);
-    place($('btn-ff'), mid + 3, 6, colW / 2 - 3, h);
+    place($('btn-menu'), mid - colW / 2, rowY + 2, colW / 2 - 3, h);
+    place($('btn-ff'), mid + 3, rowY + 2, colW / 2 - 3, h);
     place(btns.select, mid - colW / 2, ch - 2 * h - 18, colW, h);
     place(btns.start, mid - colW / 2, ch - h - 10, colW, h);
     // Portrait: menus and word sheets are always exactly as tall as the bottom screen area,
@@ -499,7 +502,11 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     window.krPillSpot = H >= W ? { x: C.left + mid, y: C.top + (6 + h + ch - 2 * h - 18) / 2 } : null;
     if (window.krLayout) krLayout();
   }
-  addEventListener('resize', function () { if (uiCurrentMode === 'player') setTimeout(layout, 50); });
+  // iPhone reports the new size a little late after rotating, so lay out again a few times.
+  function relayout() { if (uiCurrentMode !== 'player') return; [50, 250, 600].forEach(function (ms) { setTimeout(layout, ms); }); }
+  addEventListener('resize', relayout);
+  addEventListener('orientationchange', relayout);
+  if (window.visualViewport) visualViewport.addEventListener('resize', relayout);
 
   // ---------- touch input ----------
   function hit(n, x, y, slop) {

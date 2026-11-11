@@ -205,7 +205,8 @@
     var spot = window.krPillSpot;
     pill.classList.toggle('kr-big', !!spot);
     if (spot) { pill.style.left = (spot.x - 24) + 'px'; pill.style.top = (spot.y - 24) + 'px'; }
-    else { pill.style.left = (r.left + 6) + 'px'; pill.style.top = (r.top + 6) + 'px'; }
+    // Landscape: in the empty band above the top screen when there is room, so it doesn't cover the L button.
+    else { pill.style.left = (r.left + 6) + 'px'; pill.style.top = (r.top >= 44 ? Math.max(6, (r.top - 32) / 2) : r.top + 6) + 'px'; }
     // Both HeartGold and White draw the dialogue box on the top screen at DS pixels
     // x 4..252, y 146..190, with two 16 px text lines starting at y 152.
     var k = r.width / 256;
