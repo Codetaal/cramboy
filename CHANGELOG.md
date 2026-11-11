@@ -2,6 +2,9 @@
 
 CheeseLab uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 1.3.1
+- Word sheet has a back button (top-left) to the Now, Saved words or Recent tab you came from; from the subtitles it goes to Now.
+
 ## 1.3.0
 - One notification style for the whole app: a dark toast at the top with an icon (check, star, bin, warning or info) and an optional Undo. Replaces the three different styles used before.
 - Portrait: the translate button is a slowly wobbling blob (still when Reduce Motion is on), slightly bigger and lighter.

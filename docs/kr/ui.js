@@ -303,14 +303,19 @@
   var GRAB = '<div class="mx-auto mb-3 h-1.5 w-10 rounded-full bg-zinc-300 dark:bg-zinc-700"></div>'; // same handle as the menu
   function openSheet(html) { if (sheet.hidden) pause(); card.innerHTML = GRAB + html; sheet.hidden = false; card.scrollTop = 0; }
   function closeSheet() {
-    sheet.hidden = true; resume();
+    sheet.hidden = true; resume(); menuTab = null;
     Array.prototype.forEach.call(document.querySelectorAll('.kr-sel'), function (n) { n.classList.remove('kr-sel'); });
     if (current) renderPanel();
   }
 
   // ---------- word sheet ----------
+  // Which Words & text tab the word sheet's back button returns to: the tab the word was
+  // tapped in, or Now when it was tapped in the subtitles.
+  var menuTab = null, wordBack = 'now';
+  var TAB_LABEL = { now: 'Now', saved: 'Saved words', recent: 'Recent' };
   function openWord(raw, sentence, span) {
     var word = KRLookup.clean(raw);
+    wordBack = menuTab || 'now';
     if (span) span.classList.add('kr-sel');
     openSheet('<p class="' + C.muted + '">Looking up…</p>');
     loadDict().then(function (d) { showWord(word, raw, sentence, KRLookup.lookup(d, raw, 3)); })
@@ -319,7 +324,9 @@
 
   function showWord(word, raw, sentence, hits) {
     var savedNow = isSaved(word), OUT = HI('arrow-top-right-on-square', 'size-4 text-zinc-400');
-    var h = '<div class="flex items-center gap-3"><div class="kr-selectable flex-1 break-keep text-[30px] font-bold">' + esc(word) + '</div>' +
+    var h = '<button class="-ml-1.5 -mt-1 mb-1 flex items-center gap-0.5 py-1 pr-2 font-medium text-amber-600 active:opacity-60 dark:text-amber-400" data-act="back">' +
+      HI('chevron-left', 'size-5') + TAB_LABEL[wordBack] + '</button>' +
+      '<div class="flex items-center gap-3"><div class="kr-selectable flex-1 break-keep text-[30px] font-bold">' + esc(word) + '</div>' +
       '<button class="' + (savedNow ? C.saved : C.save) + '" data-act="save">' +
       (savedNow ? HI('star', 'size-5') + 'Saved' : HI('star-outline', 'size-5') + 'Save') + '</button></div>';
     if (hits === null) h += '<p class="mt-3 ' + C.muted + '">Dictionary not available offline yet. Use the links below.</p>';
@@ -345,6 +352,7 @@
     card.onclick = null;
     openSheet(h);
     card.querySelector('[data-act=close]').onclick = closeSheet;
+    card.querySelector('[data-act=back]').onclick = function () { openMenu(wordBack); };
     card.querySelector('[data-act=save]').onclick = function () {
       if (isSaved(word)) {
         saved = saved.filter(function (x) { return x.w !== word && x.base !== word; });
@@ -360,6 +368,7 @@
 
   // ---------- menu: saved words / recent text ----------
   function openMenu(tab) {
+    menuTab = tab;
     var tb = function (id, label) { return '<button class="' + C.tab + '" data-tab="' + id + '" aria-pressed="' + (tab === id) + '">' + label + '</button>'; };
     var h = '<div class="flex rounded-xl bg-zinc-100 p-1 dark:bg-zinc-800">' + tb('now', 'Now') +
       tb('saved', HI('star', 'size-4 text-amber-500') + saved.length) + tb('recent', 'Recent') + '</div>';
