@@ -371,7 +371,7 @@
     menuTab = tab;
     var tb = function (id, label) { return '<button class="' + C.tab + '" data-tab="' + id + '" aria-pressed="' + (tab === id) + '">' + label + '</button>'; };
     var h = '<div class="flex rounded-xl bg-zinc-100 p-1 dark:bg-zinc-800">' + tb('now', 'Now') +
-      tb('saved', HI('star', 'size-4 text-amber-500') + saved.length) + tb('recent', 'Recent') + '</div>';
+      tb('saved', HI('star', 'size-4 text-amber-500 relative -top-[1.25px]') + saved.length) + tb('recent', 'Recent') + '</div>';
     if (tab === 'now') {
       // Current dialogue (what has been typed so far), else the last finished message.
       var nowText = current ? plain(current.text.slice(0, current.shown)) : (history.length ? history[history.length - 1] : '');

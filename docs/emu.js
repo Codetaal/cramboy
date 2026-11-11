@@ -31,7 +31,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var standalone = window.navigator.standalone || matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches;
   if (isIOS && !standalone) $('ios-hint').hidden = false;
-  var APP_VERSION = '1.3.1';   // semantic version; keep in sync with sw.js
+  var APP_VERSION = '1.3.2';   // semantic version; keep in sync with sw.js
   $('ver').textContent = 'Version ' + APP_VERSION;
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
     var hadController = !!navigator.serviceWorker.controller;
@@ -593,7 +593,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     setSeg('controls', settings.controls);
     setSeg('subs', window.KRSettings ? KRSettings.getMode() : 'bar');
     $('m-reset-box').hidden = !window.KRSettings || KRSettings.getMode() !== 'box';
-    $('m-words').innerHTML = window.KRSettings ? HI('star', 'size-4 text-amber-500') + KRSettings.savedCount() : '';
+    $('m-words').innerHTML = window.KRSettings ? HI('star', 'size-4 text-amber-500 relative -top-[1.25px]') + KRSettings.savedCount() : '';
     var st = window.KRReaderStats ? KRReaderStats() : null;
     $('m-info').innerHTML = 'Version ' + APP_VERSION + ' · ' + (gameID ? gameID.trim() : '') +
       (st ? '<br>Reader: ' + st.strings + ' strings in memory, ' + st.korean + ' Korean, ' + st.printers + ' being printed' : '') +

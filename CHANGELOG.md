@@ -2,6 +2,9 @@
 
 CheeseLab uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 1.3.2
+- The star and the saved-word count line up exactly (Saved tab and menu).
+
 ## 1.3.1
 - Word sheet has a back button (top-left) to the Now, Saved words or Recent tab you came from; from the subtitles it goes to Now.
 
