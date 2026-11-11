@@ -36,8 +36,8 @@
 #kr-pill.kr-big .hi { width: 24px; height: 24px; }
 
 #kr-pill.kr-live { background: #ffd666; color: #16181f; box-shadow: 0 0 0 3px rgba(255, 214, 102, 0.3); }
-.kr-now { font-size: 22px; line-height: 1.7; padding: 6px 2px; }
-.kr-now .kr-w { padding: 2px 2px; }
+/* Now tab: same card padding as every other box; bigger text so words are easy to tap. */
+.kr-now { font-size: 20px; line-height: 1.7; }
 
 /* Word sheets are styled with Tailwind (see kr/ui.js); only behaviour rules live here. */
 #kr-sheet[hidden] { display: none; }

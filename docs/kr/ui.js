@@ -36,14 +36,14 @@
   var boxGeo = {};
   var BOX_DEFAULT = { x: 0, y: 142, w: 256, h: 50 };
   var sheet = el('div', { id: 'kr-sheet', className: 'fixed inset-0 z-30 flex flex-col justify-end bg-black/40', hidden: true });
-  var card = el('div', { className: 'kr-card max-h-[82vh] overflow-y-auto rounded-t-3xl bg-zinc-50 px-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-5 text-zinc-900 shadow-2xl dark:bg-zinc-950 dark:text-white' });
+  var card = el('div', { className: 'kr-card max-h-[var(--sheet-max,92vh)] overflow-y-auto rounded-t-3xl bg-zinc-50 px-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-2 text-zinc-900 shadow-2xl dark:bg-zinc-950 dark:text-white' });
   // Tailwind class sets for the sheets
   var C = {
     btn: 'flex items-center justify-center gap-1.5 rounded-xl bg-white px-3.5 py-2.5 font-semibold text-zinc-800 shadow-sm ring-1 ring-zinc-900/5 active:scale-[0.98] dark:bg-zinc-800 dark:text-zinc-100 dark:ring-white/10',
     primary: 'flex w-full items-center justify-center gap-2 rounded-xl bg-amber-400 px-4 py-3 font-semibold text-amber-950 shadow-sm active:scale-[0.98] active:bg-amber-300',
     saved: 'flex items-center gap-1.5 rounded-xl bg-amber-100 px-3.5 py-2 font-semibold text-amber-900 ring-1 ring-amber-300 active:scale-95 dark:bg-amber-400/15 dark:text-amber-300 dark:ring-amber-400/30',
     save: 'flex items-center gap-1.5 rounded-xl bg-amber-400 px-3.5 py-2 font-semibold text-amber-950 shadow-sm active:scale-95',
-    card: 'rounded-2xl bg-white p-4 shadow-sm ring-1 ring-zinc-900/5 dark:bg-zinc-900 dark:ring-white/10',
+    card: 'rounded-2xl bg-white px-4 py-3 shadow-sm ring-1 ring-zinc-900/5 dark:bg-zinc-900 dark:ring-white/10',
     list: 'divide-y divide-zinc-100 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-zinc-900/5 dark:divide-white/5 dark:bg-zinc-900 dark:ring-white/10',
     muted: 'text-sm text-zinc-500 dark:text-zinc-400',
     badge: 'ml-1.5 rounded-full bg-zinc-100 px-2 py-0.5 align-middle text-xs font-medium text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400',
@@ -301,7 +301,8 @@
   var wasRunning = false;
   function pause() { wasRunning = !!window.emuIsRunning; window.emuIsRunning = false; }
   function resume() { if (wasRunning && window.uiCurrentMode === 'player' && window.emuIsGameLoaded) window.emuIsRunning = true; wasRunning = false; }
-  function openSheet(html) { if (sheet.hidden) pause(); card.innerHTML = html; sheet.hidden = false; card.scrollTop = 0; }
+  var GRAB = '<div class="mx-auto mb-3 h-1.5 w-10 rounded-full bg-zinc-300 dark:bg-zinc-700"></div>'; // same handle as the menu
+  function openSheet(html) { if (sheet.hidden) pause(); card.innerHTML = GRAB + html; sheet.hidden = false; card.scrollTop = 0; }
   function closeSheet() {
     sheet.hidden = true; resume();
     Array.prototype.forEach.call(document.querySelectorAll('.kr-sel'), function (n) { n.classList.remove('kr-sel'); });
@@ -341,7 +342,7 @@
     h += '<div class="mt-3 grid ' + (sentence ? 'grid-cols-2' : 'grid-cols-1') + ' gap-2">' +
       '<a class="' + C.btn + '" target="_blank" rel="noopener" href="https://korean.dict.naver.com/koendict/#/search?query=' + encodeURIComponent(base) + '">Naver ' + OUT + '</a>' +
       (sentence ? '<a class="' + C.btn + '" target="_blank" rel="noopener" href="https://translate.google.com/?sl=ko&tl=en&op=translate&text=' + encodeURIComponent(sentence) + '">Google ' + OUT + '</a>' : '') +
-      '</div><button class="mt-2 ' + C.primary + '" data-act="close">' + HI('play', 'size-5') + 'Back to game</button>';
+      '</div><button class="mt-3 ' + C.primary + '" data-act="close">' + HI('play', 'size-5') + 'Back to game</button>';
     card.onclick = null;
     openSheet(h);
     card.querySelector('[data-act=close]').onclick = closeSheet;
@@ -367,16 +368,16 @@
       // Current dialogue (what has been typed so far), else the last finished message.
       var nowText = current ? plain(current.text.slice(0, current.shown)) : (history.length ? history[history.length - 1] : '');
       var full = current ? plain(current.text) : nowText;
-      if (!nowText.trim()) h += '<p class="mt-4 ' + C.muted + '">No dialogue on screen right now. Older text is under Recent.</p>';
+      if (!nowText.trim()) h += '<p class="mt-3 ' + C.muted + '">No dialogue on screen right now. Older text is under Recent.</p>';
       else {
-        h += '<div class="kr-now mt-4 ' + C.card + '" data-s="' + esc(full.replace(/\n+/g, ' ')) + '">' +
+        h += '<div class="kr-now mt-3 ' + C.card + '" data-s="' + esc(full.replace(/\n+/g, ' ')) + '">' +
           wordsHTML(nowText.replace(/\n\n+/g, '\n')) + '</div>' +
           '<p class="mt-2 px-1 ' + C.muted + '">Tap a word to look it up.</p>';
       }
     } else if (tab === 'saved') {
-      if (!saved.length) h += '<p class="mt-4 ' + C.muted + '">No saved words yet. Tap any word in the subtitles, then Save.</p>';
+      if (!saved.length) h += '<p class="mt-3 ' + C.muted + '">No saved words yet. Tap any word in the subtitles, then Save.</p>';
       else {
-        h += '<div class="mt-4 ' + C.list + '">';
+        h += '<div class="mt-3 ' + C.list + '">';
         saved.slice().reverse().forEach(function (x) {
           h += '<div class="flex items-start gap-2 px-4 py-3"><div class="min-w-0 flex-1"><p class="font-bold">' + esc(x.base || x.w) +
             (x.base && x.base !== x.w ? ' <span class="font-normal ' + C.muted + '">' + esc(x.w) + '</span>' : '') + '</p>' +
@@ -389,17 +390,17 @@
     } else if (tab === 'recent') {
       var lines = history.slice().reverse();
       if (current) lines.unshift(plain(current.text));
-      if (!lines.length && !otherText.length) h += '<p class="mt-4 ' + C.muted + '">Nothing yet. Talk to someone in the game.</p>';
+      if (!lines.length && !otherText.length) h += '<p class="mt-3 ' + C.muted + '">Nothing yet. Talk to someone in the game.</p>';
       var block = function (arr) {
-        return '<div class="mt-2 ' + C.list + '">' + arr.map(function (t) {
+        return '<div class="mt-3 ' + C.list + '">' + arr.map(function (t) {
           var s1 = t.replace(/\n+/g, ' ');
           return '<div class="px-4 py-2.5 leading-relaxed" data-s="' + esc(s1) + '">' + wordsHTML(s1) + '</div>';
         }).join('') + '</div>';
       };
-      if (lines.length) h += '<div class="mt-2">' + block(lines) + '</div>';
-      if (otherText.length) h += '<p class="mt-4 px-1 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Other text on screen</p>' + block(otherText.slice().reverse().slice(0, 60));
+      if (lines.length) h += block(lines);
+      if (otherText.length) h += '<p class="mt-3 px-1 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Other text on screen</p>' + block(otherText.slice().reverse().slice(0, 60));
     }
-    h += '<button class="mt-4 ' + C.primary + '" data-act="close">' + HI('play', 'size-5') + 'Back to game</button>';
+    h += '<button class="mt-3 ' + C.primary + '" data-act="close">' + HI('play', 'size-5') + 'Back to game</button>';
     openSheet(h);
     card.onclick = function (e) {
       var b = e.target.closest('[data-tab],[data-act],[data-del],.kr-w');

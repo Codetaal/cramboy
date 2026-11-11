@@ -2,6 +2,11 @@
 
 CheeseLab uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 1.2.5
+- In portrait, the menu and the word sheets cover at most the bottom screen, so the game screen stays visible; longer content scrolls.
+- Word sheets have the same grab handle as the menu.
+- All cards in the sheets share the same padding and spacing (the Now text box now matches the others).
+
 ## 1.2.4
 - Portrait: the translate button moved into the empty centre of the controls, between menu/fast forward and SELECT, and is a bit larger. Landscape is unchanged.
 
