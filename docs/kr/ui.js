@@ -51,12 +51,11 @@
     mark: 'rounded bg-amber-200 px-0.5 text-inherit dark:bg-amber-400/30',
   };
   sheet.appendChild(card);
-  var toastEl = el('div', { id: 'kr-toast', style: 'opacity:0' });
 
   function mount() {
     var player = document.getElementById('player') || document.body;
     player.appendChild(panel); player.appendChild(box); player.appendChild(pill);
-    document.body.appendChild(sheet); document.body.appendChild(toastEl);
+    document.body.appendChild(sheet);
     // The emulator's window-level touch handler swallows every touch while the game runs.
     // Stop our touches from reaching it so taps and scrolling work here.
     [panel, box, pill, sheet].forEach(function (n) {
@@ -86,7 +85,7 @@
   function saveSettings() {
     if (store) store.setItem('settings', { mode: settings.mode, box: boxGeo }).catch(function () {});
   }
-  function resetBox() { boxGeo = {}; saveSettings(); krLayout(); toast('Subtitle box reset'); }
+  function resetBox() { boxGeo = {}; saveSettings(); krLayout(); toast('Subtitle box reset', 'ok'); }
   window.KRReaderStats = function () { return reader.stats; };
   window.KRSettings = { getMode: function () { return settings.mode; }, setMode: setMode, savedCount: function () { return saved.length; } };
   window.KRUI = { open: function (tab) { openMenu(tab || 'now'); }, resetBox: resetBox };
@@ -105,7 +104,7 @@
   }
   function persist() {
     if (!store) return;
-    store.setItem('saved', saved).catch(function () { toast('Could not save'); });
+    store.setItem('saved', saved).catch(function () { toast('Could not save', 'warn'); });
   }
   function isSaved(word) { var c = KRLookup.clean(word); return saved.some(function (x) { return x.w === c || x.base === c; }); }
 
@@ -205,7 +204,7 @@
     // Portrait: centred in the gap between menu/fast forward and SELECT. Landscape: top-left of the top screen.
     var spot = window.krPillSpot;
     pill.classList.toggle('kr-big', !!spot);
-    if (spot) { pill.style.left = (spot.x - 22) + 'px'; pill.style.top = (spot.y - 22) + 'px'; }
+    if (spot) { pill.style.left = (spot.x - 24) + 'px'; pill.style.top = (spot.y - 24) + 'px'; }
     else { pill.style.left = (r.left + 6) + 'px'; pill.style.top = (r.top + 6) + 'px'; }
     // Both HeartGold and White draw the dialogue box on the top screen at DS pixels
     // x 4..252, y 146..190, with two 16 px text lines starting at y 152.
@@ -349,10 +348,10 @@
     card.querySelector('[data-act=save]').onclick = function () {
       if (isSaved(word)) {
         saved = saved.filter(function (x) { return x.w !== word && x.base !== word; });
-        toast('Removed');
+        toast('Removed ' + base, 'trash');
       } else {
         saved.push({ w: word, base: base, gloss: hits && hits[0] ? hits[0].gloss : '', s: sentence || '', t: Date.now() });
-        toast('Saved: ' + base);
+        toast('Saved: ' + base, 'star');
       }
       persist(); updatePill();
       showWord(word, raw, sentence, hits);
@@ -438,15 +437,12 @@
   }
   function copyList() {
     var txt = saved.map(function (x) { return (x.base || x.w) + ' — ' + (x.gloss || '') + (x.s ? '\n   ' + x.s : ''); }).join('\n');
-    (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(function () { toast('Copied'); }, function () { toast('Copy failed'); });
+    (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(function () { toast('Copied', 'ok'); }, function () { toast('Copy failed', 'warn'); });
   }
 
   function updatePill() { if (!settings.debug) pill.innerHTML = HI('language'); }
-  var toastTimer = null;
-  function toast(msg) {
-    toastEl.textContent = msg; toastEl.style.opacity = 1;
-    clearTimeout(toastTimer); toastTimer = setTimeout(function () { toastEl.style.opacity = 0; }, 1400);
-  }
+  // Uses the app-wide toast (emu.js), so every notification looks the same.
+  function toast(msg, icon) { if (window.toast) window.toast(msg, { icon: icon }); }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount); else mount();
   loadSaved();

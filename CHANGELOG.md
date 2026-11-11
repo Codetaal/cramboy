@@ -2,6 +2,10 @@
 
 CheeseLab uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 1.3.0
+- One notification style for the whole app: a dark toast at the top with an icon (check, star, bin, warning or info) and an optional Undo. Replaces the three different styles used before.
+- Portrait: the translate button is a slowly wobbling blob (still when Reduce Motion is on), slightly bigger and lighter.
+
 ## 1.2.6
 - In portrait, the menu and word sheets always have the same height: exactly the bottom half of the screen.
 

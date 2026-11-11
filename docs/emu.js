@@ -31,7 +31,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var standalone = window.navigator.standalone || matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches;
   if (isIOS && !standalone) $('ios-hint').hidden = false;
-  var APP_VERSION = '1.2.6';   // semantic version; keep in sync with sw.js
+  var APP_VERSION = '1.3.0';   // semantic version; keep in sync with sw.js
   $('ver').textContent = 'Version ' + APP_VERSION;
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
     var hadController = !!navigator.serviceWorker.controller;
@@ -44,7 +44,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     navigator.serviceWorker.addEventListener('controllerchange', function () {
       if (!hadController) { hadController = true; return; }
       if (uiCurrentMode !== 'player') location.reload();
-      else msg('Update ready: open the menu → Close game to apply it', 6000);
+      else toast('Update ready: Menu → Close game to apply', { icon: 'info', ms: 6000 });
     });
   }
 
@@ -94,20 +94,14 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     return KV.del('rom:' + id).then(saveLibrary).then(renderLibrary);
   }
   // Remove with a short "Undo" window; the ROM data is kept in memory until then.
-  var undoTimer = null;
   function removeWithUndo(e) {
     KV.get('rom:' + e.id).then(function (blob) {
       removeFromLibrary(e.id);
-      $('home-toast-text').textContent = 'Removed "' + e.title + '"';
-      $('home-toast').hidden = false;
-      clearTimeout(undoTimer);
-      undoTimer = setTimeout(function () { $('home-toast').hidden = true; }, 5000);
-      $('home-toast-undo').onclick = function () {
-        clearTimeout(undoTimer); $('home-toast').hidden = true;
+      toast('Removed ' + e.title, { icon: 'trash', ms: 5000, action: 'Undo', onAction: function () {
         if (!blob) return;
         library.push(e);
         KV.set('rom:' + e.id, blob).then(saveLibrary).then(renderLibrary).catch(function () {});
-      };
+      } });
     });
   }
   function playFromLibrary(id) {
@@ -338,7 +332,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
         emuIsGameLoaded = true;
         showPlayer();
         loader(false);
-        msg(sav ? 'Save loaded' : 'No save yet for this game', 1500);
+        toast(sav ? 'Save loaded' : 'No save yet for this game', { icon: sav ? 'ok' : 'info' });
       }).catch(function (e) { loader(false); if (e !== 'not a game') $('status').textContent = 'Failed: ' + e; });
   }
 
@@ -402,7 +396,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     // Persist once the game has stopped writing (flag went 1 -> 0), or when forced.
     if (saveDirty && (force || (flag === 0 && prevSaveFlag === 1))) {
       var data = copySave();
-      if (data) KV.set('sav-' + gameID, data).then(function () { msg('Saved ✓', 1200); }, function () { msg('Saving failed!', 3000); });
+      if (data) KV.set('sav-' + gameID, data).then(function () { toast('Game saved', { icon: 'ok' }); }, function () { toast('Saving failed', { icon: 'warn' }); });
       saveDirty = false;
     }
     prevSaveFlag = flag;
@@ -699,9 +693,21 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   };
 
   // ---------- status message ----------
-  var msgTimer = null;
-  function msg(text, ms) {
-    var m = $('msg'); m.textContent = text; m.hidden = false;
-    clearTimeout(msgTimer); msgTimer = setTimeout(function () { m.hidden = true; }, ms || 1500);
+  // ---------- toast: the one notification style for the whole app ----------
+  // toast(text, { icon: 'ok' | 'star' | 'trash' | 'warn' | 'info', ms, action: 'Undo', onAction })
+  var TOAST_ICON = { ok: 'text-emerald-400', star: 'text-amber-400', trash: 'text-zinc-400', warn: 'text-red-400', info: 'text-sky-400' };
+  var toastTimer = null;
+  function toast(text, o) {
+    o = o || {};
+    var t = $('toast'), btn = $('toast-action');
+    $('toast-icon').innerHTML = o.icon ? HI(o.icon, 'size-5 ' + (TOAST_ICON[o.icon] || '')) : '';
+    $('toast-text').textContent = text;
+    btn.hidden = !o.action; btn.textContent = o.action || '';
+    btn.onclick = function () { hide(); if (o.onAction) o.onAction(); };
+    function hide() { clearTimeout(toastTimer); t.removeAttribute('data-show'); btn.onclick = null; }
+    t.setAttribute('data-show', '');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(hide, o.ms || (o.icon === 'warn' ? 3500 : 2000));
   }
+  window.toast = toast;
 })();

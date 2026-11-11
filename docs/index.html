@@ -58,10 +58,6 @@
         <div class="mt-4 h-1.5 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800"><div id="loader-bar" class="h-full w-0 rounded-full bg-amber-400 transition-[width] duration-150"></div></div>
       </div>
     </div>
-    <div id="home-toast" class="fixed bottom-[calc(1.25rem+env(safe-area-inset-bottom))] left-1/2 z-30 flex max-w-[calc(100%-2rem)] -translate-x-1/2 items-center gap-3 rounded-2xl bg-zinc-900 py-2 pl-4 pr-2 text-[15px] text-white shadow-xl ring-1 ring-white/10 dark:bg-zinc-800" hidden>
-      <span id="home-toast-text" class="truncate"></span>
-      <button id="home-toast-undo" class="rounded-lg px-2 py-1 font-semibold text-amber-400 active:bg-white/10">Undo</button>
-    </div>
   </div>
 
   <div id="player" hidden>
@@ -80,7 +76,6 @@
       <div class="btn round" data-k="a">A</div>
       <div class="btn round" data-k="b">B</div>
     </div>
-    <div id="msg" hidden></div>
   </div>
 
   <div id="menu" class="fixed inset-0 z-20 flex items-end bg-black/40" hidden>
@@ -117,6 +112,11 @@
     </div>
   </div>
 
+      <!-- One toast for every notification in the app (see toast() in emu.js) -->
+    <div id="toast" role="status" aria-live="polite" class="pointer-events-none fixed left-1/2 top-[calc(10px+env(safe-area-inset-top))] z-50 flex max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-3 items-center gap-2.5 whitespace-nowrap rounded-2xl bg-zinc-900/95 py-2.5 pl-3.5 pr-4 text-[15px] font-medium text-white opacity-0 shadow-xl ring-1 ring-white/10 backdrop-blur-md transition duration-200 data-[show]:translate-y-0 data-[show]:opacity-100">
+      <span id="toast-icon" class="flex empty:hidden"></span><span id="toast-text" class="truncate"></span>
+      <button id="toast-action" class="pointer-events-auto -my-1 -mr-1.5 ml-1 rounded-lg px-2 py-1 font-semibold text-amber-400 active:bg-white/10" hidden></button>
+    </div>
   <script src="kv.js"></script>
   <script src="icons.js"></script>
   <script src="emu.js"></script>
