@@ -2,6 +2,9 @@
 
 CheeseLab uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 1.2.6
+- In portrait, the menu and word sheets always have the same height: exactly the bottom half of the screen.
+
 ## 1.2.5
 - In portrait, the menu and the word sheets cover at most the bottom screen, so the game screen stays visible; longer content scrolls.
 - Word sheets have the same grab handle as the menu.

@@ -31,7 +31,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var standalone = window.navigator.standalone || matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches;
   if (isIOS && !standalone) $('ios-hint').hidden = false;
-  var APP_VERSION = '1.2.5';   // semantic version; keep in sync with sw.js
+  var APP_VERSION = '1.2.6';   // semantic version; keep in sync with sw.js
   $('ver').textContent = 'Version ' + APP_VERSION;
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
     var hadController = !!navigator.serviceWorker.controller;
@@ -497,8 +497,11 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     place($('btn-ff'), mid + 3, 6, colW / 2 - 3, h);
     place(btns.select, mid - colW / 2, ch - 2 * h - 18, colW, h);
     place(btns.start, mid - colW / 2, ch - h - 10, colW, h);
-    // Menus and word sheets cover at most the bottom screen in portrait, so the top screen stays visible.
-    document.documentElement.style.setProperty('--sheet-max', H >= W ? Math.round(H - screenCanvas[0].getBoundingClientRect().bottom) + 'px' : '92vh');
+    // Portrait: menus and word sheets are always exactly as tall as the bottom screen area,
+    // so the top screen stays visible. Landscape: as tall as their content (up to 92%).
+    var sheetH = Math.round(H - screenCanvas[0].getBoundingClientRect().bottom) + 'px';
+    document.documentElement.style.setProperty('--sheet-h', H >= W ? sheetH : 'auto');
+    document.documentElement.style.setProperty('--sheet-max', H >= W ? sheetH : '92vh');
     // Portrait: the translate button goes in the empty centre gap of the controls.
     window.krPillSpot = H >= W ? { x: C.left + mid, y: C.top + (6 + h + ch - 2 * h - 18) / 2 } : null;
     if (window.krLayout) krLayout();
