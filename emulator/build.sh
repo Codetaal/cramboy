@@ -10,6 +10,7 @@ if [ -z "$SRC" ]; then
     git -C "$HERE/desmume-wasm" checkout -q $UPSTREAM_COMMIT
   fi
 fi
+bash "$HERE/extra/patches/apply.sh" "$SRC/src"
 ZLIB=$HERE/zlib
 if [ ! -f "$ZLIB/libz.a" ]; then
   git clone --depth 1 --branch v1.3.1 https://github.com/madler/zlib.git "$ZLIB"
@@ -52,7 +53,7 @@ export -f compile; export S OBJ COMMON ZLIB
 echo $FILES | tr ' ' '\n' | grep -v '^$' | xargs -P ${JOBS:-8} -I{} bash -c 'compile {}'
 em++ $COMMON -std=gnu++14 -c "$HERE/extra/main.cpp" -o "$OBJ/main.o"
 em++ $COMMON -std=gnu++14 -c "$HERE/extra/wasm_extra.cpp" -o "$OBJ/wasm_extra.o"
-EXPORTS='["_main","_malloc","_free","_realloc","_prepareRomBuffer","_loadROM","_reset","_runFrame","_getSymbol","_fillAudioBuffer","_setSampleRate","_savGetSize","_savGetPointer","_savUpdateChangeFlag","_emuSetOpt","_micWriteSamples"]'
+EXPORTS='["_main","_malloc","_free","_realloc","_prepareRomBuffer","_loadROM","_reset","_runFrame","_getSymbol","_fillAudioBuffer","_setSampleRate","_savGetSize","_savGetPointer","_savUpdateChangeFlag","_emuSetOpt","_micWriteSamples","_stateSave","_stateGetPointer","_statePrepare","_stateLoad"]'
 em++ -O3 $OBJ/*.o -o "$OUT/nds.js" $ZLIB/libz.a -sALLOW_MEMORY_GROWTH=1 -sINITIAL_MEMORY=536870912 \
   -sEXPORTED_FUNCTIONS="$EXPORTS" -sEXPORTED_RUNTIME_METHODS='["HEAPU8"]' -sENVIRONMENT=web,worker,node -sFORCE_FILESYSTEM=1
 ls -la "$OUT"

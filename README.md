@@ -27,7 +27,9 @@ no game-specific addresses and shows only the text typed so far.
 `emulator/build.sh` compiles [desmume-wasm](https://github.com/44670/desmume-wasm)
 (GPL-2.0, pinned commit) with Emscripten 3.1.25 into `docs/build/`. Changes vs upstream
 are in `emulator/extra/`: `main.cpp` without the unused `eval` hook, plus small stubs
-for symbols the upstream tree leaves undefined. `docs/emu.js` is a new frontend.
+for symbols the upstream tree leaves undefined, and save-state functions (`stateSave`,
+`stateLoad`, …) for the experimental Resume feature. `extra/patches/apply.sh` fixes three
+upstream bugs that crashed loading a save state; `build.sh` applies it. `docs/emu.js` is a new frontend.
 
 ## Tests
 `node tests/reader.test.js` and `node tests/lookup.test.js`.

@@ -2,6 +2,11 @@
 
 CheeseLab uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 1.4.0
+- New, experimental: **Resume where you left off** (Menu › Advanced, off by default). Takes a snapshot of the whole game every 2 minutes and whenever you leave the app or close the game. When you start that game again, a card offers "Resume where you left off" or "Start normally". It warns you if you saved in the game after the snapshot. Turning it off deletes all snapshots.
+- Emulator rebuilt with save-state support, plus three small fixes to the emulator source that made loading a snapshot crash (see `emulator/extra/patches/apply.sh`).
+- "Export memory snapshot" is now called "Export memory dump", so it isn't confused with the new snapshots.
+
 ## 1.3.7
 - Fixed: after rotating from landscape back to portrait, the subtitle box jumped and could hardly be dragged or resized. iPhone home-screen apps keep reporting the landscape window size; CheeseLab now measures the real size of the app's area instead.
 - The subtitles and the translate button are now pinned to the screen like the controls, so a page left slightly scrolled after rotating can't shift them.

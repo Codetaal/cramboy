@@ -16,7 +16,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   var touchKeys = 0, keyboardKeys = 0, touchDown = 0, touchX = 0, touchY = 0;
   var fastForward = false, frameNo = 0, lastT = 0, acc = 0;
   var prevSaveFlag = 0, saveDirty = false;
-  var settings = { sound: true, controls: 'below' };
+  var settings = { sound: true, controls: 'below', resume: false };
 
   var TAGLINE = '';   // no slogan; the line only shows status messages
   // ---------- startup ----------
@@ -26,12 +26,12 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     $('btn-open').disabled = false;
     loadLibrary().then(renderLibrary).catch(function () {});
   };
-  KV.get('settings').then(function (s) { if (s) { settings.sound = s.sound !== false; settings.controls = s.controls === 'floating' ? 'floating' : 'below'; } }).catch(function () {});
+  KV.get('settings').then(function (s) { if (s) { settings.sound = s.sound !== false; settings.controls = s.controls === 'floating' ? 'floating' : 'below'; settings.resume = s.resume === true; } }).catch(function () {});
 
   var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var standalone = window.navigator.standalone || matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches;
   if (isIOS && !standalone) $('ios-hint').hidden = false;
-  var APP_VERSION = '1.3.7';   // semantic version; keep in sync with sw.js
+  var APP_VERSION = '1.4.0';   // semantic version; keep in sync with sw.js
   $('ver').textContent = 'Version ' + APP_VERSION;
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
     var hadController = !!navigator.serviceWorker.controller;
@@ -330,8 +330,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
           return;
         }
         emuIsGameLoaded = true;
-        showPlayer();
-        loader(false);
+        return offerResume().then(function () { showPlayer(); loader(false); });
       }).catch(function (e) { loader(false); if (e !== 'not a game') $('status').textContent = 'Failed: ' + e; });
   }
 
@@ -395,14 +394,83 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     // Persist once the game has stopped writing (flag went 1 -> 0), or when forced.
     if (saveDirty && (force || (flag === 0 && prevSaveFlag === 1))) {
       var data = copySave();
-      if (data) KV.set('sav-' + gameID, data).then(null, function () { toast('Couldn\'t back up your in-game save', { icon: 'warn' }); });
+      if (data) KV.set('sav-' + gameID, data).then(function () { KV.set('savt-' + gameID, Date.now()).catch(function () {}); }, function () { toast('Couldn\'t back up your in-game save', { icon: 'warn' }); });
       saveDirty = false;
     }
     prevSaveFlag = flag;
   }
   document.addEventListener('visibilitychange', function () {
-    if (document.hidden && emuIsGameLoaded) checkSave(true);
+    if (document.hidden && emuIsGameLoaded) { checkSave(true); takeSnapshot(); }
   });
+  addEventListener('pagehide', function () { if (emuIsGameLoaded) takeSnapshot(); });
+
+  // ---------- experimental: resume where you left off (save states) ----------
+  // A snapshot is the emulator's complete state. With the setting on, one is taken every 2 minutes
+  // while playing and whenever the app is left or the game is closed. Per game we keep the latest
+  // ('snap:<id>') and the one before it ('snap-prev:<id>') as a spare.
+  var SNAP_EVERY = 2 * 60 * 1000, lastSnap = null, lastSnapAt = 0;
+  // force: always take one (closing the game). Otherwise skip if one was taken in the last 3 seconds
+  // (leaving the app fires both visibilitychange and pagehide).
+  function takeSnapshot(force) {
+    if (!settings.resume || !emuIsGameLoaded || !gameID || (!force && Date.now() - lastSnapAt < 3000)) return Promise.resolve();
+    var n;
+    try { n = Module._stateSave(1); } catch (e) { n = -1; }
+    if (!(n > 0)) return Promise.resolve();
+    var p = Module._stateGetPointer();
+    var snap = { t: Date.now(), app: APP_VERSION, data: Module.HEAPU8.slice(p, p + n) };
+    var id = gameID, old = lastSnap;
+    lastSnap = snap; lastSnapAt = snap.t;
+    return KV.set('snap:' + id, snap)
+      .then(function () { return old ? KV.set('snap-prev:' + id, old) : null; })
+      .then(function () { return KV.get('snap-ids'); })
+      .then(function (ids) { ids = ids || []; if (ids.indexOf(id) < 0) { ids.push(id); return KV.set('snap-ids', ids); } })
+      .catch(function () { toast('Couldn\'t store a snapshot', { icon: 'warn' }); });
+  }
+  setInterval(function () { if (emuIsRunning) takeSnapshot(); }, SNAP_EVERY);
+  function deleteSnapshots() {
+    lastSnap = null;
+    return KV.get('snap-ids').then(function (ids) {
+      return Promise.all((ids || []).map(function (id) { return Promise.all([KV.del('snap:' + id), KV.del('snap-prev:' + id)]); }));
+    }).then(function () { return KV.del('snap-ids'); }).catch(function () {});
+  }
+  function whenText(t) {
+    var d = new Date(t), now = new Date(), hm = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    if (d.toDateString() === now.toDateString()) return 'today ' + hm;
+    var y = new Date(now); y.setDate(now.getDate() - 1);
+    if (d.toDateString() === y.toDateString()) return 'yesterday ' + hm;
+    return d.toLocaleDateString([], { day: 'numeric', month: 'short' }) + ' ' + hm;
+  }
+  // Called once the ROM and its in-game save are loaded. Resolves when the game may start running.
+  function offerResume() {
+    if (!settings.resume) return Promise.resolve();
+    return Promise.all([KV.get('snap:' + gameID), KV.get('savt-' + gameID)]).catch(function () { return []; }).then(function (r) {
+      var snap = r[0], savT = r[1] || 0;
+      if (!snap || !snap.data) return;
+      $('resume-icon').innerHTML = $('loader-icon').innerHTML;
+      $('resume-title').textContent = $('loader-title').textContent;
+      $('resume-when').textContent = 'Snapshot from ' + whenText(snap.t);
+      $('resume-warn').hidden = !(savT > snap.t + 5000);
+      loader(false);
+      $('resume').hidden = false;
+      return new Promise(function (done) {
+        $('resume-skip').onclick = function () { $('resume').hidden = true; done(); };
+        $('resume-go').onclick = function () {
+          $('resume').hidden = true;
+          var ok = -1;
+          try { var d = Module._statePrepare(snap.data.length); Module.HEAPU8.set(snap.data, d); ok = Module._stateLoad(); } catch (e) { ok = -1; }
+          if (ok === 0) {
+            lastSnap = snap; lastSnapAt = Date.now();
+            // The snapshot carries the in-game save as it was then; don't treat restoring it as a new save.
+            Module._savUpdateChangeFlag(); saveDirty = false; prevSaveFlag = 0;
+          } else {
+            try { Module._reset(); } catch (e) {}
+            toast('Couldn\'t resume this snapshot; started normally', { icon: 'warn' });
+          }
+          done();
+        };
+      });
+    });
+  }
 
   // ---------- audio ----------
   var actx = null, proc = null, FIFO = 16384, fifoL = new Float32Array(FIFO), fifoR = new Float32Array(FIFO), fHead = 0, fLen = 0;
@@ -608,6 +676,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     snd.innerHTML = HI(settings.sound ? 'speaker-wave' : 'speaker-x-mark', 'size-5'); snd.classList.toggle('opacity-60', !settings.sound);
     setSeg('controls', settings.controls);
     setSeg('subs', window.KRSettings ? KRSettings.getMode() : 'bar');
+    $('m-resume').setAttribute('aria-checked', String(!!settings.resume));
     $('m-reset-box').hidden = !window.KRSettings || KRSettings.getMode() !== 'box';
     $('m-words').innerHTML = window.KRSettings ? HI('star', 'size-4 text-amber-500 relative -top-[1.25px]') + KRSettings.savedCount() : '';
     var st = window.KRReaderStats ? KRReaderStats() : null;
@@ -642,8 +711,17 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
       if (open) setTimeout(function () { $('m-advanced').scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }, 0);
     }
     if (m === 'snapshot') exportSnapshot();
+    if (m === 'resume-toggle') {
+      settings.resume = !settings.resume; saveSettings(); menuLabels();
+      if (settings.resume) { toast('Resume is on', { icon: 'ok' }); lastSnapAt = 0; takeSnapshot(); }
+      else deleteSnapshots().then(function () { toast('Resume is off; snapshots deleted', { icon: 'trash' }); });
+    }
     if (m === 'reset-box' && window.KRUI) { KRUI.resetBox(); closeMenu(); }
-    if (m === 'home') { checkSave(true); setTimeout(function () { location.reload(); }, 300); }
+    if (m === 'home') {
+      // Reload once the snapshot is stored (or after 1.5 s at most, if storage is slow).
+      var left = false, leave = function () { if (!left) { left = true; location.reload(); } };
+      checkSave(true); takeSnapshot(true).then(leave); setTimeout(leave, 1500);
+    }
   });
   ['touchstart', 'touchmove', 'touchend'].forEach(function (t) {
     $('menu').addEventListener(t, function (e) { e.stopPropagation(); }, { passive: true });

@@ -14,6 +14,7 @@
 #include "SPU.h"
 #include "mc.h"
 #include "rasterize.h"
+#include "saves.h"
 
 CHEATSEXPORT *cheatsExport = NULL;
 
@@ -106,6 +107,10 @@ SoundInterface_struct SndWasm = {1,
 
 SoundInterface_struct *SNDCoreList[] = {&SNDDummy, &SndWasm, NULL};
 GPU3DInterface *core3DList[] = {&gpu3DNull, &gpu3DRasterize, NULL};
+
+// The microphone has no state worth keeping in a snapshot (same as desmume's other frontends).
+void mic_savestate(EMUFILE &os) { os.write_32LE(-1); }
+bool mic_loadstate(EMUFILE &is, int size) { is.fseek(size, SEEK_CUR); return true; }
 
 extern "C" {
 
@@ -338,6 +343,35 @@ int micWriteSamples(uint8_t *buffer, int len) {
     }
   }
   return len;
+}
+
+// ---------- save states (CheeseLab "Resume where you left off") ----------
+// stateSave(level) writes a full snapshot into an in-memory file and returns its size (or -1);
+// JS then copies it out via stateGetPointer(). To restore, JS asks statePrepare(len) for a buffer,
+// copies the snapshot in, and calls stateLoad(). The ROM must already be loaded.
+static EMUFILE_MEMORY *stateFile = NULL;
+int stateSave(int level) {
+  delete stateFile;
+  stateFile = new EMUFILE_MEMORY();
+  if (!savestate_save(*stateFile, level)) return -1;
+  return stateFile->size();
+}
+void *stateGetPointer() { return stateFile ? stateFile->buf() : 0; }
+void *statePrepare(int len) {
+  delete stateFile;
+  stateFile = new EMUFILE_MEMORY((u32)len);
+  return stateFile->buf();
+}
+int stateLoad() {
+  if (!stateFile) return -1;
+  stateFile->fseek(0, SEEK_SET);
+#ifdef CHEESELAB_DEBUG
+  try { return savestate_load(*stateFile) ? 0 : -1; }
+  catch (std::exception &e) { printf("stateLoad exception: %s\n", e.what()); return -3; }
+  catch (...) { printf("stateLoad: unknown exception\n"); return -3; }
+#else
+  return savestate_load(*stateFile) ? 0 : -1;
+#endif
 }
 
 int emuSetOpt(int k, int v) {
