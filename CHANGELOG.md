@@ -2,6 +2,12 @@
 
 CheeseLab uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 1.5.1
+- Resume (experimental): the indicator that blinks when a snapshot is stored is now a clock instead of a camera.
+- Resume (experimental): "Start normally" no longer loses the snapshot. The skipped snapshot is kept and offered next time as "Earlier: <time>", below the latest one.
+- Portrait: more space between L / R and the D-pad / face buttons.
+- Loading a big game sometimes failed on the first try on iPhone ("ArrayBuffer has been detached"). CheeseLab now retries once by itself; the reason is shown under Menu › Advanced for diagnosis.
+
 ## 1.5.0
 - Japanese games: CheeseLab now reads Japanese Pokémon games (tested with the Gen 4 and Gen 5 text formats, i.e. HeartGold and White) and shows Japanese subtitles with tappable words.
 - Words are split using a Japanese–English dictionary (JMdict, © EDRDG, CC BY-SA 4.0, about 30,000 common words plus Japanese Pokémon, move, item and place names). Inflected verbs and adjectives are traced back to their dictionary form (いきました → 行く, polite past), and the word sheet shows the reading.

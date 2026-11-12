@@ -31,7 +31,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var standalone = window.navigator.standalone || matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches;
   if (isIOS && !standalone) $('ios-hint').hidden = false;
-  var APP_VERSION = '1.5.0';   // semantic version; keep in sync with sw.js
+  var APP_VERSION = '1.5.1';   // semantic version; keep in sync with sw.js
   $('ver').textContent = 'Version ' + APP_VERSION;
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
     var hadController = !!navigator.serviceWorker.controller;
@@ -289,7 +289,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   // ---------- load ----------
   // DS firmware languages: 0 Japanese, 1 English, 2 French, 3 German, 4 Italian, 5 Spanish.
   var FW_LANG = { J: 0, E: 1, P: 1, K: 1, F: 2, D: 3, I: 4, S: 5 }, gameRegion = '';
-  function startGame(blob, name, libId) {
+  function startGame(blob, name, libId, retried) {
     unlockAudio();
     if (!ready) return;
     if ($('loader').hidden) loader(0, name, null);
@@ -323,7 +323,9 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
       return next();
     }).then(function () { return KV.get('sav-' + gameID).catch(function () { return null; }); })
       .then(function (sav) {
-        if (sav && sav.length) Module.HEAPU8.set(sav, Module._savGetPointer(sav.length));
+        // Get the pointer first: making room for the save can grow the emulator's memory, which
+        // replaces Module.HEAPU8 (writing to the old view throws "ArrayBuffer has been detached").
+        if (sav && sav.length) { var sp = Module._savGetPointer(sav.length); Module.HEAPU8.set(sav, sp); }
         Module._savUpdateChangeFlag();
         // The DS's own language follows the game's region letter (last letter of the game code):
         // multi-language European games pick their language from it. Korean games ignore it.
@@ -338,8 +340,18 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
         }
         emuIsGameLoaded = true;
         return offerResume().then(function () { showPlayer(); loader(false); });
-      }).catch(function (e) { loader(false); if (e !== 'not a game') $('status').textContent = 'Failed: ' + e; });
+      }).catch(function (e) {
+        if (e === 'not a game') { loader(false); return; }
+        lastLoadError = String(e && e.stack || e).split('\n').slice(0, 3).join(' | ');
+        console.warn('load failed', e);
+        // Safari sometimes fails the first load of a big game when the emulator's memory grows
+        // ("ArrayBuffer has been detached"); a second attempt works, so retry once by itself.
+        if (!retried && /detached|out-of-bounds/i.test(String(e))) { startGame(blob, name, libId, true); return; }
+        loader(false);
+        $('status').textContent = 'Failed: ' + e;
+      });
   }
+  var lastLoadError = '';
 
   // Floating loading card: loader(percent, title, icon) shows/updates it, loader(false) hides it.
   function loader(pct, title, icon) {
@@ -429,12 +441,15 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     lastSnap = snap; lastSnapAt = snap.t;
     return KV.set('snap:' + id, snap)
       .then(function () { snapFlash(); return old ? KV.set('snap-prev:' + id, old) : null; })
-      .then(function () { return KV.get('snap-ids'); })
-      .then(function (ids) { ids = ids || []; if (ids.indexOf(id) < 0) { ids.push(id); return KV.set('snap-ids', ids); } })
+      .then(function () { return remember(id); })
       .catch(function () { toast('Couldn\'t store a snapshot', { icon: 'warn' }); });
   }
   setInterval(function () { if (emuIsRunning) takeSnapshot(); }, SNAP_EVERY);
-  // A small camera blinks at the top-right of the game screen once a snapshot is stored.
+  // Games that have snapshots, so turning Resume off can delete them all.
+  function remember(id) {
+    return KV.get('snap-ids').then(function (ids) { ids = ids || []; if (ids.indexOf(id) < 0) { ids.push(id); return KV.set('snap-ids', ids); } });
+  }
+  // A small clock blinks at the top-right of the game screen once a snapshot is stored.
   var flashTimer = null;
   function snapFlash() {
     if (document.hidden || uiCurrentMode !== 'player') return;
@@ -446,7 +461,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   function deleteSnapshots() {
     lastSnap = null;
     return KV.get('snap-ids').then(function (ids) {
-      return Promise.all((ids || []).map(function (id) { return Promise.all([KV.del('snap:' + id), KV.del('snap-prev:' + id)]); }));
+      return Promise.all((ids || []).map(function (id) { return Promise.all([KV.del('snap:' + id), KV.del('snap-prev:' + id), KV.del('snap-kept:' + id)]); }));
     }).then(function () { return KV.del('snap-ids'); }).catch(function () {});
   }
   function whenText(t) {
@@ -457,31 +472,45 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     return d.toLocaleDateString([], { day: 'numeric', month: 'short' }) + ' ' + hm;
   }
   // Called once the ROM and its in-game save are loaded. Resolves when the game may start running.
+  // "Start normally" never throws a snapshot away: the one that was offered is kept aside
+  // ('snap-kept:<id>') and offered again as "Earlier snapshot" until a newer one is skipped.
   function offerResume() {
     if (!settings.resume) return Promise.resolve();
-    return Promise.all([KV.get('snap:' + gameID), KV.get('savt-' + gameID)]).catch(function () { return []; }).then(function (r) {
-      var snap = r[0], savT = r[1] || 0;
-      if (!snap || !snap.data) return;
+    var id = gameID;
+    return Promise.all([KV.get('snap:' + id), KV.get('savt-' + id), KV.get('snap-kept:' + id)]).catch(function () { return []; }).then(function (r) {
+      var snap = r[0], savT = r[1] || 0, kept = r[2];
+      if (kept && (!kept.data || (snap && kept.t === snap.t))) kept = null;
+      if (!snap || !snap.data) { if (!kept) return; snap = kept; kept = null; }
       $('resume-icon').innerHTML = $('loader-icon').innerHTML;
       $('resume-title').textContent = $('loader-title').textContent;
       $('resume-when').textContent = 'Snapshot from ' + whenText(snap.t);
       $('resume-warn').hidden = !(savT > snap.t + 5000);
+      $('resume-kept').hidden = !kept;
+      if (kept) $('resume-kept-text').textContent = 'Earlier: ' + whenText(kept.t);
       loader(false);
       $('resume').hidden = false;
       return new Promise(function (done) {
-        $('resume-skip').onclick = function () { $('resume').hidden = true; done(); };
-        $('resume-go').onclick = function () {
+        function resumeFrom(s) {
           $('resume').hidden = true;
           var ok = -1;
-          try { var d = Module._statePrepare(snap.data.length); Module.HEAPU8.set(snap.data, d); ok = Module._stateLoad(); } catch (e) { ok = -1; }
+          try { var d = Module._statePrepare(s.data.length); Module.HEAPU8.set(s.data, d); ok = Module._stateLoad(); } catch (e) { ok = -1; }
           if (ok === 0) {
-            lastSnap = snap; lastSnapAt = Date.now();
+            lastSnap = s; lastSnapAt = Date.now();
             // The snapshot carries the in-game save as it was then; don't treat restoring it as a new save.
             Module._savUpdateChangeFlag(); saveDirty = false; prevSaveFlag = 0;
           } else {
             try { Module._reset(); } catch (e) {}
             toast('Couldn\'t resume this snapshot; started normally', { icon: 'warn' });
           }
+          done();
+        }
+        $('resume-go').onclick = function () { resumeFrom(snap); };
+        $('resume-kept').onclick = function () { resumeFrom(kept); };
+        $('resume-skip').onclick = function () {
+          $('resume').hidden = true;
+          // Keep the skipped snapshot, so a mis-tap can be undone next time.
+          KV.set('snap-kept:' + id, snap).then(function () { return remember(id); }).catch(function () {});
+          toast('Snapshot kept: you can still resume it next time', { icon: 'clock', ms: 3500 });
           done();
         };
       });
@@ -569,7 +598,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     var C = ctl.getBoundingClientRect(), cw = C.width, ch = C.height;
     // Portrait: keep the controls a bit further up from the bottom edge of the phone.
     if (H >= W) ch -= 16;
-    var pad = 14, topRow = 40;                         // L / R row
+    var pad = 14, topRow = H >= W ? 52 : 40;           // L / R row (portrait: more room below it)
     var D = Math.min(ch - topRow - 10, cw * 0.34, 170);
     var land = W > H;
     // Landscape: the screens sit at the top and the controls keep their full size, low on the phone
@@ -718,6 +747,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     $('m-words').innerHTML = window.KRSettings ? HI('star', 'size-4 text-amber-500 relative -top-[1.25px]') + KRSettings.savedCount() : '';
     var st = window.KRReaderStats ? KRReaderStats() : null;
     $('m-info').innerHTML = 'Version ' + APP_VERSION + ' · ' + (gameID ? gameID.trim() : '') +
+      (lastLoadError ? '<br>Last load problem (retried): ' + lastLoadError.replace(/</g, '&lt;') : '') +
       (st ? '<br>Reader: ' + st.strings + ' strings in memory, ' + st.korean + ' in the game’s language, ' + st.printers + ' being printed' : '') +
       '<br>The game saves automatically a few seconds after you save in‑game.' +
       '<br>Emulator: desmume‑wasm (GPL‑2.0). Character table and Pokémon names: PKHeX (GPL‑3.0). Dictionaries: kengdic (MPL‑2.0), JMdict by the EDRDG (CC BY‑SA 4.0). Icons: Heroicons (MIT).';
@@ -827,7 +857,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   // ---------- status message ----------
   // ---------- toast: the one notification style for the whole app ----------
   // toast(text, { icon: 'ok' | 'star' | 'trash' | 'warn' | 'info', ms, action: 'Undo', onAction })
-  var TOAST_ICON = { ok: 'text-emerald-400', star: 'text-amber-400', trash: 'text-zinc-400', warn: 'text-red-400', info: 'text-sky-400' };
+  var TOAST_ICON = { ok: 'text-emerald-400', star: 'text-amber-400', trash: 'text-zinc-400', warn: 'text-red-400', info: 'text-sky-400', clock: 'text-amber-400' };
   var toastTimer = null;
   function toast(text, o) {
     o = o || {};
