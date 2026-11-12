@@ -2,6 +2,9 @@
 
 CheeseLab uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 1.4.4
+- Portrait: Below and Floating now both use the roomier Floating controls size (it was the tighter Below size in 1.4.3). With Below, the screens are slightly smaller to make room.
+
 ## 1.4.3
 - Portrait: Floating now uses exactly the same controls area as Below, so every button and the translate button sit in the same place and at the same size in both settings.
 
