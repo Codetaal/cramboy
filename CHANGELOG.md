@@ -2,6 +2,10 @@
 
 CheeseLab uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 1.4.5
+- SELECT and START show icons (− and +) instead of text, side by side (in portrait too, under the translate button).
+- New "Study mode" switch at the top of the menu (on by default). Turning it off hides everything for studying Korean: subtitles, the translate button, Words & text and the subtitle settings, and stops reading text from the game.
+
 ## 1.4.4
 - Portrait: Below and Floating now both use the roomier Floating controls size (it was the tighter Below size in 1.4.3). With Below, the screens are slightly smaller to make room.
 

@@ -31,7 +31,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var standalone = window.navigator.standalone || matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches;
   if (isIOS && !standalone) $('ios-hint').hidden = false;
-  var APP_VERSION = '1.4.4';   // semantic version; keep in sync with sw.js
+  var APP_VERSION = '1.4.5';   // semantic version; keep in sync with sw.js
   $('ver').textContent = 'Version ' + APP_VERSION;
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
     var hadController = !!navigator.serviceWorker.controller;
@@ -589,15 +589,16 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
       place(btns.select, mid - sw2 - 4, ch - h - 10, sw2, h);
       place(btns.start, mid + 4, ch - h - 10, sw2, h);
     } else {
-      place(btns.select, mid - colW / 2, ch - 2 * h - 18, colW, h);
-      place(btns.start, mid - colW / 2, ch - h - 10, colW, h);
+      // Portrait: SELECT and START side by side at the bottom of the centre column, like menu / fast forward.
+      place(btns.select, mid - colW / 2, ch - h - 10, colW / 2 - 3, h);
+      place(btns.start, mid + 3, ch - h - 10, colW / 2 - 3, h);
     }
     // Menus and word sheets are always 70% of the screen height, in portrait and landscape.
     var sheetH = Math.round(H * 0.7) + 'px';
     document.documentElement.style.setProperty('--sheet-h', sheetH);
     document.documentElement.style.setProperty('--sheet-max', sheetH);
     // Portrait: the translate button goes in the empty centre gap of the controls.
-    window.krPillSpot = H >= W ? { x: C.left + mid, y: C.top + (6 + h + ch - 2 * h - 18) / 2 } : null;
+    window.krPillSpot = H >= W ? { x: C.left + mid, y: C.top + (6 + h + ch - h - 10) / 2 } : null;
     if (window.krLayout) krLayout();
   }
   // iPhone reports the new size a little late after rotating, so lay out again a few times.
@@ -697,7 +698,11 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     setSeg('controls', settings.controls);
     setSeg('subs', window.KRSettings ? KRSettings.getMode() : 'bar');
     $('m-resume').setAttribute('aria-checked', String(!!settings.resume));
-    $('m-reset-box').hidden = !window.KRSettings || KRSettings.getMode() !== 'box';
+    var study = !window.KRSettings || KRSettings.getStudy();
+    $('m-study').setAttribute('aria-checked', String(study));
+    // Study mode off: hide every study-related row.
+    $('m-subs-row').hidden = !study; $('m-words-row').hidden = !study;
+    $('m-reset-box').hidden = !study || !window.KRSettings || KRSettings.getMode() !== 'box';
     $('m-words').innerHTML = window.KRSettings ? HI('star', 'size-4 text-amber-500 relative -top-[1.25px]') + KRSettings.savedCount() : '';
     var st = window.KRReaderStats ? KRReaderStats() : null;
     $('m-info').innerHTML = 'Version ' + APP_VERSION + ' · ' + (gameID ? gameID.trim() : '') +
@@ -731,6 +736,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
       if (open) setTimeout(function () { $('m-advanced').scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }, 0);
     }
     if (m === 'snapshot') exportSnapshot();
+    if (m === 'study-toggle' && window.KRSettings) { KRSettings.setStudy(!KRSettings.getStudy()); menuLabels(); }
     if (m === 'resume-toggle') {
       settings.resume = !settings.resume; saveSettings(); menuLabels();
       if (settings.resume) { toast('Resume is on', { icon: 'ok' }); lastSnapAt = 0; takeSnapshot(); }

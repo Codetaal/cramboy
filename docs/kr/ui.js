@@ -18,7 +18,8 @@
   var history = [];           // finished dialogue messages (newest last)
   var otherText = [];         // other Korean text seen (menus, descriptions)
   // mode: 'box' = Pokémon-style box over the game's own text, 'bar' = bar at the top, 'off' = only via 가
-  var settings = { mode: 'box', debug: /krdebug/.test(location.search) };
+  // study: false hides everything Korean-related (subtitles, translate button, word sheets) and stops reading.
+  var settings = { mode: 'box', study: true, debug: /krdebug/.test(location.search) };
   var frame = 0, views = null, hideTimer = null, current = null;
 
   // ---------- DOM ----------
@@ -83,11 +84,26 @@
     renderPanel();
   }
   function saveSettings() {
-    if (store) store.setItem('settings', { mode: settings.mode, box: boxGeo }).catch(function () {});
+    if (store) store.setItem('settings', { mode: settings.mode, box: boxGeo, study: settings.study }).catch(function () {});
+  }
+  function setStudy(on) {
+    settings.study = !!on;
+    saveSettings();
+    applyStudy();
+  }
+  function applyStudy() {
+    pill.hidden = !settings.study;
+    if (!settings.study) {
+      current = null;
+      setPanelVisible(false); box.classList.add('kr-hidden');
+      if (!sheet.hidden) closeSheet();
+    }
+    renderPanel();
   }
   function resetBox() { boxGeo = {}; saveSettings(); krLayout(); toast('Subtitle box reset', 'ok'); }
   window.KRReaderStats = function () { return reader.stats; };
-  window.KRSettings = { getMode: function () { return settings.mode; }, setMode: setMode, savedCount: function () { return saved.length; } };
+  window.KRSettings = { getMode: function () { return settings.mode; }, setMode: setMode, savedCount: function () { return saved.length; },
+    getStudy: function () { return settings.study; }, setStudy: setStudy };
   window.KRUI = { open: function (tab) { openMenu(tab || 'now'); }, resetBox: resetBox };
 
   function loadSaved() {
@@ -98,6 +114,8 @@
       // Older versions stored {subs: true/false} for the bar.
       settings.mode = v.mode || (v.subs === false ? 'off' : v.subs === true ? 'bar' : 'box');
       if (v.box && typeof v.box === 'object') boxGeo = v.box;
+      settings.study = v.study !== false;
+      applyStudy();
       krLayout();
       renderPanel();
     }).catch(function () {});
@@ -120,7 +138,7 @@
 
   // ---------- emulator hooks ----------
   window.krOnFrame = function () {
-    if (++frame % SCAN_EVERY) return;
+    if (!settings.study || ++frame % SCAN_EVERY) return;
     try {
       var mem = Module._getSymbol(7);
       var buf = Module.HEAPU8.buffer;
@@ -279,7 +297,7 @@
     return i >= t.length || t.charAt(i) === '\n';
   }
   function renderPanel() {
-    var mode = settings.mode;
+    var mode = settings.study ? settings.mode : 'off';
     if (!current || mode !== 'bar') setPanelVisible(false);
     if (!current || mode !== 'box') box.classList.add('kr-hidden');
     if (!current || mode === 'off') return;
