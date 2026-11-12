@@ -24,15 +24,18 @@ const msg = [0xFFFE, 0xFF00, 1, 0x0002].concat(encode('안녕! 포켓몬의 세�
 const data = putString(0x200000, msg);
 // Heap text printer: cursor pointer after 5 codes (ctrl + '안녕!' = 4+3 = 7 codes) 
 const PRINTER = 0x300000 >> 2;
-u32[PRINTER] = 0x02000000 + data + 7 * 2;
+u32[PRINTER] = 0x02000000 + data + 6 * 2;
 // Decoy: pointer to start of the text (should be ignored)
 u32[0x310000 >> 2] = 0x02000000 + data;
+res = r.scan(u32, u16);
+assert.strictEqual(res.active, null, 'not dialogue until its cursor moves');
+assert(res.fresh.some(t => t.includes('공박사')), 'new text is still collected for the Recent list');
+u32[PRINTER] = 0x02000000 + data + 7 * 2;   // the printer types the next letter
 res = r.scan(u32, u16);
 assert(res.active, 'should find active dialogue');
 assert.strictEqual(res.newMessage, true);
 console.log('shown text:', JSON.stringify(res.active.text.slice(0, res.active.shown)));
 assert.strictEqual(res.active.text.slice(0, res.active.shown).replace(/​/g, ''), '안녕!');
-assert(res.fresh.some(t => t.includes('공박사')));
 
 // Printer advances to the end
 u32[PRINTER] = 0x02000000 + data + msg.length * 2;
@@ -48,6 +51,8 @@ assert.strictEqual(res.active, null); assert(res.closed);
 
 // Mirror addresses (0x02400000 + x) also work
 const data2 = putString(0x220000, encode('야생 피카츄가 나타났다!'));
+u32[PRINTER] = 0x02400000 + data2 + 5 * 2;
+r.scan(u32, u16);
 u32[PRINTER] = 0x02400000 + data2 + 6 * 2;
 res = r.scan(u32, u16);
 assert.strictEqual(res.active.text.slice(0, res.active.shown), '야생 피카츄');
@@ -113,6 +118,7 @@ console.log('ALL READER TESTS PASSED');
   // Gen 4 HeartGold (Japanese): kana only, spaces between words
   const msgJ = encJ('ポケモンの せかいへ\nようこそ！');
   const dJ = putString(0x200000, msgJ);
+  u32[0x300000 >> 2] = 0x02000000 + dJ + 4 * 2; rj.scan(u32, u16);
   u32[0x300000 >> 2] = 0x02000000 + dJ + 5 * 2;
   rr = rj.scan(u32, u16);
   assert(rr.active, 'Japanese G4 dialogue found');
@@ -125,6 +131,7 @@ console.log('ALL READER TESTS PASSED');
   const uni = s => [...s].map(c => c === '\n' ? 0xFFFE : c.charCodeAt(0));
   const m5 = uni('ポケモンの　世界へ\nようこそ！');
   const d5 = putString(0x240000, m5);
+  u32[0x300000 >> 2] = 0x02000000 + d5 + 5 * 2; rj5.scan(u32, u16);
   u32[0x300000 >> 2] = 0x02000000 + d5 + 6 * 2;
   rr = rj5.scan(u32, u16);
   assert(rr.active, 'Japanese G5 dialogue found');
@@ -134,4 +141,23 @@ console.log('ALL READER TESTS PASSED');
   const rk = new Reader(T, 'ko'); rk.scan(u32, u16);
   assert.strictEqual(rk.stats.korean, 0);
   console.log('JAPANESE READER TESTS PASSED');
+}
+
+// ---- A touch-screen label with a pointer that never moves (HeartGold's "조사한다" button) ----
+{
+  u32.fill(0);
+  const rl = new Reader(T);
+  rl.scan(u32, u16);
+  const dlg = encode('TV가 있다…');
+  const dd = putString(0x200000, dlg);
+  u32[0x300000 >> 2] = 0x02000000 + dd + 3 * 2; rl.scan(u32, u16);
+  u32[0x300000 >> 2] = 0x02000000 + dd + dlg.length * 2;   // dialogue printed to the end
+  let rr = rl.scan(u32, u16);
+  assert.strictEqual(rr.active.text, 'TV가 있다…');
+  // A newer string appears: the button label, with a pointer stuck after its first letter
+  const lab = putString(0x220000, encode('조사한다'));
+  u32[0x310000 >> 2] = 0x02000000 + lab + 1 * 2;
+  for (let k = 0; k < 3; k++) rr = rl.scan(u32, u16);
+  assert.strictEqual(rr.active.text, 'TV가 있다…', 'a label with a fixed pointer is not dialogue');
+  console.log('LABEL TEST PASSED');
 }

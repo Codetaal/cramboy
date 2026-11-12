@@ -2,6 +2,9 @@
 
 CheeseLab uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 1.5.2
+- Fixed: the subtitles sometimes showed a single letter of a touch-screen button (in HeartGold "조" from the "조사한다" button) instead of the dialogue. Text now only counts as dialogue once it is actually being typed out (or is fully printed).
+
 ## 1.5.1
 - Resume (experimental): the indicator that blinks when a snapshot is stored is now a clock instead of a camera.
 - Resume (experimental): "Start normally" no longer loses the snapshot. The skipped snapshot is kept and offered next time as "Earlier: <time>", below the latest one.

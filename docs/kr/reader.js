@@ -163,11 +163,18 @@
       var key = codesKey(u16, s2.dataByte >> 1, s2.size);
       var prev = this.known.get(s2.addr);
       var isNew = !prev || prev.key !== key;
-      var rec = isNew ? { key: key, firstSeen: this.scanNo } : prev;
+      var rec = isNew ? { key: key, firstSeen: this.scanNo, cur0: -1, moved: false } : prev;
       seenNow.set(s2.addr, rec);
       s2.key = key; s2.firstSeen = rec.firstSeen;
       if (isNew && this.scanNo > 1) fresh.push(s2);
+      // Only text that is really being typed counts as dialogue: its cursor has moved since we first
+      // saw it, or it is already printed to the end. Labels on the touch screen (HeartGold's "조사한다"
+      // button) also have a pointer into their text, but it never moves.
       if (s2.cursor >= 0) {
+        if (rec.cur0 < 0) rec.cur0 = s2.cursor;
+        else if (s2.cursor !== rec.cur0) rec.moved = true;
+      }
+      if (s2.cursor >= 0 && (rec.moved || s2.cursor >= s2.size - 1)) {
         // Prefer the most recently created string that is being printed. Strings created at the
         // same moment are usually two copies of one message (Gen 5 keeps a raw and a printed copy,
         // and only the printed one's pointer is the live cursor): take the one printed furthest.
