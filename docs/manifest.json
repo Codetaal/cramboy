@@ -1,6 +1,6 @@
 {
-  "name": "CheeseLab",
-  "short_name": "CheeseLab",
+  "name": "CramBox",
+  "short_name": "CramBox",
   "start_url": "./",
   "scope": "./",
   "display": "fullscreen",

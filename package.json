@@ -1,7 +1,7 @@
 {
-  "name": "cheeselab",
+  "name": "crambox",
   "private": true,
-  "description": "CheeseLab: DS emulator web app with Korean subtitles",
+  "description": "CramBox: DS emulator web app with Korean subtitles",
   "scripts": {
     "build:css": "tailwindcss -c tailwind.config.js -i docs/tw.in.css -o docs/tw.css --minify",
     "watch:css": "tailwindcss -c tailwind.config.js -i docs/tw.in.css -o docs/tw.css --watch"
