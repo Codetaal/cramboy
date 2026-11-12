@@ -2,6 +2,12 @@
 
 CheeseLab uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 1.4.6
+- Landscape: the translate button is the wobbling blob too, in the middle of the black strip under the screens, above SELECT and START.
+- The menu button shows a gear (settings) icon instead of three lines.
+- Portrait: the controls sit a bit higher, with more room to the bottom edge of the phone.
+- The menu and word sheets are now 80% of the screen height (was 70%), in portrait and landscape.
+
 ## 1.4.5
 - SELECT and START show icons (− and +) instead of text, side by side (in portrait too, under the translate button).
 - New "Study mode" switch at the top of the menu (on by default). Turning it off hides everything for studying Korean: subtitles, the translate button, Words & text and the subtitle settings, and stops reading text from the game.

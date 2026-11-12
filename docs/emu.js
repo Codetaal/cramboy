@@ -31,7 +31,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var standalone = window.navigator.standalone || matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches;
   if (isIOS && !standalone) $('ios-hint').hidden = false;
-  var APP_VERSION = '1.4.5';   // semantic version; keep in sync with sw.js
+  var APP_VERSION = '1.4.6';   // semantic version; keep in sync with sw.js
   $('ver').textContent = 'Version ' + APP_VERSION;
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
     var hadController = !!navigator.serviceWorker.controller;
@@ -560,6 +560,8 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
       ctl.style.opacity = 0.6;
     }
     var C = ctl.getBoundingClientRect(), cw = C.width, ch = C.height;
+    // Portrait: keep the controls a bit further up from the bottom edge of the phone.
+    if (H >= W) ch -= 16;
     var pad = 14, topRow = 40;                         // L / R row
     var D = Math.min(ch - topRow - 10, cw * 0.34, 170);
     var land = W > H;
@@ -593,12 +595,15 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
       place(btns.select, mid - colW / 2, ch - h - 10, colW / 2 - 3, h);
       place(btns.start, mid + 3, ch - h - 10, colW / 2 - 3, h);
     }
-    // Menus and word sheets are always 70% of the screen height, in portrait and landscape.
-    var sheetH = Math.round(H * 0.7) + 'px';
+    // Menus and word sheets are always 80% of the screen height, in portrait and landscape.
+    var sheetH = Math.round(H * 0.8) + 'px';
     document.documentElement.style.setProperty('--sheet-h', sheetH);
     document.documentElement.style.setProperty('--sheet-max', sheetH);
-    // Portrait: the translate button goes in the empty centre gap of the controls.
-    window.krPillSpot = H >= W ? { x: C.left + mid, y: C.top + (6 + h + ch - h - 10) / 2 } : null;
+    // The translate button (the blob) goes in the middle of the controls: in portrait between
+    // menu / fast forward and SELECT / START; in landscape in the black strip under the screens,
+    // above SELECT / START.
+    var spotTop = land ? Math.max(rowY + 2 + h, top + sh) : 6 + h;
+    window.krPillSpot = { x: C.left + mid, y: C.top + (spotTop + ch - h - 10) / 2 };
     if (window.krLayout) krLayout();
   }
   // iPhone reports the new size a little late after rotating, so lay out again a few times.
