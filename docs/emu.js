@@ -1,4 +1,4 @@
-// CheeseLab — frontend for desmume-wasm.
+// CramBoy — frontend for desmume-wasm.
 // Globals shared with kr/ui.js: Module, screenCanvas, emuIsRunning, emuIsGameLoaded, uiCurrentMode.
 'use strict';
 

@@ -1,4 +1,4 @@
-# CheeseLab
+# CramBoy
 
 A Nintendo DS and Game Boy Advance player for iPhone (web app) that shows Pokémon HeartGold/SoulSilver
 and Black/White dialogue as tappable Korean or Japanese subtitles. Tap a word: the game pauses, you get the

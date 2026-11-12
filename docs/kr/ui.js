@@ -1,4 +1,4 @@
-// Korean subtitle + vocabulary overlay for CheeseLab.
+// Korean subtitle + vocabulary overlay for CramBoy.
 // Hooks: app.js calls krOnFrame() after each emulated frame and krLayout() after layout changes.
 (function () {
   'use strict';

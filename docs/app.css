@@ -1,4 +1,4 @@
-/* CheeseLab: the start screen, menu and word sheets are styled with Tailwind (tw.css).
+/* CramBoy: the start screen, menu and word sheets are styled with Tailwind (tw.css).
    This file keeps the player and the behaviour rules Tailwind can't express. */
 :root {
   --bg: #0e1018; --fg: #f4f1ea; --muted: #8b90a0; --accent: #ffd666;

@@ -1,10 +1,10 @@
-# Working on CheeseLab
+# Working on CramBoy
 
 ## Release workflow (agreed with the owner)
 1. Make changes locally and test them (browser tests with Playwright).
 2. **Show a proposal first** (screenshots or a clear summary) and wait for an explicit OK before pushing. Committing locally is fine; pushing is not, until approved.
 3. On approval, for every release:
-   - Bump the semantic version in **both** `docs/emu.js` (`APP_VERSION`) and `docs/sw.js` (`VERSION = 'cheeselab-vX.Y.Z'`):
+   - Bump the semantic version in **both** `docs/emu.js` (`APP_VERSION`) and `docs/sw.js` (`VERSION = 'cramboy-vX.Y.Z'`):
      patch = fixes, minor = new features, major = big changes.
      Until the full 1.0 release the version stays 0.x (0.5.3 followed 1.5.2); minor = features, patch = fixes.
    - Add an entry to `CHANGELOG.md`.
