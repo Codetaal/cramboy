@@ -2,6 +2,10 @@
 
 CheeseLab uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.5.5
+- CheeseLab is now called CramBoy, with a new pixel-art icon: an open box shaped like a game controller.
+  Your games, saves and saved words stay as they are. On iPhone, remove the home-screen app and add it again from Safari to see the new name and icon.
+
 ## 0.5.4
 - Resume (experimental): tapping outside the resume card cancels it: the game isn't started and you stay on the start screen.
 

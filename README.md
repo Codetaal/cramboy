@@ -1,4 +1,4 @@
-# CramBox
+# CramBoy
 
 A Nintendo DS player for iPhone (web app) that shows Pokémon HeartGold/SoulSilver and Black/White
 dialogue as tappable Korean subtitles. Tap a word: the game pauses, you get the

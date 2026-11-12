@@ -1,5 +1,5 @@
-"""Draws the CramBox app icon (pixel art) into docs/icon-512.png and docs/icon-180.png.
-Run: python3 tools/make_crambox_icon.py"""
+"""Draws the CramBoy app icon (pixel art) into docs/icon-512.png and docs/icon-180.png.
+Run: python3 tools/make_cramboy_icon.py"""
 from PIL import Image
 import os
 

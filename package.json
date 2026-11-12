@@ -1,7 +1,7 @@
 {
-  "name": "crambox",
+  "name": "cramboy",
   "private": true,
-  "description": "CramBox: DS emulator web app with Korean subtitles",
+  "description": "CramBoy: DS emulator web app with Korean subtitles",
   "scripts": {
     "build:css": "tailwindcss -c tailwind.config.js -i docs/tw.in.css -o docs/tw.css --minify",
     "watch:css": "tailwindcss -c tailwind.config.js -i docs/tw.in.css -o docs/tw.css --watch"

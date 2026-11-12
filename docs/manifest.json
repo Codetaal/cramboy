@@ -1,6 +1,6 @@
 {
-  "name": "CramBox",
-  "short_name": "CramBox",
+  "name": "CramBoy",
+  "short_name": "CramBoy",
   "start_url": "./",
   "scope": "./",
   "display": "fullscreen",
