@@ -135,17 +135,19 @@
   };
 
   // ---------- movable in-box subtitles ----------
+  // Same true app size as the player layout uses (not the sometimes-stale innerWidth/innerHeight).
+  function vw() { return window.viewSize ? window.viewSize() : { w: innerWidth, h: innerHeight }; }
   function screens() {
     var r = screenCanvas[0].getBoundingClientRect(), b = screenCanvas[1] && screenCanvas[1].getBoundingClientRect();
     // Orientation comes from the window itself, not from where the screens happen to be drawn:
     // right after rotating, iPhone can still report the old layout for a moment.
-    return { top: r, bottom: b && b.width ? b : null, k: r.width / 256, key: innerWidth > innerHeight ? 'landscape' : 'portrait' };
+    return { top: r, bottom: b && b.width ? b : null, k: r.width / 256, key: vw().w > vw().h ? 'landscape' : 'portrait' };
   }
   function placeBox() {
     var s = screens(), g = boxGeo[s.key] || BOX_DEFAULT, k = s.k;
     // Never let a saved position put the box (or its grip) off screen.
-    var bw = Math.min(g.w * k, innerWidth), bh = Math.min(g.h * k, innerHeight);
-    var bl = Math.max(0, Math.min(innerWidth - bw, s.top.left + g.x * k)), bt = Math.max(12, Math.min(innerHeight - bh, s.top.top + g.y * k));
+    var V = vw(), bw = Math.min(g.w * k, V.w), bh = Math.min(g.h * k, V.h);
+    var bl = Math.max(0, Math.min(V.w - bw, s.top.left + g.x * k)), bt = Math.max(12, Math.min(V.h - bh, s.top.top + g.y * k));
     if (bl !== s.top.left + g.x * k || bt !== s.top.top + g.y * k || bw !== g.w * k || bh !== g.h * k)
       g = { x: (bl - s.top.left) / k, y: (bt - s.top.top) / k, w: bw / k, h: bh / k };
     // Default: full width at the bottom of the top screen, starting 4 DS pixels above the
@@ -177,7 +179,7 @@
     handle.addEventListener('pointermove', function (e) {
       if (!start) return;
       e.preventDefault();
-      var s = screens(), k = s.k, W = innerWidth, H = innerHeight, SNAP = 12;
+      var s = screens(), k = s.k, V = vw(), W = V.w, H = V.h, SNAP = 12;
       var dx = e.clientX - start.x, dy = e.clientY - start.y, l = start.l, t = start.t, w = start.w, h = start.h;
       var xs = [0, W, s.top.left, s.top.right];
       if (s.bottom) xs.push(s.bottom.left, s.bottom.right);

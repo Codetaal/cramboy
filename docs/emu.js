@@ -31,7 +31,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var standalone = window.navigator.standalone || matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches;
   if (isIOS && !standalone) $('ios-hint').hidden = false;
-  var APP_VERSION = '1.3.6';   // semantic version; keep in sync with sw.js
+  var APP_VERSION = '1.3.7';   // semantic version; keep in sync with sw.js
   $('ver').textContent = 'Version ' + APP_VERSION;
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
     var hadController = !!navigator.serviceWorker.controller;
@@ -444,8 +444,18 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   Array.prototype.forEach.call(document.querySelectorAll('#controls [data-k]'), function (n) { btns[n.dataset.k] = n; });
   function place(n, x, y, w, h) { n.style.left = x + 'px'; n.style.top = y + 'px'; n.style.width = w + 'px'; n.style.height = h + 'px'; }
 
+  // The real size of the app's area. After rotating, iPhone home-screen apps can keep reporting the
+  // old innerWidth / innerHeight for a while; the full-screen player element always has the true size.
+  function viewSize() {
+    var r = $('player').getBoundingClientRect();
+    if (r.width > 0 && r.height > 0) return { w: r.width, h: r.height };
+    var d = document.documentElement; return { w: d.clientWidth || innerWidth, h: d.clientHeight || innerHeight };
+  }
+  window.viewSize = viewSize;
   function layout() {
-    var W = innerWidth, H = innerHeight, ctl = $('controls'), sw, sh, top;
+    // iPhone can leave the page scrolled a little after rotating; the player always sits at the top.
+    if (window.scrollX || window.scrollY) window.scrollTo(0, 0);
+    var vp = viewSize(), W = vp.w, H = vp.h, ctl = $('controls'), sw, sh, top;
     var floating = settings.controls === 'floating';
     $('controls').classList.toggle('floating', floating);
     if (H >= W && floating) {
@@ -503,7 +513,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     if (window.krLayout) krLayout();
   }
   // iPhone reports the new size a little late after rotating, so lay out again a few times.
-  function relayout() { if (uiCurrentMode !== 'player') return; [50, 250, 600].forEach(function (ms) { setTimeout(layout, ms); }); }
+  function relayout() { if (uiCurrentMode !== 'player') return; [50, 250, 600, 1200].forEach(function (ms) { setTimeout(layout, ms); }); }
   addEventListener('resize', relayout);
   addEventListener('orientationchange', relayout);
   if (window.visualViewport) visualViewport.addEventListener('resize', relayout);
