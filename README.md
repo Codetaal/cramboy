@@ -32,7 +32,7 @@ for symbols the upstream tree leaves undefined, and save-state functions (`state
 upstream bugs that crashed loading a save state; `build.sh` applies it. `docs/emu.js` is a new frontend.
 
 ## Tests
-`node tests/reader.test.js` and `node tests/lookup.test.js`.
+`node tests/reader.test.js`, `node tests/lookup.test.js` and `node tests/ja-lookup.test.js`.
 
 Styles use Tailwind CSS: after changing classes in `docs/index.html`, `docs/emu.js` or
 `docs/kr/ui.js`, run `npm install` once and then `npm run build:css` to regenerate `docs/tw.css`.
@@ -40,3 +40,10 @@ Styles use Tailwind CSS: after changing classes in `docs/index.html`, `docs/emu.
 ## Licences
 GPL-3.0-or-later (see LICENSE). Includes desmume (GPL-2.0-or-later), PKHeX data
 (GPL-3.0), kengdic (MPL-2.0 / LGPL-2.0+) and Heroicons (MIT, notice in docs/icons.js) and Tailwind CSS (MIT). Play only games you own.
+
+## Japanese games
+Japanese games (region letter `J` in the game code) are read in Japanese: the DS itself is set to
+Japanese, the reader looks for kana/kanji, and words are looked up in `docs/kr/ja-dict.json`, built by
+`tools/build_ja_dict.py` from [JMdict](https://www.edrdg.org/jmdict/j_jmdict.html) (© EDRDG,
+CC BY-SA 4.0; this derived file is under the same licence) plus Japanese Pokémon names from PKHeX.
+`docs/kr/ja-lookup.js` turns inflected words back into their dictionary form and splits text into words.

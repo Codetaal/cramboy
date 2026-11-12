@@ -101,3 +101,37 @@ console.log('ALL READER TESTS PASSED');
   console.log('Gen 5 two-copy test:', JSON.stringify(shown));
   console.log('GEN 5 COPY TESTS PASSED');
 }
+
+// ---- Japanese (lang 'ja'): Gen 4 kana from the game's table, Gen 5 Unicode kana/kanji ----
+{
+  u32.fill(0);
+  const rj = new Reader(T, 'ja');
+  const encJ = s => [...s].map(ch => ch === '\n' ? 0xE000 : ch === ' ' ? 0x0001 : (assert(ch in enc, 'no JP code for ' + ch), enc[ch]));
+  putString(0x100000, encode('가방'));                         // Korean string: ignored in Japanese mode
+  let rr = rj.scan(u32, u16);
+  assert.strictEqual(rj.stats.korean, 0, 'Korean text must not count in Japanese mode');
+  // Gen 4 HeartGold (Japanese): kana only, spaces between words
+  const msgJ = encJ('ポケモンの せかいへ\nようこそ！');
+  const dJ = putString(0x200000, msgJ);
+  u32[0x300000 >> 2] = 0x02000000 + dJ + 5 * 2;
+  rr = rj.scan(u32, u16);
+  assert(rr.active, 'Japanese G4 dialogue found');
+  assert.strictEqual(rr.active.text.slice(0, rr.active.shown), 'ポケモンの');
+  console.log('JA G4 text:', JSON.stringify(rr.active.text));
+  // Gen 5 White (Japanese, kanji mode): Unicode with 0xFFFE new line
+  u32.fill(0);
+  const rj5 = new Reader(T, 'ja');
+  rj5.scan(u32, u16);
+  const uni = s => [...s].map(c => c === '\n' ? 0xFFFE : c.charCodeAt(0));
+  const m5 = uni('ポケモンの　世界へ\nようこそ！');
+  const d5 = putString(0x240000, m5);
+  u32[0x300000 >> 2] = 0x02000000 + d5 + 6 * 2;
+  rr = rj5.scan(u32, u16);
+  assert(rr.active, 'Japanese G5 dialogue found');
+  assert.strictEqual(rr.active.text.slice(0, rr.active.shown), 'ポケモンの　');
+  console.log('JA G5 text:', JSON.stringify(rr.active.text));
+  // Korean reader ignores Japanese text
+  const rk = new Reader(T, 'ko'); rk.scan(u32, u16);
+  assert.strictEqual(rk.stats.korean, 0);
+  console.log('JAPANESE READER TESTS PASSED');
+}

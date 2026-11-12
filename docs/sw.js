@@ -1,9 +1,11 @@
 // Offline cache for the app. Bump the version here and APP_VERSION in emu.js whenever any file changes
 // (semantic versioning: patch = fixes, minor = features, major = big changes).
-var VERSION = 'cheeselab-v1.4.6';
+var VERSION = 'cheeselab-v1.5.0';
 var FILES = ['./', './index.html', './tw.css', './app.css', './kv.js', './icons.js', './emu.js', './manifest.json', './icon-180.png', './icon-512.png',
   './build/nds.js', './build/nds.wasm',
-  './kr/ui.css', './kr/table.js', './kr/reader.js', './kr/lookup.js', './kr/ui.js', './kr/dict.json'];
+  './kr/ui.css', './kr/table.js', './kr/reader.js', './kr/lookup.js', './kr/ja-lookup.js', './kr/ui.js', './kr/dict.json'];
+// Downloaded only when first needed (Japanese games), then kept for offline use.
+var ON_DEMAND = ['kr/ja-dict.json'];
 
 self.addEventListener('install', function (e) {
   // cache: 'reload' bypasses the browser's HTTP cache, so a new version never stores old files.
@@ -23,5 +25,15 @@ self.addEventListener('activate', function (e) {
 });
 self.addEventListener('fetch', function (e) {
   if (e.request.method !== 'GET') return;
-  e.respondWith(caches.match(e.request, { ignoreSearch: true }).then(function (r) { return r || fetch(e.request); }));
+  e.respondWith(caches.match(e.request, { ignoreSearch: true }).then(function (r) {
+    if (r) return r;
+    return fetch(e.request).then(function (res) {
+      var path = new URL(e.request.url).pathname;
+      if (res.ok && ON_DEMAND.some(function (f) { return path.slice(-f.length) === f; })) {
+        var copy = res.clone();
+        caches.open(VERSION).then(function (c) { c.put(e.request, copy); });
+      }
+      return res;
+    });
+  }));
 });

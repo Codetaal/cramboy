@@ -2,6 +2,13 @@
 
 CheeseLab uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 1.5.0
+- Japanese games: CheeseLab now reads Japanese Pokémon games (tested with the Gen 4 and Gen 5 text formats, i.e. HeartGold and White) and shows Japanese subtitles with tappable words.
+- Words are split using a Japanese–English dictionary (JMdict, © EDRDG, CC BY-SA 4.0, about 30,000 common words plus Japanese Pokémon, move, item and place names). Inflected verbs and adjectives are traced back to their dictionary form (いきました → 行く, polite past), and the word sheet shows the reading.
+- For Japanese games the word sheet links to Jisho instead of Naver, and Google translates from Japanese. The Japanese dictionary is downloaded the first time a Japanese game is played, then works offline.
+- The emulated DS is set to the game's language, based on the region letter in the game code (J = Japanese, E/P/K = English, F/D/I/S = French/German/Italian/Spanish).
+- Saved words keep their reading; the Anki export has a Reading column.
+
 ## 1.4.6
 - Landscape: the translate button is the wobbling blob too, in the middle of the black strip under the screens, above SELECT and START.
 - The menu button shows a gear (settings) icon instead of three lines.

@@ -13,7 +13,12 @@
     getItem: function (k) { return KV.get('kr-' + k); },
     setItem: function (k, v) { return KV.set('kr-' + k, v); }
   } : window.localforage ? localforage.createInstance({ name: 'kr-vocab' }) : null;
-  var dict = null, dictLoading = null;
+  // lang: the game's language, set by the app when a game loads ('ko' Korean, 'ja' Japanese).
+  var lang = 'ko', dicts = {}, dictLoading = {};
+  var LANG = {
+    ko: { file: 'dict.json', dictName: 'Naver', dictUrl: 'https://korean.dict.naver.com/koendict/#/search?query=' },
+    ja: { file: 'ja-dict.json', dictName: 'Jisho', dictUrl: 'https://jisho.org/search/' }
+  };
   var saved = [];             // [{w, base, gloss, s, t}]
   var history = [];           // finished dialogue messages (newest last)
   var otherText = [];         // other Korean text seen (menus, descriptions)
@@ -26,7 +31,7 @@
   var panel = el('div', { id: 'kr-panel', className: 'kr-hidden' });
   var textBox = el('div', { className: 'kr-text' });
   panel.appendChild(textBox);
-  var pill = el('button', { id: 'kr-pill', ariaLabel: 'Korean words', innerHTML: HI('language') });
+  var pill = el('button', { id: 'kr-pill', ariaLabel: 'Words', innerHTML: HI('language') });
   var box = el('div', { id: 'kr-box', className: 'kr-hidden' });
   var boxText = el('div', { className: 'kr-box-text' });
   var boxArrow = el('div', { className: 'kr-box-arrow' });
@@ -126,15 +131,22 @@
   }
   function isSaved(word) { var c = KRLookup.clean(word); return saved.some(function (x) { return x.w === c || x.base === c; }); }
 
-  function loadDict() {
-    if (dict) return Promise.resolve(dict);
-    if (!dictLoading) {
-      dictLoading = fetch(BASE + 'dict.json').then(function (r) { return r.json(); })
-        .then(function (d) { dict = d; return d; })
-        .catch(function (e) { dictLoading = null; throw e; });
+  function loadDict(l) {
+    l = l || lang;
+    if (dicts[l]) return Promise.resolve(dicts[l]);
+    if (!dictLoading[l]) {
+      dictLoading[l] = fetch(BASE + LANG[l].file).then(function (r) { return r.json(); })
+        .then(function (d) { dicts[l] = d; if (l === 'ja') renderPanel(); return d; })   // re-split words once the dictionary is there
+        .catch(function (e) { dictLoading[l] = null; throw e; });
     }
-    return dictLoading;
+    return dictLoading[l];
   }
+  // Called by the app when a game loads: read and look up text in that game's language.
+  window.KRSetLang = function (l) {
+    l = l === 'ja' ? 'ja' : 'ko';
+    if (l !== lang) { lang = l; reader.setLang(l); current = null; history = []; otherText = []; renderPanel(); }
+    if (l === 'ja') loadDict('ja').catch(function () {});   // needed to split Japanese into words
+  };
 
   // ---------- emulator hooks ----------
   window.krOnFrame = function () {
@@ -251,7 +263,7 @@
       current = res.active;
       if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
       if (res.changed) renderPanel();
-      if (!dict) loadDict().catch(function () {});
+      if (!dicts[lang]) loadDict().catch(function () {});
     } else if (res.closed && current) {
       archive(current);
       current = null;
@@ -274,6 +286,13 @@
 
   // Turn text into tappable word spans.
   function wordsHTML(text) {
+    if (lang === 'ja') {
+      return esc(text).split('\n').map(function (line) {
+        return KRLookupJa.segment(dicts.ja || null, line).map(function (p) {
+          return p.w ? '<span class="kr-w' + (isSaved(p.t) ? ' kr-saved' : '') + '" data-w="' + p.t + '">' + p.t + '</span>' : p.t;
+        }).join('');
+      }).join('<br>');
+    }
     return esc(text).split('\n').map(function (line) {
       return line.split(/( +)/).map(function (tok) {
         if (!tok.trim()) return tok;
@@ -321,7 +340,13 @@
     var t = e.target.closest ? e.target.closest('.kr-w') : null;
     if (!t) return;
     var sentence = current ? plain(current.text).replace(/\n+/g, ' ') : t.closest('[data-s]') ? t.closest('[data-s]').getAttribute('data-s') : '';
-    openWord(t.getAttribute('data-w'), sentence, t);
+    var raw = t.getAttribute('data-w');
+    if (lang === 'ja') {
+      // Japanese: look up from the tapped word to the end of the phrase, so a longer word or an
+      // inflected verb that spans several pieces is still found (いって|きます -> 行く).
+      for (var n = t.nextSibling; n && n.nodeType === 1 && n.classList.contains('kr-w'); n = n.nextSibling) raw += n.getAttribute('data-w');
+    }
+    openWord(raw, sentence, t);
   }
 
   // ---------- pause / resume ----------
@@ -350,6 +375,14 @@
   var TAB_LABEL = { now: 'Now', saved: 'Saved words', recent: 'Recent' };
   function openWord(raw, sentence, span) {
     var word = KRLookup.clean(raw);
+    if (lang === 'ja') {
+      wordBack = menuTab || 'now';
+      if (span) span.classList.add('kr-sel');
+      openSheet('<p class="' + C.muted + '">Looking up…</p>');
+      loadDict('ja').then(function (d) { var r = KRLookupJa.lookup(d, raw, 5); showWord(r.matched, r.matched, sentence, r.hits); })
+        .catch(function () { showWord(KRLookupJa.clean(raw), raw, sentence, null); });
+      return;
+    }
     wordBack = menuTab || 'now';
     if (span) span.classList.add('kr-sel');
     openSheet('<p class="' + C.muted + '">Looking up…</p>');
@@ -365,11 +398,12 @@
       '<button class="' + (savedNow ? C.saved : C.save) + '" data-act="save">' +
       (savedNow ? HI('star', 'size-5') + 'Saved' : HI('star-outline', 'size-5') + 'Save') + '</button></div>';
     if (hits === null) h += '<p class="mt-3 ' + C.muted + '">Dictionary not available offline yet. Use the links below.</p>';
-    else if (!hits.length) h += '<p class="mt-3 ' + C.muted + '">Not in the offline dictionary. Try Naver below, or long‑press the word above → Look Up.</p>';
+    else if (!hits.length) h += '<p class="mt-3 ' + C.muted + '">Not in the offline dictionary. Try ' + LANG[lang].dictName + ' below, or long‑press the word above → Look Up.</p>';
     else {
       h += '<div class="mt-3 ' + C.list + '">';
       hits.forEach(function (x) {
         h += '<div class="px-4 py-3"><p class="text-lg font-bold"><span class="kr-selectable">' + esc(x.word) + '</span>' +
+          (x.reading ? '<span class="kr-selectable ml-2 text-base font-normal text-zinc-500 dark:text-zinc-400">' + esc(x.reading) + '</span>' : '') +
           (x.how ? '<span class="' + C.badge + '">' + esc(x.how) + '</span>' : '') + '</p>' +
           '<p class="mt-0.5 text-zinc-600 dark:text-zinc-300">' + esc(x.gloss) + '</p></div>';
       });
@@ -381,8 +415,8 @@
     }
     var base = hits && hits[0] ? hits[0].word : word;
     h += '<div class="mt-3 grid ' + (sentence ? 'grid-cols-2' : 'grid-cols-1') + ' gap-2">' +
-      '<a class="' + C.btn + '" target="_blank" rel="noopener" href="https://korean.dict.naver.com/koendict/#/search?query=' + encodeURIComponent(base) + '">Naver ' + OUT + '</a>' +
-      (sentence ? '<a class="' + C.btn + '" target="_blank" rel="noopener" href="https://translate.google.com/?sl=ko&tl=en&op=translate&text=' + encodeURIComponent(sentence) + '">Google ' + OUT + '</a>' : '') +
+      '<a class="' + C.btn + '" target="_blank" rel="noopener" href="' + LANG[lang].dictUrl + encodeURIComponent(base) + '">' + LANG[lang].dictName + ' ' + OUT + '</a>' +
+      (sentence ? '<a class="' + C.btn + '" target="_blank" rel="noopener" href="https://translate.google.com/?sl=' + lang + '&tl=en&op=translate&text=' + encodeURIComponent(sentence) + '">Google ' + OUT + '</a>' : '') +
       '</div>';
     card.onclick = null;
     openSheet(h, true);
@@ -393,7 +427,7 @@
         saved = saved.filter(function (x) { return x.w !== word && x.base !== word; });
         toast('Removed ' + base, 'trash');
       } else {
-        saved.push({ w: word, base: base, gloss: hits && hits[0] ? hits[0].gloss : '', s: sentence || '', t: Date.now() });
+        saved.push({ w: word, base: base, reading: hits && hits[0] ? hits[0].reading || '' : '', gloss: hits && hits[0] ? hits[0].gloss : '', s: sentence || '', t: Date.now(), lang: lang });
         toast('Saved: ' + base, 'star');
       }
       persist(); updatePill();
@@ -423,6 +457,7 @@
         h += '<div class="mt-3 ' + C.list + '">';
         saved.slice().reverse().forEach(function (x) {
           h += '<div class="flex items-start gap-2 px-4 py-3"><div class="min-w-0 flex-1"><p class="font-bold">' + esc(x.base || x.w) +
+            (x.reading ? ' <span class="font-normal ' + C.muted + '">' + esc(x.reading) + '</span>' : '') +
             (x.base && x.base !== x.w ? ' <span class="font-normal ' + C.muted + '">' + esc(x.w) + '</span>' : '') + '</p>' +
             '<p class="text-zinc-600 dark:text-zinc-300">' + esc(x.gloss || '—') + '</p>' +
             (x.s ? '<p class="mt-0.5 truncate ' + C.muted + '">' + esc(x.s) + '</p>' : '') + '</div>' +
@@ -464,14 +499,14 @@
   function csvField(s) { s = String(s || ''); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
   function exportCSV() {
     var rows = saved.map(function (x) {
-      return [x.base || x.w, x.gloss, x.s, x.w].map(csvField).join(',');
+      return [x.base || x.w, x.gloss, x.s, x.w, x.reading || ''].map(csvField).join(',');
     });
-    var csv = '#separator:comma\n#columns:Korean,Meaning,Sentence,As seen\n' + rows.join('\n') + '\n';
-    var name = 'pokemon-korean-words.csv';
+    var csv = '#separator:comma\n#columns:Word,Meaning,Sentence,As seen,Reading\n' + rows.join('\n') + '\n';
+    var name = 'pokemon-words.csv';
     var file = null;
     try { file = new File([csv], name, { type: 'text/csv' }); } catch (e) {}
     if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
-      navigator.share({ files: [file], title: 'Korean words' }).catch(function () {});
+      navigator.share({ files: [file], title: 'Saved words' }).catch(function () {});
     } else {
       var a = document.createElement('a');
       a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));

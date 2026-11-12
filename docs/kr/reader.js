@@ -1,4 +1,4 @@
-// Korean text reader for Pokémon Gen 4 (HeartGold/SoulSilver, D/P/Pt) and Gen 5 (Black/White).
+// Korean / Japanese text reader for Pokémon Gen 4 (HeartGold/SoulSilver, D/P/Pt) and Gen 5 (Black/White).
 // Finds live in-game String objects in DS main RAM and works out which one the
 // text printer is currently typing, by looking for a pointer into its characters.
 (function (root) {
@@ -14,12 +14,15 @@
   var G4_NEWLINE = 0xE000, G4_SCROLL = 0x25BC, G4_PAGE = 0x25BD, G4_CTRL = 0xFFFE;
   // Gen 5: Unicode text. 0xFFFE = new line, 0xF000 = command (BE00 scroll, BE01 new page).
   var UNI_HANGUL_MIN = 0xAC00, UNI_HANGUL_MAX = 0xD7A3;
+  // Japanese: kana (and kanji in Gen 5). In Gen 4 the kana sit at the start of the game's table.
+  var UNI_KANA_MIN = 0x3041, UNI_KANA_MAX = 0x30FF, UNI_KANJI_MIN = 0x4E00, UNI_KANJI_MAX = 0x9FFF;
   var G5_NEWLINE = 0xFFFE, G5_CTRL = 0xF000, G5_SCROLL = 0xBE00, G5_PAGE = 0xBE01;
   var EOS = 0xFFFF;
   var G4 = 1, G5 = 2;
 
-  function Reader(table) {
+  function Reader(table, lang) {
     this.table = table;                 // string: code -> char ('\0' = unknown)
+    this.setLang(lang || 'ko');
     this.owner = new Int32Array(RAM_WORDS);
     this.marked = [];                   // owner[] slots to clear next scan
     this.known = new Map();             // addr -> {text, firstSeen}
@@ -28,10 +31,23 @@
     this.stats = { strings: 0, korean: 0, printers: 0 };
   }
 
+  // 'ko' (Hangul) or 'ja' (kana / kanji): which strings count as game text.
+  Reader.prototype.setLang = function (lang) {
+    this.lang = lang === 'ja' ? 'ja' : 'ko';
+    if (this.lang === 'ja' && !this.g4Kana) {
+      this.g4Kana = new Uint8Array(this.table.length);
+      for (var i = 0; i < this.table.length; i++) {
+        var x = this.table.charCodeAt(i);
+        if (x >= UNI_KANA_MIN && x <= UNI_KANA_MAX) this.g4Kana[i] = 1;
+      }
+    }
+    this.known = new Map(); this.current = null;
+  };
+
   // Decode a run of 16-bit codes into display text.
   // Returns {text, pos} where pos[k] = source code index of text[k].
   Reader.prototype.decode = function (u16, start, len, mode) {
-    if (!mode) mode = koreanMode(u16, start, len) || G4;
+    if (!mode) mode = this.textMode(u16, start, len) || G4;
     var t = this.table, out = [], pos = [];
     for (var i = 0; i < len; i++) {
       var c = u16[start + i];
@@ -67,16 +83,26 @@
     return { text: out.join(''), pos: pos };
   };
 
-  // Which encoding a string uses, judged by its Hangul: G5 (Unicode), G4 (game table) or 0 (no Korean).
-  function koreanMode(u16, start, len) {
-    var g4 = false;
-    for (var i = 0; i < len; i++) {
-      var c = u16[start + i];
+  // Which encoding a string uses, judged by its Korean or Japanese characters:
+  // G5 (Unicode), G4 (game table) or 0 (no text in the game's language).
+  Reader.prototype.textMode = function (u16, start, len) {
+    var g4 = false, i, c;
+    if (this.lang === 'ja') {
+      var kana = this.g4Kana, n = kana.length;
+      for (i = 0; i < len; i++) {
+        c = u16[start + i];
+        if ((c >= UNI_KANA_MIN && c <= UNI_KANA_MAX) || (c >= UNI_KANJI_MIN && c <= UNI_KANJI_MAX)) return G5;
+        if (c < n && kana[c]) g4 = true;
+      }
+      return g4 ? G4 : 0;
+    }
+    for (i = 0; i < len; i++) {
+      c = u16[start + i];
       if (c >= UNI_HANGUL_MIN && c <= UNI_HANGUL_MAX) return G5;
       if (c >= G4_HANGUL_MIN && c <= G4_HANGUL_MAX) g4 = true;
     }
     return g4 ? G4 : 0;
-  }
+  };
 
   // u32/u16: typed views over the 4 MB main RAM (same buffer, word/halfword).
   Reader.prototype.scan = function (u32, u16) {
@@ -87,7 +113,7 @@
     for (i = 0; i < this.marked.length; i++) owner[this.marked[i]] = 0;
     this.marked.length = 0;
 
-    // 1) Find live String objects with Korean text.
+    // 1) Find live String objects with text in the game's language.
     var total = 0;
     for (i = 1; i < RAM_WORDS - 2; i++) {
       if (u32[i] !== STRING_MAGIC) continue;
@@ -97,7 +123,7 @@
       var dataHalf = (i + 1) * 2;
       if (dataHalf + size >= RAM_WORDS * 2) continue;
       total++;
-      var mode = koreanMode(u16, dataHalf, size);
+      var mode = this.textMode(u16, dataHalf, size);
       if (!mode) continue;
       var s = { addr: (i - 1) * 4, dataByte: dataHalf * 2, size: size, cursor: -1, mode: mode };
       list.push(s);

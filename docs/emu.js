@@ -31,7 +31,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var standalone = window.navigator.standalone || matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches;
   if (isIOS && !standalone) $('ios-hint').hidden = false;
-  var APP_VERSION = '1.4.6';   // semantic version; keep in sync with sw.js
+  var APP_VERSION = '1.5.0';   // semantic version; keep in sync with sw.js
   $('ver').textContent = 'Version ' + APP_VERSION;
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
     var hadController = !!navigator.serviceWorker.controller;
@@ -287,6 +287,8 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   }
 
   // ---------- load ----------
+  // DS firmware languages: 0 Japanese, 1 English, 2 French, 3 German, 4 Italian, 5 Spanish.
+  var FW_LANG = { J: 0, E: 1, P: 1, K: 1, F: 2, D: 3, I: 4, S: 5 }, gameRegion = '';
   function startGame(blob, name, libId) {
     unlockAudio();
     if (!ready) return;
@@ -300,6 +302,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
       }
       gameID = h.code[0] === '#' ? name : h.id;
       gameTitle = h.title;
+      gameRegion = (h.code || '').charAt(3);
       loader(0, h.banner || h.title || name, h.icon);
       if (libId) {
         library.forEach(function (e) { if (e.id === libId) e.played = Date.now(); });
@@ -322,7 +325,11 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
       .then(function (sav) {
         if (sav && sav.length) Module.HEAPU8.set(sav, Module._savGetPointer(sav.length));
         Module._savUpdateChangeFlag();
-        Module._emuSetOpt(0, 1); // firmware language: English (games use their own language)
+        // The DS's own language follows the game's region letter (last letter of the game code):
+        // multi-language European games pick their language from it. Korean games ignore it.
+        Module._emuSetOpt(0, FW_LANG[gameRegion] !== undefined ? FW_LANG[gameRegion] : 1);
+        // The study overlay reads Japanese for Japanese games and Korean otherwise.
+        if (window.KRSetLang) KRSetLang(gameRegion === 'J' ? 'ja' : 'ko');
         var ret = Module._loadROM(romSize);
         if (ret !== 0) {
           loader(false);
@@ -711,9 +718,9 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     $('m-words').innerHTML = window.KRSettings ? HI('star', 'size-4 text-amber-500 relative -top-[1.25px]') + KRSettings.savedCount() : '';
     var st = window.KRReaderStats ? KRReaderStats() : null;
     $('m-info').innerHTML = 'Version ' + APP_VERSION + ' · ' + (gameID ? gameID.trim() : '') +
-      (st ? '<br>Reader: ' + st.strings + ' strings in memory, ' + st.korean + ' Korean, ' + st.printers + ' being printed' : '') +
+      (st ? '<br>Reader: ' + st.strings + ' strings in memory, ' + st.korean + ' in the game’s language, ' + st.printers + ' being printed' : '') +
       '<br>The game saves automatically a few seconds after you save in‑game.' +
-      '<br>Emulator: desmume‑wasm (GPL‑2.0). Character table and Pokémon names: PKHeX (GPL‑3.0). Dictionary: kengdic (MPL‑2.0). Icons: Heroicons (MIT).';
+      '<br>Emulator: desmume‑wasm (GPL‑2.0). Character table and Pokémon names: PKHeX (GPL‑3.0). Dictionaries: kengdic (MPL‑2.0), JMdict by the EDRDG (CC BY‑SA 4.0). Icons: Heroicons (MIT).';
   }
   function setSeg(name, v) {
     Array.prototype.forEach.call(document.querySelectorAll('[data-seg=' + name + '] button'), function (b) { b.setAttribute('aria-pressed', b.dataset.v === v ? 'true' : 'false'); });
