@@ -2,6 +2,9 @@
 
 CheeseLab uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.5.4
+- Resume (experimental): tapping outside the resume card cancels it: the game isn't started and you stay on the start screen.
+
 ## 0.5.3
 CheeseLab is still being built, so version numbers now start with 0 until the full 1.0 release.
 0.5.3 is the release after 1.5.2 (the 1.x numbers below are the earlier releases).

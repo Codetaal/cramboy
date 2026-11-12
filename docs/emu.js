@@ -31,7 +31,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var standalone = window.navigator.standalone || matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches;
   if (isIOS && !standalone) $('ios-hint').hidden = false;
-  var APP_VERSION = '0.5.3';   // semantic version; keep in sync with sw.js
+  var APP_VERSION = '0.5.4';   // semantic version; keep in sync with sw.js
   $('ver').textContent = 'Version ' + APP_VERSION;
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
     var hadController = !!navigator.serviceWorker.controller;
@@ -339,7 +339,10 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
           return;
         }
         emuIsGameLoaded = true;
-        return offerResume().then(function () { showPlayer(); loader(false); });
+        return offerResume().then(function (how) {
+          if (how === 'cancel') { emuIsGameLoaded = false; gameID = ''; loader(false); return; }
+          showPlayer(); loader(false);
+        });
       }).catch(function (e) {
         if (e === 'not a game') { loader(false); return; }
         lastLoadError = String(e && e.stack || e).split('\n').slice(0, 3).join(' | ');
@@ -506,6 +509,12 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
         }
         $('resume-go').onclick = function () { resumeFrom(snap); };
         $('resume-kept').onclick = function () { resumeFrom(kept); };
+        // Tapping outside the card cancels: the game isn't started and the start screen stays.
+        $('resume').onclick = function (ev) {
+          if (ev.target !== $('resume')) return;
+          $('resume').hidden = true;
+          done('cancel');
+        };
         $('resume-skip').onclick = function () {
           $('resume').hidden = true;
           // Keep the skipped snapshot, so a mis-tap can be undone next time.
