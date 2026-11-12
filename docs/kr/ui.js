@@ -137,10 +137,17 @@
   // ---------- movable in-box subtitles ----------
   function screens() {
     var r = screenCanvas[0].getBoundingClientRect(), b = screenCanvas[1] && screenCanvas[1].getBoundingClientRect();
-    return { top: r, bottom: b && b.width ? b : null, k: r.width / 256, key: b && b.width && b.left >= r.right - 2 ? 'landscape' : 'portrait' };
+    // Orientation comes from the window itself, not from where the screens happen to be drawn:
+    // right after rotating, iPhone can still report the old layout for a moment.
+    return { top: r, bottom: b && b.width ? b : null, k: r.width / 256, key: innerWidth > innerHeight ? 'landscape' : 'portrait' };
   }
   function placeBox() {
     var s = screens(), g = boxGeo[s.key] || BOX_DEFAULT, k = s.k;
+    // Never let a saved position put the box (or its grip) off screen.
+    var bw = Math.min(g.w * k, innerWidth), bh = Math.min(g.h * k, innerHeight);
+    var bl = Math.max(0, Math.min(innerWidth - bw, s.top.left + g.x * k)), bt = Math.max(12, Math.min(innerHeight - bh, s.top.top + g.y * k));
+    if (bl !== s.top.left + g.x * k || bt !== s.top.top + g.y * k || bw !== g.w * k || bh !== g.h * k)
+      g = { x: (bl - s.top.left) / k, y: (bt - s.top.top) / k, w: bw / k, h: bh / k };
     // Default: full width at the bottom of the top screen, starting 4 DS pixels above the
     // game's own box (y 146) so its edge line can't peek out.
     box.style.left = (s.top.left + g.x * k) + 'px'; box.style.top = (s.top.top + g.y * k) + 'px';
@@ -176,7 +183,7 @@
       if (s.bottom) xs.push(s.bottom.left, s.bottom.right);
       var snap = function (v, list) { for (var i = 0; i < list.length; i++) if (Math.abs(v - list[i]) < SNAP) return list[i]; return null; };
       if (kind === 'move') {
-        l = Math.max(0, Math.min(W - w, l + dx)); t = Math.max(0, Math.min(H - h, t + dy));
+        l = Math.max(0, Math.min(W - w, l + dx)); t = Math.max(12, Math.min(H - h, t + dy));   // 12: keeps the grip reachable
         var sl = snap(l, xs), sr = snap(l + w, xs);
         if (sl !== null) l = sl; else if (sr !== null) l = sr - w;   // snaps left/right only
       } else {

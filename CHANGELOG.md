@@ -2,6 +2,10 @@
 
 CheeseLab uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 1.3.6
+- The movable subtitle box keeps its position and size separately for portrait and landscape, decided by the phone's orientation (not by the screen layout, which iPhone can report late after rotating). Each orientation starts at the default spot until you move the box there.
+- A saved position can never put the box or its grip off screen, so it can always be dragged and resized again.
+
 ## 1.3.5
 - Landscape: L / R, menu and fast forward sit just above the D-pad and face buttons instead of at the screen's top edge.
 - Landscape: the translate button moved into the empty band above the top screen, clear of the L button.
