@@ -31,7 +31,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var standalone = window.navigator.standalone || matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches;
   if (isIOS && !standalone) $('ios-hint').hidden = false;
-  var APP_VERSION = '1.4.1';   // semantic version; keep in sync with sw.js
+  var APP_VERSION = '1.4.2';   // semantic version; keep in sync with sw.js
   $('ver').textContent = 'Version ' + APP_VERSION;
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
     var hadController = !!navigator.serviceWorker.controller;
@@ -562,12 +562,9 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     var pad = 14, topRow = 40;                         // L / R row
     var D = Math.min(ch - topRow - 10, cw * 0.34, 170);
     var land = W > H;
-    // Landscape: the screens sit at the top. If the strip below them is tall enough, all controls go
-    // in that strip (sized to fit); on wider phones with only a thin strip, they float low over the screens.
-    var bandTop = land ? top + sh : 0, bandH = ch - bandTop, inBand = land && bandH >= 110;
-    if (inBand) D = Math.min(170, bandH - 12, cw * 0.3);
-    if (land) ctl.style.opacity = inBand ? 1 : 0.6;   // solid when they don't cover the screens
-    var cy = inBand ? bandTop + bandH / 2 : land ? ch - D / 2 - 14 : topRow + (ch - topRow) / 2;
+    // Landscape: the screens sit at the top and the controls keep their full size, low on the phone
+    // near the bottom edge; they may overlap the screens a little (see-through there).
+    var cy = land ? ch - D / 2 - 14 : topRow + (ch - topRow) / 2;
     dpadRect = { x: pad, y: cy - D / 2, w: D, h: D };
     place($('dpad'), dpadRect.x, dpadRect.y, D, D);
     var b = D * 0.37, ax = cw - pad - D / 2;
@@ -578,15 +575,9 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     var pw = Math.min(84, D * 0.75), ph = 30;
     // L / R and menu / fast forward sit just above the D-pad and face buttons. In portrait that is
     // the top of the controls; in landscape it keeps them away from the screen's top edge.
-    var rowY = H >= W ? 4 : inBand ? bandTop + 6 : Math.max(4, dpadRect.y - ph - 12);
-    if (inBand) {
-      // In the strip: L and R just inside the D-pad and the face buttons, at the top of the strip.
-      place(btns.l, pad + D + 10, rowY, pw, ph);
-      place(btns.r, cw - pad - D - 10 - pw, rowY, pw, ph);
-    } else {
-      place(btns.l, pad, rowY, pw, ph);
-      place(btns.r, cw - pad - pw, rowY, pw, ph);
-    }
+    var rowY = H >= W ? 4 : Math.max(4, dpadRect.y - ph - 12);
+    place(btns.l, pad, rowY, pw, ph);
+    place(btns.r, cw - pad - pw, rowY, pw, ph);
     // Centre column between the D-pad and the face buttons.
     var colW = Math.min(84, cw - 2 * (pad + D) - 12), mid = cw / 2, h = 26;
     place($('btn-menu'), mid - colW / 2, rowY + 2, colW / 2 - 3, h);

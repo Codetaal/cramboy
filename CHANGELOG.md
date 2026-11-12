@@ -2,6 +2,9 @@
 
 CheeseLab uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 1.4.2
+- Landscape: the controls keep their full size again (the same with Below and Floating), low on the phone; they may overlap the screens a little, see-through there. The screens stay at the top.
+
 ## 1.4.1
 - Resume (experimental): a small camera blinks for a moment at the top-right of the game screen whenever a snapshot is stored.
 - The menu and the word sheets are now 70% of the screen height, in portrait and landscape.
