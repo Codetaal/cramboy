@@ -96,9 +96,12 @@
     saveSettings();
     applyStudy();
   }
+  // active: false while a game without study support runs (GBA); the setting itself is kept.
+  var active = true;
+  function studyOn() { return settings.study && active; }
   function applyStudy() {
-    pill.hidden = !settings.study;
-    if (!settings.study) {
+    pill.hidden = !studyOn();
+    if (!studyOn()) {
       current = null;
       setPanelVisible(false); box.classList.add('kr-hidden');
       if (!sheet.hidden) closeSheet();
@@ -108,7 +111,8 @@
   function resetBox() { boxGeo = {}; saveSettings(); krLayout(); toast('Subtitle box reset', 'ok'); }
   window.KRReaderStats = function () { return reader.stats; };
   window.KRSettings = { getMode: function () { return settings.mode; }, setMode: setMode, savedCount: function () { return saved.length; },
-    getStudy: function () { return settings.study; }, setStudy: setStudy };
+    getStudy: function () { return settings.study; }, setStudy: setStudy,
+    setActive: function (on) { active = !!on; applyStudy(); } };
   window.KRUI = { open: function (tab) { openMenu(tab || 'now'); }, resetBox: resetBox };
 
   function loadSaved() {
@@ -150,7 +154,7 @@
 
   // ---------- emulator hooks ----------
   window.krOnFrame = function () {
-    if (!settings.study || ++frame % SCAN_EVERY) return;
+    if (!studyOn() || ++frame % SCAN_EVERY) return;
     try {
       var mem = Module._getSymbol(7);
       var buf = Module.HEAPU8.buffer;
@@ -316,7 +320,7 @@
     return i >= t.length || t.charAt(i) === '\n';
   }
   function renderPanel() {
-    var mode = settings.study ? settings.mode : 'off';
+    var mode = studyOn() ? settings.mode : 'off';
     if (!current || mode !== 'bar') setPanelVisible(false);
     if (!current || mode !== 'box') box.classList.add('kr-hidden');
     if (!current || mode === 'off') return;

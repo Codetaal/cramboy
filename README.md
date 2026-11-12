@@ -1,7 +1,7 @@
 # CheeseLab
 
-A Nintendo DS player for iPhone (web app) that shows Pokémon HeartGold/SoulSilver and Black/White
-dialogue as tappable Korean subtitles. Tap a word: the game pauses, you get the
+A Nintendo DS and Game Boy Advance player for iPhone (web app) that shows Pokémon HeartGold/SoulSilver
+and Black/White dialogue as tappable Korean or Japanese subtitles. Tap a word: the game pauses, you get the
 dictionary entry, and ☆ Save keeps it with its sentence. Saved words export to Anki.
 
 ## Use it
@@ -31,6 +31,13 @@ for symbols the upstream tree leaves undefined, and save-state functions (`state
 `stateLoad`, …) for the experimental Resume feature. `extra/patches/apply.sh` fixes three
 upstream bugs that crashed loading a save state; `build.sh` applies it. `docs/emu.js` is a new frontend.
 
+Game Boy Advance games use `emulator/build_gba.sh`, which compiles [44VBA](https://github.com/44670/44vba)
+(GPL-3.0, a VBA-Next fork, pinned commit) into `docs/build-gba/`. `emulator/gba/main.cpp` is upstream's
+`port-wasm/main.cpp` with sound and start-up callbacks for the app and save-state functions for Resume.
+It is built as a separate module (`createGBA()`) and only downloaded when a GBA game is opened: the app
+picks the emulator from the file's header (`.gba` has 0x96 at 0xB2, a DS game has the logo checksum at 0x15C).
+The study overlay is off for GBA games.
+
 ## Tests
 `node tests/reader.test.js`, `node tests/lookup.test.js` and `node tests/ja-lookup.test.js`.
 
@@ -38,7 +45,7 @@ Styles use Tailwind CSS: after changing classes in `docs/index.html`, `docs/emu.
 `docs/kr/ui.js`, run `npm install` once and then `npm run build:css` to regenerate `docs/tw.css`.
 
 ## Licences
-GPL-3.0-or-later (see LICENSE). Includes desmume (GPL-2.0-or-later), PKHeX data
+GPL-3.0-or-later (see LICENSE). Includes desmume (GPL-2.0-or-later), 44VBA / VBA-Next (GPL-3.0), PKHeX data
 (GPL-3.0), kengdic (MPL-2.0 / LGPL-2.0+) and Heroicons (MIT, notice in docs/icons.js) and Tailwind CSS (MIT). Play only games you own.
 
 ## Japanese games

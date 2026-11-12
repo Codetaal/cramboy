@@ -17,6 +17,8 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   var fastForward = false, frameNo = 0, lastT = 0, acc = 0;
   var prevSaveFlag = 0, saveDirty = false;
   var settings = { sound: true, controls: 'below', resume: false };
+  // Which emulator runs the current game: 'nds' (desmume, global Module) or 'gba' (44VBA, loaded on demand into G).
+  var sys = 'nds', G = null, gbaLoading = null;
 
   var TAGLINE = '';   // no slogan; the line only shows status messages
   // ---------- startup ----------
@@ -31,7 +33,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var standalone = window.navigator.standalone || matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches;
   if (isIOS && !standalone) $('ios-hint').hidden = false;
-  var APP_VERSION = '0.5.4';   // semantic version; keep in sync with sw.js
+  var APP_VERSION = '0.6.0';   // semantic version; keep in sync with sw.js
   $('ver').textContent = 'Version ' + APP_VERSION;
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
     var hadController = !!navigator.serviceWorker.controller;
@@ -81,7 +83,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   function addToLibrary(blob, h, name) {
     var id = h.id.trim() + '-' + blob.size;
     library = library.filter(function (e) { return e.id !== id; });
-    var entry = { id: id, name: name || blob.name || h.title, title: h.banner || h.title, size: blob.size, icon: h.icon, played: Date.now() };
+    var entry = { id: id, name: name || blob.name || h.title, title: h.banner || h.title, size: blob.size, icon: h.icon, sys: h.sys, played: Date.now() };
     library.unshift(entry);
     return KV.set('rom:' + id, blob).then(saveLibrary).then(function () { renderLibrary(); return entry; }, function () {
       library = library.filter(function (e) { return e.id !== id; });
@@ -148,7 +150,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     // The DS icon keeps square corners inside a rounded tile, so no pixels get cut off
     var tile = 'grid size-11 shrink-0 place-items-center rounded-xl bg-zinc-100 ring-1 ring-inset ring-zinc-900/5 dark:bg-zinc-800 dark:ring-white/10';
     cell.innerHTML = (e.icon ? '<span class="' + tile + '"><img class="size-9 [image-rendering:pixelated]" alt="" src="' + e.icon + '"></span>'
-                             : '<span class="' + tile + ' text-xs font-medium text-zinc-400 dark:text-zinc-500">DS</span>') +
+                             : '<span class="' + tile + ' text-xs font-medium text-zinc-400 dark:text-zinc-500">' + (e.sys === 'gba' ? 'GBA' : 'DS') + '</span>') +
       '<div class="min-w-0 flex-1"><p class="g-title truncate font-semibold"></p><p class="g-sub truncate text-sm text-zinc-500 dark:text-zinc-400"></p></div>' + HI('chevron-right', 'size-5 shrink-0 text-zinc-300 dark:text-zinc-600');
     cell.querySelector('.g-title').textContent = e.title;
     cell.querySelector('.g-sub').textContent = 'Played ' + ago(e.played) + ' · ' + sizeText(e.size);
@@ -232,9 +234,10 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   function readHeader(blob) {
     return blob.slice(0, 0x200).arrayBuffer().then(function (ab) {
       var u8 = new Uint8Array(ab), id = '', title = '';
+      if (isGBA(u8, blob)) return gbaHeader(u8, blob);
       for (var i = 0; i < 0x10; i++) id += u8[i] ? String.fromCharCode(u8[i]) : ' ';
       title = id.slice(0, 12).trim();
-      var h = { id: id, title: title, code: id.slice(12, 16), error: checkRom(u8, blob) };
+      var h = { sys: 'nds', id: id, title: title, code: id.slice(12, 16), error: checkRom(u8, blob) };
       if (h.error) return h;
       var bannerOff = u8[0x68] | (u8[0x69] << 8) | (u8[0x6A] << 16) | (u8[0x6B] << 24);
       if (!bannerOff || bannerOff + 0xA40 > blob.size) return h;
@@ -270,17 +273,32 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     h.icon = cv.toDataURL('image/png');
   }
 
-  // Returns a message if this isn't a DS game file, else null.
+  // Game Boy Advance: the header has a fixed 0x96 at 0xB2 and starts with an ARM branch instruction.
+  // A DS game always has the Nintendo logo checksum at 0x15C, so that is checked first.
+  function isGBA(u8, blob) {
+    if (u8.length >= 0x160 && (u8[0x15C] | (u8[0x15D] << 8)) === 0xCF56) return false;
+    return u8.length >= 0xC0 && u8[0xB2] === 0x96 && u8[3] === 0xEA && blob.size >= 0xC0 && blob.size <= 32 << 20;
+  }
+  function gbaHeader(u8, blob) {
+    var title = '', code = '';
+    for (var i = 0xA0; i < 0xAC; i++) title += u8[i] >= 32 && u8[i] < 127 ? String.fromCharCode(u8[i]) : ' ';
+    for (i = 0xAC; i < 0xB0; i++) code += u8[i] >= 32 && u8[i] < 127 ? String.fromCharCode(u8[i]) : ' ';
+    // The header title is short and in capitals ("POKEMON EMER"); the file name usually reads better.
+    var fname = (blob.name || '').replace(/\.[^.]+$/, '').replace(/\s*[([].*$/, '').replace(/_/g, ' ').trim();
+    return { sys: 'gba', id: (title + '            ').slice(0, 12) + code, title: title.trim(), code: code, banner: fname || title.trim(), error: null };
+  }
+
+  // Returns a message if this isn't a DS or GBA game file, else null.
   function checkRom(u8, blob) {
-    var unpack = ' Unpack it first and pick the .nds file inside.\n\n' +
+    var unpack = ' Unpack it first and pick the .nds or .gba file inside.\n\n' +
       'A .zip unpacks by tapping it in the Files app. A .rar needs an unpacking app (e.g. iZip).';
-    if (u8[0] === 0x50 && u8[1] === 0x4B) return 'This is a ZIP archive, not a DS game.' + unpack;
-    if (u8[0] === 0x52 && u8[1] === 0x61 && u8[2] === 0x72 && u8[3] === 0x21) return 'This is a RAR archive, not a DS game.' + unpack;
-    if (u8[0] === 0x37 && u8[1] === 0x7A && u8[2] === 0xBC && u8[3] === 0xAF) return 'This is a 7z archive, not a DS game.' + unpack;
+    if (u8[0] === 0x50 && u8[1] === 0x4B) return 'This is a ZIP archive, not a game.' + unpack;
+    if (u8[0] === 0x52 && u8[1] === 0x61 && u8[2] === 0x72 && u8[3] === 0x21) return 'This is a RAR archive, not a game.' + unpack;
+    if (u8[0] === 0x37 && u8[1] === 0x7A && u8[2] === 0xBC && u8[3] === 0xAF) return 'This is a 7z archive, not a game.' + unpack;
     // Every DS game header has the checksum of the Nintendo logo (0xCF56) at 0x15C.
     var logoOk = u8.length >= 0x160 && (u8[0x15C] | (u8[0x15D] << 8)) === 0xCF56;
     if (!logoOk || blob.size < 0x8000) {
-      return 'This doesn\'t look like a Nintendo DS game (.nds), so it wasn\'t loaded.' +
+      return 'This doesn\'t look like a Nintendo DS (.nds) or Game Boy Advance (.gba) game, so it wasn\'t loaded.' +
         (blob.name ? '\n\nFile: ' + blob.name : '');
     }
     return null;
@@ -300,14 +318,21 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
         alert(h.error + '\n\nPlease open your game again with "Open ROM file…".');
         throw 'not a game';
       }
-      gameID = h.code[0] === '#' ? name : h.id;
       gameTitle = h.title;
       gameRegion = (h.code || '').charAt(3);
-      loader(0, h.banner || h.title || name, h.icon);
+      loader(0, h.banner || h.title || name, h.icon || (h.sys === 'gba' ? 'GBA' : null));
       if (libId) {
-        library.forEach(function (e) { if (e.id === libId) e.played = Date.now(); });
+        library.forEach(function (e) { if (e.id === libId) { e.played = Date.now(); e.sys = h.sys; } });
         saveLibrary().catch(function () {});
       }
+      if (h.sys === 'gba') {
+        // Homebrew has no game code: use the file name, like 44VBA does.
+        gameID = /^[\s0]*$/.test(h.code) ? 'gba-' + (name || h.title) : h.id;
+        gameTitle = h.banner || h.title;
+        throw { gba: startGBA(blob) };
+      }
+      setSystem('nds');
+      gameID = h.code[0] === '#' ? name : h.id;
       var size = romSize = blob.size;
       var ptr = Module._prepareRomBuffer(size);
       var CH = 4 << 20, pos = 0;
@@ -345,6 +370,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
         });
       }).catch(function (e) {
         if (e === 'not a game') { loader(false); return; }
+        if (e && e.gba) return e.gba.catch(function (err) { loader(false); $('status').textContent = 'Failed: ' + err; console.warn('gba load failed', err); });
         lastLoadError = String(e && e.stack || e).split('\n').slice(0, 3).join(' | ');
         console.warn('load failed', e);
         // Safari sometimes fails the first load of a big game when the emulator's memory grows
@@ -362,10 +388,89 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     if (pct === false) { box.hidden = true; return; }
     box.hidden = false;
     if (title !== undefined) $('loader-title').textContent = title || '';
-    if (icon) $('loader-icon').innerHTML = '<img class="size-12 [image-rendering:pixelated]" alt="" src="' + icon + '">';
-    else if (icon === null) $('loader-icon').textContent = 'DS';
+    if (icon && icon !== 'GBA') $('loader-icon').innerHTML = '<img class="size-12 [image-rendering:pixelated]" alt="" src="' + icon + '">';
+    else if (icon === null || icon === 'GBA') $('loader-icon').textContent = icon || 'DS';
     $('loader-pct').textContent = pct ? 'Loading… ' + pct + '%' : 'Loading…';
     $('loader-bar').style.width = (pct || 0) + '%';
+  }
+
+  // ---------- Game Boy Advance (44VBA, GPL-3.0) ----------
+  // Loaded only when a GBA game is opened. It is its own module (createGBA), separate from the DS one.
+  var GBA_KEY = { a: 0, b: 1, select: 2, start: 3, right: 4, left: 5, up: 6, down: 7, r: 8, l: 9 };
+  var GBA_SAVE_LEN = 0x22000, GBA_FPS = 59.7275;
+  function loadGBA() {
+    if (gbaLoading) return gbaLoading;
+    gbaLoading = new Promise(function (ok, fail) {
+      var s = document.createElement('script');
+      s.src = 'build-gba/gba.js';
+      s.onerror = function () { gbaLoading = null; fail(new Error('Couldn\'t load the GBA emulator. Check your connection and try again.')); };
+      s.onload = function () {
+        var readyFlag = false, mod = null;
+        function done() { if (readyFlag && mod) ok(mod); }
+        createGBA({
+          locateFile: function (f) { return 'build-gba/' + f; },
+          print: function (t) { console.log('[gba]', t); }, printErr: function (t) { console.warn('[gba]', t); },
+          onReady: function () { readyFlag = true; done(); },
+          onAudio: gbaAudio
+        }).then(function (m) { mod = m; done(); }, function (e) { gbaLoading = null; fail(e); });
+      };
+      document.head.appendChild(s);
+    });
+    return gbaLoading;
+  }
+  function startGBA(blob) {
+    setSystem('gba');
+    return loadGBA().then(function (m) {
+      G = m;
+      loader(5);
+      return blob.arrayBuffer();
+    }).then(function (ab) {
+      loader(60);
+      romSize = ab.byteLength;
+      G.HEAPU8.set(new Uint8Array(ab), G._emuGetSymbol(1));
+      G._emuLoadROM(romSize);
+      return KV.get('sav-' + gameID).catch(function () { return null; });
+    }).then(function (sav) {
+      // Same order as 44VBA: load the ROM, put the save in place, then reset so the game sees it.
+      var p = G._emuGetSymbol(2);
+      if (sav && sav.length) G.HEAPU8.set(sav.subarray(0, GBA_SAVE_LEN), p);
+      G._emuUpdateSavChangeFlag(); saveDirty = false; prevSaveFlag = 0;
+      G._emuResetCpu();
+      gbaRate();
+      emuIsGameLoaded = true;
+      return offerResume().then(function (how) {
+        if (how === 'cancel') { emuIsGameLoaded = false; gameID = ''; loader(false); return; }
+        showPlayer(); loader(false);
+      });
+    });
+  }
+  // The GBA makes a little under 60 frames a second; the app runs 60, so ask for slightly fewer samples.
+  function gbaRate() { if (G) G._emuSetSampleRate(Math.round((actx ? actx.sampleRate : 48000) * GBA_FPS / 60)); }
+  function gbaAudio(ptr, frames) {
+    if (!actx || fastForward || sys !== 'gba') return;
+    var s16 = new Int16Array(G.HEAPU8.buffer, ptr, frames * 2);
+    for (var i = 0; i < frames; i++) {
+      if (fLen >= FIFO) break;
+      var w = (fHead + fLen) % FIFO;
+      fifoL[w] = s16[i * 2] / 32768; fifoR[w] = s16[i * 2 + 1] / 32768; fLen++;
+    }
+    if (fLen > 6144) { fHead = (fHead + fLen - 3072) % FIFO; fLen = 3072; }
+  }
+  // DS key bits -> GBA key bits.
+  function gbaKeys(k) {
+    var out = 0;
+    for (var name in GBA_KEY) if (k & (1 << KEYS[name])) out |= 1 << GBA_KEY[name];
+    return out;
+  }
+  // One screen of 240x160 and no X / Y for GBA; two 256x192 screens for DS.
+  function setSystem(s) {
+    sys = s;
+    var gba = s === 'gba';
+    document.body.classList.toggle('gba', gba);
+    screenCanvas[0].width = gba ? 240 : 256; screenCanvas[0].height = gba ? 160 : 192;
+    screenCanvas[1].hidden = gba;
+    btns.x.hidden = btns.y.hidden = gba;
+    if (window.KRSettings && KRSettings.setActive) KRSettings.setActive(!gba);
   }
 
   function showPlayer() {
@@ -391,6 +496,15 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
 
   function runFrame(draw) {
     var keys = touchKeys | keyboardKeys;
+    if (sys === 'gba') {
+      G._emuRunFrame(gbaKeys(keys));       // sound arrives through gbaAudio while the frame runs
+      if (draw) {
+        var gfb = G._emuGetSymbol(3);
+        ctx2d[0].putImageData(new ImageData(new Uint8ClampedArray(G.HEAPU8.buffer, gfb, 240 * 160 * 4), 240, 160), 0, 0);
+      }
+      if (++frameNo % 30 === 0) checkSave();
+      return;
+    }
     Module._runFrame(draw ? 1 : 0, keys, touchDown, touchX, touchY);
     pumpAudio();
     if (window.krOnFrame) krOnFrame();
@@ -405,13 +519,15 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
 
   // ---------- saves ----------
   function copySave() {
+    if (sys === 'gba') { if (!G) return null; var gp = G._emuGetSymbol(2); return G.HEAPU8.slice(gp, gp + GBA_SAVE_LEN); }
     var n = Module._savGetSize();
     if (n <= 0) return null;
     var p = Module._savGetPointer(0);
     return Module.HEAPU8.slice(p, p + n);
   }
   function checkSave(force) {
-    var flag = Module._savUpdateChangeFlag();
+    if (sys === 'gba' && !G) return;
+    var flag = sys === 'gba' ? G._emuUpdateSavChangeFlag() : Module._savUpdateChangeFlag();
     if (flag) saveDirty = true;
     // Persist once the game has stopped writing (flag went 1 -> 0), or when forced.
     if (saveDirty && (force || (flag === 0 && prevSaveFlag === 1))) {
@@ -435,11 +551,11 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   // (leaving the app fires both visibilitychange and pagehide).
   function takeSnapshot(force) {
     if (!settings.resume || !emuIsGameLoaded || !gameID || (!force && Date.now() - lastSnapAt < 3000)) return Promise.resolve();
-    var n;
-    try { n = Module._stateSave(1); } catch (e) { n = -1; }
+    var n, M = sys === 'gba' ? G : Module, p;
+    try { n = sys === 'gba' ? G._emuStateSave() : Module._stateSave(1); } catch (e) { n = -1; }
     if (!(n > 0)) return Promise.resolve();
-    var p = Module._stateGetPointer();
-    var snap = { t: Date.now(), app: APP_VERSION, data: Module.HEAPU8.slice(p, p + n) };
+    p = sys === 'gba' ? G._emuStateBuffer() : Module._stateGetPointer();
+    var snap = { t: Date.now(), app: APP_VERSION, sys: sys, data: M.HEAPU8.slice(p, p + n) };
     var id = gameID, old = lastSnap;
     lastSnap = snap; lastSnapAt = snap.t;
     return KV.set('snap:' + id, snap)
@@ -496,13 +612,17 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
         function resumeFrom(s) {
           $('resume').hidden = true;
           var ok = -1;
-          try { var d = Module._statePrepare(s.data.length); Module.HEAPU8.set(s.data, d); ok = Module._stateLoad(); } catch (e) { ok = -1; }
+          try {
+            if (sys === 'gba') { G.HEAPU8.set(s.data, G._emuStateBuffer()); ok = G._emuStateLoad(s.data.length); gbaRate(); }
+            else { var d = Module._statePrepare(s.data.length); Module.HEAPU8.set(s.data, d); ok = Module._stateLoad(); }
+          } catch (e) { ok = -1; }
           if (ok === 0) {
             lastSnap = s; lastSnapAt = Date.now();
             // The snapshot carries the in-game save as it was then; don't treat restoring it as a new save.
-            Module._savUpdateChangeFlag(); saveDirty = false; prevSaveFlag = 0;
+            if (sys === 'gba') G._emuUpdateSavChangeFlag(); else Module._savUpdateChangeFlag();
+            saveDirty = false; prevSaveFlag = 0;
           } else {
-            try { Module._reset(); } catch (e) {}
+            try { if (sys === 'gba') G._emuResetCpu(); else Module._reset(); } catch (e) {}
             toast('Couldn\'t resume this snapshot; started normally', { icon: 'warn' });
           }
           done();
@@ -543,11 +663,13 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
         };
         proc.connect(actx.destination);
         if (ready) Module._setSampleRate(Math.round(actx.sampleRate * 59.8261 / 60));
+        gbaRate();
       }
       if (actx.state !== 'running') actx.resume();
     } catch (e) { console.warn('audio', e); }
   }
   function pumpAudio() {
+    if (sys === 'gba') return;
     var n = Module._fillAudioBuffer(4096);
     if (!actx || fastForward) return;
     var p = Module._getSymbol(6) >> 1, s16 = new Int16Array(Module.HEAPU8.buffer);
@@ -583,7 +705,25 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     // and spacing are identical in both.
     var ctrlH = Math.max(165, Math.min(230, H * 0.3));
     $('controls').classList.toggle('floating', floating);
-    if (H >= W && floating) {
+    var gba = sys === 'gba';
+    if (gba && H >= W) {
+      // GBA, portrait: one 3:2 screen across the top, the controls in the lower part of the phone.
+      sw = W; sh = W * 2 / 3; top = 0;
+      place(screenCanvas[0], 0, top, sw, sh);
+      var gh = Math.max(ctrlH, Math.min(260, H * 0.36));
+      ctl.style.top = Math.max(sh, H - gh) + 'px'; ctl.style.height = (H - Math.max(sh, H - gh)) + 'px';
+      ctl.style.opacity = 1;
+    } else if (gba) {
+      // GBA, landscape: the controls get a column on each side and the screen takes the middle,
+      // leaving a strip below it for menu, fast forward, SELECT and START.
+      var side = Math.max(170, W * 0.2);
+      sw = Math.min(H * 1.5, W - 2 * side, (H - 46) * 1.5); sh = sw / 1.5; top = 0;
+      place(screenCanvas[0], (W - sw) / 2, top, sw, sh);
+      ctl.style.top = '0px'; ctl.style.height = H + 'px';
+      ctl.style.opacity = 1;
+      layoutGbaLandscape(W, H, side, sh);
+      return;
+    } else if (H >= W && floating) {
       // Screens as large as possible; semi-transparent controls float over the bottom screen.
       sh = Math.min(W * 0.75, H / 2); sw = sh * 4 / 3; top = 0;
       place(screenCanvas[0], (W - sw) / 2, top, sw, sh);
@@ -616,10 +756,17 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     dpadRect = { x: pad, y: cy - D / 2, w: D, h: D };
     place($('dpad'), dpadRect.x, dpadRect.y, D, D);
     var b = D * 0.37, ax = cw - pad - D / 2;
-    place(btns.x, ax - b / 2, cy - D / 2, b, b);
-    place(btns.b, ax - b / 2, cy + D / 2 - b, b, b);
-    place(btns.y, ax - D / 2, cy - b / 2, b, b);
-    place(btns.a, ax + D / 2 - b, cy - b / 2, b, b);
+    if (gba) {
+      // GBA: just A and B, slanted like on the handheld (B lower left, A upper right).
+      var gb = D * 0.44;
+      place(btns.b, ax - D / 2 + D * 0.02, cy - gb / 2 + D * 0.14, gb, gb);
+      place(btns.a, ax + D / 2 - gb - D * 0.02, cy - gb / 2 - D * 0.14, gb, gb);
+    } else {
+      place(btns.x, ax - b / 2, cy - D / 2, b, b);
+      place(btns.b, ax - b / 2, cy + D / 2 - b, b, b);
+      place(btns.y, ax - D / 2, cy - b / 2, b, b);
+      place(btns.a, ax + D / 2 - b, cy - b / 2, b, b);
+    }
     var pw = Math.min(84, D * 0.75), ph = 30;
     // L / R and menu / fast forward sit just above the D-pad and face buttons. In portrait that is
     // the top of the controls; in landscape it keeps them away from the screen's top edge.
@@ -651,6 +798,26 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     window.krPillSpot = { x: C.left + mid, y: C.top + (spotTop + ch - h - 10) / 2 };
     if (window.krLayout) krLayout();
   }
+  function layoutGbaLandscape(W, H, side, sh) {
+    var pad = 14, D = Math.min(side - 2 * pad, H * 0.45, 170), cy = H * 0.58, ph = 30, pw = Math.min(84, side - 2 * pad);
+    dpadRect = { x: (side - D) / 2, y: cy - D / 2, w: D, h: D };
+    place($('dpad'), dpadRect.x, dpadRect.y, D, D);
+    var ax = W - side / 2, gb = D * 0.44;
+    place(btns.b, ax - D / 2 + D * 0.02, cy - gb / 2 + D * 0.14, gb, gb);
+    place(btns.a, ax + D / 2 - gb - D * 0.02, cy - gb / 2 - D * 0.14, gb, gb);
+    var rowY = Math.max(10, cy - D / 2 - ph - 22);
+    place(btns.l, (side - pw) / 2, rowY, pw, ph);
+    place(btns.r, W - side + (side - pw) / 2, rowY, pw, ph);
+    // Strip under the screen: SELECT, menu, fast forward, START.
+    var h = 26, bw = 52, gap = 8, y = sh + (H - sh - h) / 2, x0 = W / 2 - (4 * bw + 3 * gap) / 2;
+    place(btns.select, x0, y, bw, h);
+    place($('btn-menu'), x0 + bw + gap, y, bw, h);
+    place($('btn-ff'), x0 + 2 * (bw + gap), y, bw, h);
+    place(btns.start, x0 + 3 * (bw + gap), y, bw, h);
+    var sheetH = Math.round(H * 0.8) + 'px';
+    document.documentElement.style.setProperty('--sheet-h', sheetH);
+    document.documentElement.style.setProperty('--sheet-max', sheetH);
+  }
   // iPhone reports the new size a little late after rotating, so lay out again a few times.
   function relayout() { if (uiCurrentMode !== 'player') return; [50, 250, 600, 1200].forEach(function (ms) { setTimeout(layout, ms); }); }
   addEventListener('resize', relayout);
@@ -664,7 +831,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   }
   var CONTROL_MARGIN = 15;
   function nearControl(x, y) {
-    for (var k in btns) if (hit(btns[k], x, y, CONTROL_MARGIN)) return true;
+    for (var k in btns) if (!btns[k].hidden && hit(btns[k], x, y, CONTROL_MARGIN)) return true;
     return hit($('dpad'), x, y, CONTROL_MARGIN) || hit($('btn-menu'), x, y, CONTROL_MARGIN) || hit($('btn-ff'), x, y, CONTROL_MARGIN);
   }
   function onTouch(e) {
@@ -678,7 +845,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     for (var i = 0; i < e.touches.length; i++) {
       var t = e.touches[i], x = t.clientX, y = t.clientY;
       var found = false;
-      for (var k in btns) if (hit(btns[k], x, y)) { keys |= 1 << KEYS[k]; found = true; }
+      for (var k in btns) if (!btns[k].hidden && hit(btns[k], x, y)) { keys |= 1 << KEYS[k]; found = true; }
       if (hit($('btn-menu'), x, y)) { menuDown = true; continue; }
       if (hit($('btn-ff'), x, y)) { ffDown = true; continue; }
       if (found) continue;
@@ -756,8 +923,11 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     setSeg('controls', settings.controls);
     setSeg('subs', window.KRSettings ? KRSettings.getMode() : 'bar');
     $('m-resume').setAttribute('aria-checked', String(!!settings.resume));
-    var study = !window.KRSettings || KRSettings.getStudy();
+    var study = (!window.KRSettings || KRSettings.getStudy()) && sys !== 'gba';
     $('m-study').setAttribute('aria-checked', String(study));
+    // GBA games have no study overlay (the text reader only knows DS Pokémon games).
+    $('m-study').hidden = sys === 'gba';
+    document.querySelector('[data-m=snapshot]').hidden = sys === 'gba';
     // Study mode off: hide every study-related row.
     $('m-subs-row').hidden = !study; $('m-words-row').hidden = !study;
     $('m-reset-box').hidden = !study || !window.KRSettings || KRSettings.getMode() !== 'box';
@@ -767,7 +937,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
       (lastLoadError ? '<br>Last load problem (retried): ' + lastLoadError.replace(/</g, '&lt;') : '') +
       (st ? '<br>Reader: ' + st.strings + ' strings in memory, ' + st.korean + ' in the game’s language, ' + st.printers + ' being printed' : '') +
       '<br>The game saves automatically a few seconds after you save in‑game.' +
-      '<br>Emulator: desmume‑wasm (GPL‑2.0). Character table and Pokémon names: PKHeX (GPL‑3.0). Dictionaries: kengdic (MPL‑2.0), JMdict by the EDRDG (CC BY‑SA 4.0). Icons: Heroicons (MIT).';
+      '<br>Emulators: desmume‑wasm (GPL‑2.0) for DS, 44VBA (GPL‑3.0) for GBA. Character table and Pokémon names: PKHeX (GPL‑3.0). Dictionaries: kengdic (MPL‑2.0), JMdict by the EDRDG (CC BY‑SA 4.0). Icons: Heroicons (MIT).';
   }
   function setSeg(name, v) {
     Array.prototype.forEach.call(document.querySelectorAll('[data-seg=' + name + '] button'), function (b) { b.setAttribute('aria-pressed', b.dataset.v === v ? 'true' : 'false'); });
