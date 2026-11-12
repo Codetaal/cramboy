@@ -6,6 +6,7 @@
 3. On approval, for every release:
    - Bump the semantic version in **both** `docs/emu.js` (`APP_VERSION`) and `docs/sw.js` (`VERSION = 'cheeselab-vX.Y.Z'`):
      patch = fixes, minor = new features, major = big changes.
+     Until the full 1.0 release the version stays 0.x (0.5.3 followed 1.5.2); minor = features, patch = fixes.
    - Add an entry to `CHANGELOG.md`.
    - Push to `main`, then create and push a git tag `vX.Y.Z`.
 

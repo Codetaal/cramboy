@@ -31,7 +31,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var standalone = window.navigator.standalone || matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches;
   if (isIOS && !standalone) $('ios-hint').hidden = false;
-  var APP_VERSION = '1.5.2';   // semantic version; keep in sync with sw.js
+  var APP_VERSION = '0.5.3';   // semantic version; keep in sync with sw.js
   $('ver').textContent = 'Version ' + APP_VERSION;
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
     var hadController = !!navigator.serviceWorker.controller;
@@ -653,6 +653,11 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     var r = n.getBoundingClientRect(); slop = slop || 6;
     return x >= r.left - slop && x <= r.right + slop && y >= r.top - slop && y <= r.bottom + slop;
   }
+  var CONTROL_MARGIN = 15;
+  function nearControl(x, y) {
+    for (var k in btns) if (hit(btns[k], x, y, CONTROL_MARGIN)) return true;
+    return hit($('dpad'), x, y, CONTROL_MARGIN) || hit($('btn-menu'), x, y, CONTROL_MARGIN) || hit($('btn-ff'), x, y, CONTROL_MARGIN);
+  }
   function onTouch(e) {
     if (uiCurrentMode !== 'player') return;
     if (e.target.closest && e.target.closest('#menu')) return;
@@ -680,6 +685,9 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
         if (a < -22.5 && a > -157.5) { keys |= 1 << KEYS.up; dpCls += ' u'; }
         continue;
       }
+      // A touch just next to a button or the D-pad is a missed press, not a tap on the game:
+      // ignore it within 15 px of any control. The open space between controls still works.
+      if (nearControl(x, y)) continue;
       if (!td && x >= bottom.left && x <= bottom.right && y >= bottom.top && y <= bottom.bottom) {
         td = 1;
         touchX = Math.max(0, Math.min(255, Math.floor((x - bottom.left) / bottom.width * 256)));

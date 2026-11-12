@@ -2,6 +2,12 @@
 
 CheeseLab uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.5.3
+CheeseLab is still being built, so version numbers now start with 0 until the full 1.0 release.
+0.5.3 is the release after 1.5.2 (the 1.x numbers below are the earlier releases).
+- The translate button fades softly (0.8 s) between its normal colour and amber when text appears or disappears, instead of switching at once.
+- A touch that just misses a button or the D-pad (within 15 px) no longer counts as a tap on the game's touch screen, which mattered most with Floating controls. The open space between the controls still works as a touch screen.
+
 ## 1.5.2
 - Fixed: the subtitles sometimes showed a single letter of a touch-screen button (in HeartGold "조" from the "조사한다" button) instead of the dialogue. Text now only counts as dialogue once it is actually being typed out (or is fully printed).
 
