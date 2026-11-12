@@ -418,6 +418,18 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     });
     return gbaLoading;
   }
+  function gbaStudy() { return sys === 'gba' && gameRegion === 'J'; }
+  // Views over the GBA's game file, work RAM and internal RAM for the text reader.
+  var gbaMem = null;
+  window.krGbaMemory = function () {
+    if (!G) return null;
+    if (!gbaMem || gbaMem.buf !== G.HEAPU8.buffer || gbaMem.size !== romSize) {
+      var b = G.HEAPU8.buffer;
+      gbaMem = { buf: b, size: romSize, rom: new Uint8Array(b, G._emuGetSymbol(1), romSize),
+        ew: new Uint8Array(b, G._emuGetSymbol(5), 0x40000), iw: new Uint8Array(b, G._emuGetSymbol(6), 0x8000) };
+    }
+    return gbaMem;
+  };
   function startGBA(blob) {
     setSystem('gba');
     return loadGBA().then(function (m) {
@@ -470,7 +482,10 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     screenCanvas[0].width = gba ? 240 : 256; screenCanvas[0].height = gba ? 160 : 192;
     screenCanvas[1].hidden = gba;
     btns.x.hidden = btns.y.hidden = gba;
-    if (window.KRSettings && KRSettings.setActive) KRSettings.setActive(!gba);
+    // Study overlay: DS games, and Japanese GBA Pokémon games (Emerald engine, read by kr/gen3.js).
+    if (window.KRSetSystem) KRSetSystem(s);
+    if (window.KRSettings && KRSettings.setActive) KRSettings.setActive(!gba || gbaStudy());
+    if (gba && gbaStudy() && window.KRSetLang) KRSetLang('ja');
   }
 
   function showPlayer() {
@@ -498,6 +513,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     var keys = touchKeys | keyboardKeys;
     if (sys === 'gba') {
       G._emuRunFrame(gbaKeys(keys));       // sound arrives through gbaAudio while the frame runs
+      if (window.krOnFrame) krOnFrame();
       if (draw) {
         var gfb = G._emuGetSymbol(3);
         ctx2d[0].putImageData(new ImageData(new Uint8ClampedArray(G.HEAPU8.buffer, gfb, 240 * 160 * 4), 240, 160), 0, 0);
@@ -817,6 +833,9 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     var sheetH = Math.round(H * 0.8) + 'px';
     document.documentElement.style.setProperty('--sheet-h', sheetH);
     document.documentElement.style.setProperty('--sheet-max', sheetH);
+    // Translate button: top of the left column, above L.
+    window.krPillSpot = { x: side / 2, y: Math.max(30, rowY / 2) };
+    if (window.krLayout) krLayout();
   }
   // iPhone reports the new size a little late after rotating, so lay out again a few times.
   function relayout() { if (uiCurrentMode !== 'player') return; [50, 250, 600, 1200].forEach(function (ms) { setTimeout(layout, ms); }); }
@@ -923,10 +942,11 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     setSeg('controls', settings.controls);
     setSeg('subs', window.KRSettings ? KRSettings.getMode() : 'bar');
     $('m-resume').setAttribute('aria-checked', String(!!settings.resume));
-    var study = (!window.KRSettings || KRSettings.getStudy()) && sys !== 'gba';
+    var noStudy = sys === 'gba' && !gbaStudy();
+    var study = (!window.KRSettings || KRSettings.getStudy()) && !noStudy;
     $('m-study').setAttribute('aria-checked', String(study));
-    // GBA games have no study overlay (the text reader only knows DS Pokémon games).
-    $('m-study').hidden = sys === 'gba';
+    // Only Japanese GBA Pokémon games have a study overlay; other GBA games don't show the switch.
+    $('m-study').hidden = noStudy;
     document.querySelector('[data-m=snapshot]').hidden = sys === 'gba';
     // Study mode off: hide every study-related row.
     $('m-subs-row').hidden = !study; $('m-words-row').hidden = !study;
@@ -937,7 +957,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
       (lastLoadError ? '<br>Last load problem (retried): ' + lastLoadError.replace(/</g, '&lt;') : '') +
       (st ? '<br>Reader: ' + st.strings + ' strings in memory, ' + st.korean + ' in the game’s language, ' + st.printers + ' being printed' : '') +
       '<br>The game saves automatically a few seconds after you save in‑game.' +
-      '<br>Emulators: desmume‑wasm (GPL‑2.0) for DS, 44VBA (GPL‑3.0) for GBA. Character table and Pokémon names: PKHeX (GPL‑3.0). Dictionaries: kengdic (MPL‑2.0), JMdict by the EDRDG (CC BY‑SA 4.0). Icons: Heroicons (MIT).';
+      '<br>Emulators: desmume‑wasm (GPL‑2.0) for DS, 44VBA (GPL‑3.0) for GBA. Character table and Pokémon names: PKHeX (GPL‑3.0). GBA text format: pret/pokeemerald. Dictionaries: kengdic (MPL‑2.0), JMdict by the EDRDG (CC BY‑SA 4.0). Icons: Heroicons (MIT).';
   }
   function setSeg(name, v) {
     Array.prototype.forEach.call(document.querySelectorAll('[data-seg=' + name + '] button'), function (b) { b.setAttribute('aria-pressed', b.dataset.v === v ? 'true' : 'false'); });

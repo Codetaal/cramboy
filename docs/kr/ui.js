@@ -7,7 +7,8 @@
   var HIDE_AFTER_MS = 3500;    // hide subtitles this long after the dialogue box closes
 
   var BASE = (document.currentScript && document.currentScript.src) ? document.currentScript.src.replace(/[^/]*$/, '') : 'kr/';
-  var reader = new KRReader(window.KR_TABLE);
+  var dsReader = new KRReader(window.KR_TABLE), gbaReader = window.KRGen3Reader ? new KRGen3Reader() : null;
+  var reader = dsReader, system = 'nds';
   // Storage: the app's IndexedDB helper (kv.js) when present, otherwise localForage.
   var store = window.KV ? {
     getItem: function (k) { return KV.get('kr-' + k); },
@@ -41,6 +42,8 @@
   // User-placed box per orientation, in DS pixels relative to the top screen's top-left.
   var boxGeo = {};
   var BOX_DEFAULT = { x: 0, y: 142, w: 256, h: 50 };
+  // Emerald's message box covers GBA pixels y 112..160 at the bottom of the screen.
+  var BOX_DEFAULT_GBA = { x: 0, y: 110, w: 240, h: 50 };
   var sheet = el('div', { id: 'kr-sheet', className: 'fixed inset-0 z-30 flex flex-col justify-end bg-black/40', hidden: true });
   var card = el('div', { className: 'kr-card h-[var(--sheet-h,auto)] max-h-[var(--sheet-max,92vh)] flex flex-col [&>*]:shrink-0 overflow-y-auto rounded-t-3xl bg-zinc-50 px-4 pt-2 text-zinc-900 shadow-2xl dark:bg-zinc-950 dark:text-white' });
   // Tailwind class sets for the sheets
@@ -153,9 +156,18 @@
   };
 
   // ---------- emulator hooks ----------
+  // Called by the app when a game starts: 'nds' or 'gba' (Gen 3 Pokémon, read with gen3.js).
+  window.KRSetSystem = function (sys) {
+    sys = sys === 'gba' && gbaReader ? 'gba' : 'nds';
+    if (sys === system) return;
+    system = sys; reader = sys === 'gba' ? gbaReader : dsReader;
+    current = null; history = []; otherText = [];
+    krLayout(); renderPanel();
+  };
   window.krOnFrame = function () {
     if (!studyOn() || ++frame % SCAN_EVERY) return;
     try {
+      if (system === 'gba') { if (window.krGbaMemory) handleScan(reader.scan(krGbaMemory())); return; }
       var mem = Module._getSymbol(7);
       var buf = Module.HEAPU8.buffer;
       if (!views || views.buf !== buf || views.mem !== mem) {
@@ -175,10 +187,12 @@
     var r = screenCanvas[0].getBoundingClientRect(), b = screenCanvas[1] && screenCanvas[1].getBoundingClientRect();
     // Orientation comes from the window itself, not from where the screens happen to be drawn:
     // right after rotating, iPhone can still report the old layout for a moment.
-    return { top: r, bottom: b && b.width ? b : null, k: r.width / 256, key: vw().w > vw().h ? 'landscape' : 'portrait' };
+    var o = vw().w > vw().h ? 'landscape' : 'portrait';
+    // GBA screens are 240 pixels wide and keep their own box position, apart from the DS one.
+    return { top: r, bottom: b && b.width ? b : null, k: r.width / (system === 'gba' ? 240 : 256), key: system === 'gba' ? 'gba-' + o : o };
   }
   function placeBox() {
-    var s = screens(), g = boxGeo[s.key] || BOX_DEFAULT, k = s.k;
+    var s = screens(), g = boxGeo[s.key] || (system === 'gba' ? BOX_DEFAULT_GBA : BOX_DEFAULT), k = s.k;
     // Never let a saved position put the box (or its grip) off screen.
     var V = vw(), bw = Math.min(g.w * k, V.w), bh = Math.min(g.h * k, V.h);
     var bl = Math.max(0, Math.min(V.w - bw, s.top.left + g.x * k)), bt = Math.max(12, Math.min(V.h - bh, s.top.top + g.y * k));
@@ -189,7 +203,7 @@
     box.style.left = (s.top.left + g.x * k) + 'px'; box.style.top = (s.top.top + g.y * k) + 'px';
     box.style.width = (g.w * k) + 'px'; box.style.height = (g.h * k) + 'px';
     // Text size follows the box height (always two lines, like the game's box)...
-    boxK = k * g.h / BOX_DEFAULT.h;
+    boxK = k * g.h / (system === 'gba' ? BOX_DEFAULT_GBA : BOX_DEFAULT).h;
     fitBox();
   }
   var boxK = 1.46;
@@ -244,6 +258,8 @@
     var pr = r2 && r2.width > 0 ? r2 : r;
     panel.style.left = pr.left + 'px'; panel.style.top = pr.top + 'px';
     panel.style.width = pr.width + 'px'; panel.style.maxHeight = '';
+    // GBA in portrait: one screen, so the bar goes just below it, in the space above the controls.
+    if (system === 'gba' && vw().h > vw().w) panel.style.top = r.bottom + 'px';
     // Portrait: centred in the gap between menu/fast forward and SELECT. Landscape: top-left of the top screen.
     var spot = window.krPillSpot;
     pill.classList.toggle('kr-big', !!spot);

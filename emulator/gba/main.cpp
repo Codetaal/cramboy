@@ -133,6 +133,14 @@ void *emuGetSymbol(int id) {
   if (id == 4) {
     return emuGBuf;
   }
+  // Game memory for the study overlay's text reader: 256 KB work RAM (0x02000000) and
+  // 32 KB internal RAM (0x03000000).
+  if (id == 5) {
+    return workRAM;
+  }
+  if (id == 6) {
+    return internalRAM;
+  }
   return 0;
 }
 

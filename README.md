@@ -36,10 +36,15 @@ Game Boy Advance games use `emulator/build_gba.sh`, which compiles [44VBA](https
 `port-wasm/main.cpp` with sound and start-up callbacks for the app and save-state functions for Resume.
 It is built as a separate module (`createGBA()`) and only downloaded when a GBA game is opened: the app
 picks the emulator from the file's header (`.gba` has 0x96 at 0xB2, a DS game has the logo checksum at 0x15C).
-The study overlay is off for GBA games.
+For Japanese GBA Pokémon games on the Emerald engine (Emerald, FireRed, LeafGreen) `docs/kr/gen3.js`
+reads the text: it finds the game's text printers in work RAM by their shape (`struct TextPrinter`
+in pret/pokeemerald: a `currentChar` pointer, window id, font id, callback, `active` flag) and
+follows the cursor of the one that is typing; characters use the Japanese Gen 3 table. The core
+exposes work RAM and internal RAM for this (`emuGetSymbol(5)` / `(6)`). Other GBA games have no
+study overlay.
 
 ## Tests
-`node tests/reader.test.js`, `node tests/lookup.test.js` and `node tests/ja-lookup.test.js`.
+`node tests/reader.test.js`, `node tests/lookup.test.js`, `node tests/ja-lookup.test.js` and `node tests/gen3.test.js`.
 
 Styles use Tailwind CSS: after changing classes in `docs/index.html`, `docs/emu.js` or
 `docs/kr/ui.js`, run `npm install` once and then `npm run build:css` to regenerate `docs/tw.css`.

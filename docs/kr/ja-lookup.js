@@ -1,4 +1,4 @@
-// Japanese word lookup for CheeseLab: turns inflected words back into their dictionary form
+// Japanese word lookup for CramBoy: turns inflected words back into their dictionary form
 // (行きました -> 行く, たべない -> たべる) and finds the longest dictionary word at a tapped position.
 // Dictionary format (ja-dict.json): {e: [[word, reading, pos, gloss], ...], f: {form: [entry index, ...]}}
 // pos: '1' ichidan verb, '5x' godan verb ending in x, 's' suru verb, 'k' kuru verb, 'i' i-adjective, 'n' other.

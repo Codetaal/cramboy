@@ -1,12 +1,14 @@
 # Changelog
 
-CheeseLab uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
+CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
 ## 0.6.0
 - Game Boy Advance games: open a `.gba` file and CramBoy starts a GBA emulator (44VBA, GPL-3.0) instead of the DS one. The app picks the emulator from the file itself; DS games work as before.
 - GBA layout: one screen, with D-pad, A, B, L, R, SELECT and START (no X / Y, no touch screen). In landscape the controls sit beside the screen and the small buttons sit below it.
 - GBA in-game saves are stored on the device like DS saves, and Resume (experimental) works for GBA games too.
-- GBA games show a "GBA" tile in the game list. The study overlay (subtitles and words) is hidden for GBA games; it only reads DS Pokémon games.
+- GBA games show a "GBA" tile in the game list.
+- Japanese Pokémon Emerald (and other Japanese games on the same engine, FireRed and LeafGreen): the study overlay works on GBA too. CramBoy follows the game's own text printer as it types, shows the Japanese text as subtitles (bar below the screen in portrait, or a movable box over the game's message box) and you can tap words for the Japanese dictionary. The box keeps its own position for GBA, apart from the DS one.
+- Other GBA games (and non-Japanese versions) have no study overlay; the switch is hidden in the menu for them.
 - The GBA emulator is about 0.6 MB and is stored for offline use.
 
 ## 0.5.5
