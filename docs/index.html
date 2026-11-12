@@ -117,7 +117,9 @@
     </div>
   </div>
 
-      <!-- Experimental resume: shown when a game with a snapshot starts -->
+      <!-- Blinks briefly at the top-right of the game screen when a Resume snapshot is stored -->
+    <div id="snap-flash" class="pointer-events-none fixed z-[6] grid size-7 place-items-center rounded-full bg-black/55 text-white/90 opacity-0 transition-opacity duration-200 data-[show]:opacity-100" aria-hidden="true"><span data-hi="camera" data-hi-class="size-4"></span></div>
+    <!-- Experimental resume: shown when a game with a snapshot starts -->
     <div id="resume" class="fixed inset-0 z-40 grid place-items-center bg-zinc-950/40 px-6 backdrop-blur-sm" hidden>
       <div class="w-full max-w-xs rounded-3xl bg-white p-5 text-center shadow-2xl ring-1 ring-zinc-900/5 dark:bg-zinc-900 dark:ring-white/10">
         <div id="resume-icon" class="mx-auto grid size-16 place-items-center rounded-2xl bg-zinc-100 text-sm font-semibold text-zinc-400 ring-1 ring-inset ring-zinc-900/5 dark:bg-zinc-800 dark:text-zinc-500 dark:ring-white/10">DS</div>

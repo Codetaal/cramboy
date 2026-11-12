@@ -2,6 +2,11 @@
 
 CheeseLab uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 1.4.1
+- Resume (experimental): a small camera blinks for a moment at the top-right of the game screen whenever a snapshot is stored.
+- The menu and the word sheets are now 70% of the screen height, in portrait and landscape.
+- Landscape: the screens sit at the top of the phone, and the controls in the strip below them (D-pad left, A/B/X/Y right, L and R just inside them, menu/fast forward and SELECT/START side by side in the middle). On wider phones where that strip is too thin, the controls float low over the screens instead.
+
 ## 1.4.0
 - New, experimental: **Resume where you left off** (Menu › Advanced, off by default). Takes a snapshot of the whole game every 2 minutes and whenever you leave the app or close the game. When you start that game again, a card offers "Resume where you left off" or "Start normally". It warns you if you saved in the game after the snapshot. Turning it off deletes all snapshots.
 - Emulator rebuilt with save-state support, plus three small fixes to the emulator source that made loading a snapshot crash (see `emulator/extra/patches/apply.sh`).

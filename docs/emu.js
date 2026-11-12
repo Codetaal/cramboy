@@ -31,7 +31,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var standalone = window.navigator.standalone || matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches;
   if (isIOS && !standalone) $('ios-hint').hidden = false;
-  var APP_VERSION = '1.4.0';   // semantic version; keep in sync with sw.js
+  var APP_VERSION = '1.4.1';   // semantic version; keep in sync with sw.js
   $('ver').textContent = 'Version ' + APP_VERSION;
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
     var hadController = !!navigator.serviceWorker.controller;
@@ -421,12 +421,21 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     var id = gameID, old = lastSnap;
     lastSnap = snap; lastSnapAt = snap.t;
     return KV.set('snap:' + id, snap)
-      .then(function () { return old ? KV.set('snap-prev:' + id, old) : null; })
+      .then(function () { snapFlash(); return old ? KV.set('snap-prev:' + id, old) : null; })
       .then(function () { return KV.get('snap-ids'); })
       .then(function (ids) { ids = ids || []; if (ids.indexOf(id) < 0) { ids.push(id); return KV.set('snap-ids', ids); } })
       .catch(function () { toast('Couldn\'t store a snapshot', { icon: 'warn' }); });
   }
   setInterval(function () { if (emuIsRunning) takeSnapshot(); }, SNAP_EVERY);
+  // A small camera blinks at the top-right of the game screen once a snapshot is stored.
+  var flashTimer = null;
+  function snapFlash() {
+    if (document.hidden || uiCurrentMode !== 'player') return;
+    var f = $('snap-flash'), r = screenCanvas[0].getBoundingClientRect();
+    f.style.left = (r.right - 34) + 'px'; f.style.top = (r.top + 6) + 'px';
+    f.setAttribute('data-show', '');
+    clearTimeout(flashTimer); flashTimer = setTimeout(function () { f.removeAttribute('data-show'); }, 1200);
+  }
   function deleteSnapshots() {
     lastSnap = null;
     return KV.get('snap-ids').then(function (ids) {
@@ -542,7 +551,8 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
       ctl.style.top = (top + sh * 2) + 'px'; ctl.style.height = (H - top - sh * 2) + 'px';
       ctl.style.opacity = 1;
     } else {
-      sh = Math.min(H, (W / 2) * 0.75); sw = sh * 4 / 3; top = (H - sh) / 2;
+      // Landscape: screens side by side at the top; the space below is for the controls.
+      sh = Math.min(H, (W / 2) * 0.75); sw = sh * 4 / 3; top = 0;
       place(screenCanvas[0], W / 2 - sw, top, sw, sh);
       place(screenCanvas[1], W / 2, top, sw, sh);
       ctl.style.top = '0px'; ctl.style.height = H + 'px';
@@ -551,7 +561,13 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     var C = ctl.getBoundingClientRect(), cw = C.width, ch = C.height;
     var pad = 14, topRow = 40;                         // L / R row
     var D = Math.min(ch - topRow - 10, cw * 0.34, 170);
-    var cy = topRow + (ch - topRow) / 2;
+    var land = W > H;
+    // Landscape: the screens sit at the top. If the strip below them is tall enough, all controls go
+    // in that strip (sized to fit); on wider phones with only a thin strip, they float low over the screens.
+    var bandTop = land ? top + sh : 0, bandH = ch - bandTop, inBand = land && bandH >= 110;
+    if (inBand) D = Math.min(170, bandH - 12, cw * 0.3);
+    if (land) ctl.style.opacity = inBand ? 1 : 0.6;   // solid when they don't cover the screens
+    var cy = inBand ? bandTop + bandH / 2 : land ? ch - D / 2 - 14 : topRow + (ch - topRow) / 2;
     dpadRect = { x: pad, y: cy - D / 2, w: D, h: D };
     place($('dpad'), dpadRect.x, dpadRect.y, D, D);
     var b = D * 0.37, ax = cw - pad - D / 2;
@@ -562,20 +578,32 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     var pw = Math.min(84, D * 0.75), ph = 30;
     // L / R and menu / fast forward sit just above the D-pad and face buttons. In portrait that is
     // the top of the controls; in landscape it keeps them away from the screen's top edge.
-    var rowY = H >= W ? 4 : Math.max(4, dpadRect.y - ph - 12);
-    place(btns.l, pad, rowY, pw, ph);
-    place(btns.r, cw - pad - pw, rowY, pw, ph);
+    var rowY = H >= W ? 4 : inBand ? bandTop + 6 : Math.max(4, dpadRect.y - ph - 12);
+    if (inBand) {
+      // In the strip: L and R just inside the D-pad and the face buttons, at the top of the strip.
+      place(btns.l, pad + D + 10, rowY, pw, ph);
+      place(btns.r, cw - pad - D - 10 - pw, rowY, pw, ph);
+    } else {
+      place(btns.l, pad, rowY, pw, ph);
+      place(btns.r, cw - pad - pw, rowY, pw, ph);
+    }
     // Centre column between the D-pad and the face buttons.
     var colW = Math.min(84, cw - 2 * (pad + D) - 12), mid = cw / 2, h = 26;
     place($('btn-menu'), mid - colW / 2, rowY + 2, colW / 2 - 3, h);
     place($('btn-ff'), mid + 3, rowY + 2, colW / 2 - 3, h);
-    place(btns.select, mid - colW / 2, ch - 2 * h - 18, colW, h);
-    place(btns.start, mid - colW / 2, ch - h - 10, colW, h);
-    // Portrait: menus and word sheets are always exactly as tall as the bottom screen area,
-    // so the top screen stays visible. Landscape: as tall as their content (up to 92%).
-    var sheetH = Math.round(H - screenCanvas[0].getBoundingClientRect().bottom) + 'px';
-    document.documentElement.style.setProperty('--sheet-h', H >= W ? sheetH : 'auto');
-    document.documentElement.style.setProperty('--sheet-max', H >= W ? sheetH : '92vh');
+    if (land) {
+      // Landscape: SELECT and START side by side at the bottom centre.
+      var sw2 = Math.min(84, colW);
+      place(btns.select, mid - sw2 - 4, ch - h - 10, sw2, h);
+      place(btns.start, mid + 4, ch - h - 10, sw2, h);
+    } else {
+      place(btns.select, mid - colW / 2, ch - 2 * h - 18, colW, h);
+      place(btns.start, mid - colW / 2, ch - h - 10, colW, h);
+    }
+    // Menus and word sheets are always 70% of the screen height, in portrait and landscape.
+    var sheetH = Math.round(H * 0.7) + 'px';
+    document.documentElement.style.setProperty('--sheet-h', sheetH);
+    document.documentElement.style.setProperty('--sheet-max', sheetH);
     // Portrait: the translate button goes in the empty centre gap of the controls.
     window.krPillSpot = H >= W ? { x: C.left + mid, y: C.top + (6 + h + ch - 2 * h - 18) / 2 } : null;
     if (window.krLayout) krLayout();
