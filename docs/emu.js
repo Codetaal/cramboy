@@ -31,7 +31,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var standalone = window.navigator.standalone || matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches;
   if (isIOS && !standalone) $('ios-hint').hidden = false;
-  var APP_VERSION = '1.4.2';   // semantic version; keep in sync with sw.js
+  var APP_VERSION = '1.4.3';   // semantic version; keep in sync with sw.js
   $('ver').textContent = 'Version ' + APP_VERSION;
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
     var hadController = !!navigator.serviceWorker.controller;
@@ -534,17 +534,17 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     if (window.scrollX || window.scrollY) window.scrollTo(0, 0);
     var vp = viewSize(), W = vp.w, H = vp.h, ctl = $('controls'), sw, sh, top;
     var floating = settings.controls === 'floating';
+    // Same controls area in portrait for Below and Floating, so buttons and spacing are identical.
+    var ctrlH = Math.max(165, Math.min(240, H * 0.27));
     $('controls').classList.toggle('floating', floating);
     if (H >= W && floating) {
       // Screens as large as possible; semi-transparent controls float over the bottom screen.
       sh = Math.min(W * 0.75, H / 2); sw = sh * 4 / 3; top = 0;
       place(screenCanvas[0], (W - sw) / 2, top, sw, sh);
       place(screenCanvas[1], (W - sw) / 2, top + sh, sw, sh);
-      var fh = Math.max(165, Math.min(230, H * 0.3));
-      ctl.style.top = (H - fh) + 'px'; ctl.style.height = fh + 'px';
+      ctl.style.top = (H - ctrlH) + 'px'; ctl.style.height = ctrlH + 'px';
       ctl.style.opacity = 0.45;
     } else if (H >= W) {
-      var ctrlH = Math.max(165, Math.min(240, H * 0.27));
       sh = Math.min(W * 0.75, (H - ctrlH) / 2); sw = sh * 4 / 3; top = 0;
       place(screenCanvas[0], (W - sw) / 2, top, sw, sh);
       place(screenCanvas[1], (W - sw) / 2, top + sh, sw, sh);

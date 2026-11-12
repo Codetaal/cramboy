@@ -2,6 +2,9 @@
 
 CheeseLab uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 1.4.3
+- Portrait: Floating now uses exactly the same controls area as Below, so every button and the translate button sit in the same place and at the same size in both settings.
+
 ## 1.4.2
 - Landscape: the controls keep their full size again (the same with Below and Floating), low on the phone; they may overlap the screens a little, see-through there. The screens stay at the top.
 
