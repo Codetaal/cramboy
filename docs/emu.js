@@ -581,7 +581,9 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     var floating = settings.controls === 'floating';
     // Same controls area in portrait for Below and Floating (the roomier Floating size), so buttons
     // and spacing are identical in both.
-    var ctrlH = Math.max(165, Math.min(230, H * 0.3));
+    // Portrait: the controls area is as tall as the big D-pad and face buttons need (see layoutPortrait),
+    // but never more than 36% of the screen.
+    var ctrlH = Math.max(165, Math.min(PORTRAIT.need(W) + 16, H * 0.36));
     $('controls').classList.toggle('floating', floating);
     if (H >= W && floating) {
       // Screens as large as possible; semi-transparent controls float over the bottom screen.
@@ -607,6 +609,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     var C = ctl.getBoundingClientRect(), cw = C.width, ch = C.height;
     // Portrait: keep the controls a bit further up from the bottom edge of the phone.
     if (H >= W) ch -= 16;
+    if (H >= W) { layoutPortrait(C, cw, ch); return; }
     var pad = 14, topRow = H >= W ? 52 : 40;           // L / R row (portrait: more room below it)
     var D = Math.min(ch - topRow - 10, cw * 0.34, 170);
     var land = W > H;
@@ -649,6 +652,47 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     // above SELECT / START.
     var spotTop = land ? Math.max(rowY + 2 + h, top + sh) : 6 + h;
     window.krPillSpot = { x: C.left + mid, y: C.top + (spotTop + ch - h - 10) / 2 };
+    if (window.krLayout) krLayout();
+  }
+  // Portrait controls: a big D-pad and big face buttons for thumbs; the small buttons keep their slim size.
+  //   top row:    L | menu | translate button | fast forward | R
+  //   middle:     D-pad                         A B X Y
+  //   bottom row:            SELECT | START
+  var PORTRAIT = {
+    pad: 12, inner: 10, gap: 6, top: 8, lrH: 30, smallH: 26, maxD: 184,
+    // D-pad size that fits the width: two clusters side by side.
+    widthD: function (cw) { return Math.min((cw - 2 * this.pad - 2 * this.inner) / 2, this.maxD); },
+    // Height the controls need for that D-pad.
+    need: function (cw) { return this.top + this.lrH + this.gap + this.widthD(cw) + this.gap + this.smallH + 6; }
+  };
+  function layoutPortrait(C, cw, ch) {
+    var P = PORTRAIT, pad = P.pad;
+    var D = Math.min(P.widthD(cw), ch - (P.top + P.lrH + P.gap + P.gap + P.smallH + 6));
+    var rowY = P.top, free = ch - P.need(cw) + (P.widthD(cw) - D);
+    var cy = rowY + P.lrH + P.gap + D / 2 + Math.max(0, free / 2);
+    dpadRect = { x: pad, y: cy - D / 2, w: D, h: D };
+    place($('dpad'), dpadRect.x, dpadRect.y, D, D);
+    // Face buttons: neighbours (Y-X, X-A, ...) keep at least 14 px between them, so a thumb hits one
+    // button at a time. They get as large as that spacing allows, up to 40% of the cluster.
+    var GAP = 14, b = Math.min(D * 0.4, (D * Math.SQRT1_2 - GAP) / (1 + Math.SQRT1_2)), ax = cw - pad - D / 2;
+    place(btns.x, ax - b / 2, cy - D / 2, b, b);
+    place(btns.b, ax - b / 2, cy + D / 2 - b, b, b);
+    place(btns.y, ax - D / 2, cy - b / 2, b, b);
+    place(btns.a, ax + D / 2 - b, cy - b / 2, b, b);
+    // Slim buttons, the same size as before: L / R 84 x 30, the others 39 x 26.
+    var mid = cw / 2, sw = 39, sh = P.smallH, pw = 84;
+    place(btns.l, pad, rowY, pw, P.lrH);
+    place(btns.r, cw - pad - pw, rowY, pw, P.lrH);
+    var spot = 30, sy = rowY + (P.lrH - sh) / 2;   // room for the translate button between menu and fast forward
+    place($('btn-menu'), mid - spot - 4 - sw, sy, sw, sh);
+    place($('btn-ff'), mid + spot + 4, sy, sw, sh);
+    var by = Math.min(ch - sh - 2, cy + D / 2 + P.gap);
+    place(btns.select, mid - sw - 3, by, sw, sh);
+    place(btns.start, mid + 3, by, sw, sh);
+    var sheetH = Math.round(viewSize().h * 0.8) + 'px';
+    document.documentElement.style.setProperty('--sheet-h', sheetH);
+    document.documentElement.style.setProperty('--sheet-max', sheetH);
+    window.krPillSpot = { x: C.left + mid, y: C.top + rowY + P.lrH / 2 };
     if (window.krLayout) krLayout();
   }
   // iPhone reports the new size a little late after rotating, so lay out again a few times.
