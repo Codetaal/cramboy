@@ -2,6 +2,9 @@
 
 CheeseLab uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.5.10
+- The app icon is now grape (purple) instead of amber.
+
 ## 0.5.9
 - Start screen: a "Made by CramLab" card with the CramLab flask icon, together with the support link, which now goes to buymeacoffee.com/cramlab.
 
