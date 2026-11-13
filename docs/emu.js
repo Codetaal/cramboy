@@ -693,11 +693,6 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     document.documentElement.style.setProperty('--sheet-h', sheetH);
     document.documentElement.style.setProperty('--sheet-max', sheetH);
     window.krPillSpot = { x: C.left + mid, y: C.top + rowY + P.lrH / 2 };
-    // Touch mode: the translate button sits just above the handle at the bottom, out of the way.
-    if (touchMode) {
-      var hr = $('ctl-handle').getBoundingClientRect();
-      window.krPillSpot = { x: hr.left + hr.width / 2, y: hr.top - 10 - 24 };
-    }
     // Touch areas (screen coordinates): the whole left part of the controls is the D-pad, the whole right
     // part the face buttons. They start just under the top row and run to the bottom of the phone.
     var zt = C.top + rowY + P.lrH + 2, zb = C.top + C.height;
@@ -719,8 +714,9 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     return x >= r.left - slop && x <= r.right + slop && y >= r.top - slop && y <= r.bottom + slop;
   }
   var CONTROL_MARGIN = 15;
-  // Touch mode (portrait): all controls hidden, the whole touch screen is free. The handle at the bottom
-  // brings the controls back; nothing else does (manual only). The translate button stays.
+  // Touch mode (portrait): all controls and the translate button hidden, the whole touch screen is free.
+  // Subtitle text stays and can still be tapped. The handle at the bottom brings the controls back;
+  // nothing else does (manual only).
   var touchMode = false, ignoreTouches = {};
   function setTouchMode(on) {
     touchMode = !!on;
