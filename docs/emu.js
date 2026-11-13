@@ -16,7 +16,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   var touchKeys = 0, keyboardKeys = 0, touchDown = 0, touchX = 0, touchY = 0;
   var fastForward = false, frameNo = 0, lastT = 0, acc = 0;
   var prevSaveFlag = 0, saveDirty = false;
-  var settings = { sound: true, controls: 'below', resume: false };
+  var settings = { sound: true, controls: 'floating', resume: false };
 
   var TAGLINE = '';   // no slogan; the line only shows status messages
   // ---------- startup ----------
@@ -26,7 +26,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     $('btn-open').disabled = false;
     loadLibrary().then(renderLibrary).catch(function () {});
   };
-  KV.get('settings').then(function (s) { if (s) { settings.sound = s.sound !== false; settings.controls = s.controls === 'floating' ? 'floating' : 'below'; settings.resume = s.resume === true; } }).catch(function () {});
+  KV.get('settings').then(function (s) { if (s) { settings.sound = s.sound !== false; settings.controls = 'floating'; /* the Below layout was removed */ settings.resume = s.resume === true; } }).catch(function () {});
 
   var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var standalone = window.navigator.standalone || matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches;
@@ -578,9 +578,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     // iPhone can leave the page scrolled a little after rotating; the player always sits at the top.
     if (window.scrollX || window.scrollY) window.scrollTo(0, 0);
     var vp = viewSize(), W = vp.w, H = vp.h, ctl = $('controls'), sw, sh, top;
-    var floating = settings.controls === 'floating';
-    // Same controls area in portrait for Below and Floating (the roomier Floating size), so buttons
-    // and spacing are identical in both.
+    var floating = true;   // controls always float over the bottom screen (Below was removed)
     // Portrait: the controls area is as tall as the big D-pad and face buttons need (see layoutPortrait),
     // but never more than 36% of the screen.
     var ctrlH = Math.max(165, Math.min(PORTRAIT.need(W) + 16, H * 0.36));
@@ -592,12 +590,6 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
       place(screenCanvas[1], (W - sw) / 2, top + sh, sw, sh);
       ctl.style.top = (H - ctrlH) + 'px'; ctl.style.height = ctrlH + 'px';
       ctl.style.opacity = 0.45;
-    } else if (H >= W) {
-      sh = Math.min(W * 0.75, (H - ctrlH) / 2); sw = sh * 4 / 3; top = 0;
-      place(screenCanvas[0], (W - sw) / 2, top, sw, sh);
-      place(screenCanvas[1], (W - sw) / 2, top + sh, sw, sh);
-      ctl.style.top = (top + sh * 2) + 'px'; ctl.style.height = (H - top - sh * 2) + 'px';
-      ctl.style.opacity = 1;
     } else {
       // Landscape: screens side by side at the top; the space below is for the controls.
       sh = Math.min(H, (W / 2) * 0.75); sw = sh * 4 / 3; top = 0;
@@ -610,6 +602,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     // Portrait: keep the controls a bit further up from the bottom edge of the phone.
     if (H >= W) ch -= 16;
     if (H >= W) { layoutPortrait(C, cw, ch); return; }
+    touchZones = null;
     var pad = 14, topRow = H >= W ? 52 : 40;           // L / R row (portrait: more room below it)
     var D = Math.min(ch - topRow - 10, cw * 0.34, 170);
     var land = W > H;
@@ -695,6 +688,13 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     document.documentElement.style.setProperty('--sheet-h', sheetH);
     document.documentElement.style.setProperty('--sheet-max', sheetH);
     window.krPillSpot = { x: C.left + mid, y: C.top + rowY + P.lrH / 2 };
+    // Touch areas (screen coordinates): the whole left part of the controls is the D-pad, the whole right
+    // part the face buttons. They start just under the top row and run to the bottom of the phone.
+    var zt = C.top + rowY + P.lrH + 2, zb = C.top + C.height;
+    touchZones = {
+      pad: { left: C.left, right: C.left + mid - sw / 2 - 6, top: zt, bottom: zb, cx: C.left + pad + D / 2, cy: C.top + cy, D: D },
+      face: { left: C.left + mid + sw / 2 + 6, right: C.left + cw, top: zt, bottom: zb, cx: C.left + ax, cy: C.top + cy, D: D }
+    };
     if (window.krLayout) krLayout();
   }
   // iPhone reports the new size a little late after rotating, so lay out again a few times.
@@ -709,6 +709,47 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     return x >= r.left - slop && x <= r.right + slop && y >= r.top - slop && y <= r.bottom + slop;
   }
   var CONTROL_MARGIN = 15;
+  // Portrait touch areas, set by layoutPortrait (null in landscape).
+  var touchZones = null;
+  function inZone(z, x, y) { return z && x >= z.left && x <= z.right && y >= z.top && y <= z.bottom; }
+  // Floating D-pad: each thumb on the D-pad area has its own centre. A thumb that lands on the D-pad
+  // itself uses the D-pad's centre (so tapping an arm still works); a thumb that lands anywhere else
+  // in the area becomes the centre, and the D-pad moves under it. Sliding further than the D-pad's
+  // edge drags the centre along, like a joystick.
+  var padTouches = {};
+  function padKeys(z, id, x, y, start) {
+    var o = padTouches[id];
+    if (!o) {
+      if (!start) return null;
+      var onPad = Math.abs(x - z.cx) <= z.D / 2 && Math.abs(y - z.cy) <= z.D / 2;
+      o = padTouches[id] = onPad ? { x: z.cx, y: z.cy, moved: false } : { x: x, y: y, moved: true };
+    }
+    var dx = x - o.x, dy = y - o.y, r = Math.hypot(dx, dy), max = z.D * 0.45;
+    if (r > max) { o.x += dx * (1 - max / r); o.y += dy * (1 - max / r); o.moved = true; dx = x - o.x; dy = y - o.y; r = max; }
+    var keys = 0, cls = '';
+    if (r > z.D * 0.1) {
+      var a = Math.atan2(dy, dx) * 180 / Math.PI;
+      if (a > -67.5 && a < 67.5) { keys |= 1 << KEYS.right; cls += ' r'; }
+      if (a > 112.5 || a < -112.5) { keys |= 1 << KEYS.left; cls += ' l'; }
+      if (a > 22.5 && a < 157.5) { keys |= 1 << KEYS.down; cls += ' d'; }
+      if (a < -22.5 && a > -157.5) { keys |= 1 << KEYS.up; cls += ' u'; }
+    }
+    return { keys: keys, cls: cls, o: o };
+  }
+  // Face buttons: the whole right area is split by angle around the cluster's centre: right = A,
+  // bottom = B, left = Y, top = X. Close to the line between two buttons both are pressed, so sliding
+  // a thumb from B to A goes B, A+B, A.
+  var FACE = [['a', 0], ['b', 90], ['y', 180], ['x', -90]], BOTH = 14;
+  function faceKeys(z, x, y) {
+    var dx = x - z.cx, dy = y - z.cy;
+    if (Math.hypot(dx, dy) < 6) return 0;
+    var a = Math.atan2(dy, dx) * 180 / Math.PI, keys = 0;
+    FACE.forEach(function (f) {
+      var d = Math.abs(((a - f[1]) % 360 + 540) % 360 - 180);
+      if (d <= 45 + BOTH) keys |= 1 << KEYS[f[0]];
+    });
+    return keys;
+  }
   function nearControl(x, y) {
     for (var k in btns) if (hit(btns[k], x, y, CONTROL_MARGIN)) return true;
     return hit($('dpad'), x, y, CONTROL_MARGIN) || hit($('btn-menu'), x, y, CONTROL_MARGIN) || hit($('btn-ff'), x, y, CONTROL_MARGIN);
@@ -720,14 +761,33 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     unlockAudio();
     var keys = 0, td = 0, bottom = screenCanvas[1].getBoundingClientRect();
     var dp = $('dpad').getBoundingClientRect(), dpCls = '';
-    var menuDown = false, ffDown = false;
+    var menuDown = false, ffDown = false, live = {}, padAt = null;
+    var started = {};
+    if (e.type === 'touchstart') for (var c = 0; c < e.changedTouches.length; c++) started[e.changedTouches[c].identifier || 0] = 1;
     for (var i = 0; i < e.touches.length; i++) {
-      var t = e.touches[i], x = t.clientX, y = t.clientY;
+      var t = e.touches[i], x = t.clientX, y = t.clientY, id = t.identifier || 0;
+      live[id] = 1;
       var found = false;
-      for (var k in btns) if (hit(btns[k], x, y)) { keys |= 1 << KEYS[k]; found = true; }
+      // A thumb that started on the D-pad area keeps steering it wherever it slides.
+      if (touchZones && padTouches[id]) {
+        var pk = padKeys(touchZones.pad, id, x, y, false);
+        keys |= pk.keys; dpCls += pk.cls; padAt = pk.o; continue;
+      }
+      for (var k in btns) {
+        if (touchZones && /^[abxy]$/.test(k)) continue;   // portrait: face buttons go by area, below
+        if (hit(btns[k], x, y)) { keys |= 1 << KEYS[k]; found = true; }
+      }
       if (hit($('btn-menu'), x, y)) { menuDown = true; continue; }
       if (hit($('btn-ff'), x, y)) { ffDown = true; continue; }
       if (found) continue;
+      if (touchZones) {
+        if (inZone(touchZones.face, x, y)) { keys |= faceKeys(touchZones.face, x, y); continue; }
+        if (inZone(touchZones.pad, x, y) && started[id]) {
+          var pk2 = padKeys(touchZones.pad, id, x, y, true);
+          keys |= pk2.keys; dpCls += pk2.cls; padAt = pk2.o; continue;
+        }
+        if (inZone(touchZones.pad, x, y)) continue;   // a thumb slid in from elsewhere: not a game tap
+      }
       // D-pad: 8-way by angle from centre, with a generous area.
       var dx = x - (dp.left + dp.width / 2), dy = y - (dp.top + dp.height / 2);
       var onBottom = x >= bottom.left && x <= bottom.right && y >= bottom.top && y <= bottom.bottom;
@@ -750,7 +810,13 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
       }
     }
     touchKeys = keys; touchDown = td;
+    for (var pid in padTouches) if (!live[pid]) delete padTouches[pid];
     $('dpad').className = dpCls;
+    // The floating D-pad follows the thumb's centre, and goes home when the thumb lifts.
+    if (touchZones) {
+      var z = touchZones.pad, ox = padAt && padAt.moved ? padAt.x : z.cx, oy = padAt && padAt.moved ? padAt.y : z.cy;
+      $('dpad').style.translate = (ox - z.cx) + 'px ' + (oy - z.cy) + 'px';
+    } else $('dpad').style.translate = '';
     for (var k2 in btns) btns[k2].classList.toggle('on', !!(keys & (1 << KEYS[k2])));
     $('btn-menu').classList.toggle('on', menuDown);
     $('btn-ff').classList.toggle('on', ffDown);
@@ -799,7 +865,6 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   function menuLabels() {
     var snd = document.querySelector('[data-m=sound]');
     snd.innerHTML = HI(settings.sound ? 'speaker-wave' : 'speaker-x-mark', 'size-5'); snd.classList.toggle('opacity-60', !settings.sound);
-    setSeg('controls', settings.controls);
     setSeg('subs', window.KRSettings ? KRSettings.getMode() : 'bar');
     $('m-resume').setAttribute('aria-checked', String(!!settings.resume));
     var study = !window.KRSettings || KRSettings.getStudy();
@@ -825,7 +890,6 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     var segBtn = e.target.closest('.seg button');
     if (segBtn) {
       var seg = segBtn.parentNode.dataset.seg, v = segBtn.dataset.v;
-      if (seg === 'controls') { settings.controls = v; saveSettings(); layout(); }
       if (seg === 'subs' && window.KRSettings) KRSettings.setMode(v);
       return menuLabels();
     }
