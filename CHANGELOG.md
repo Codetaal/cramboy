@@ -2,6 +2,9 @@
 
 CheeseLab uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.5.9
+- Start screen: a "Made by CramLab" card with the CramLab flask icon, together with the support link, which now goes to buymeacoffee.com/cramlab.
+
 ## 0.5.8
 - The app icon drawing is larger again (85% of the icon's width), close to the first CramBoy icon.
 
