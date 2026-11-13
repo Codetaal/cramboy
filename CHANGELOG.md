@@ -2,6 +2,9 @@
 
 CheeseLab uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.5.13
+- While subtitles are on screen, the amber translate button is only 10% transparent, so it is easy to see.
+
 ## 0.5.12
 - The translate button has the same see-through look as the floating controls, slightly less transparent so it still stands out.
 
