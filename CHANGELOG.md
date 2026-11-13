@@ -2,6 +2,9 @@
 
 CheeseLab uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.5.7
+- The app icon drawing is a little larger again: between 0.5.5 and 0.5.6.
+
 ## 0.5.6
 - The app icon has more space around the drawing.
 
