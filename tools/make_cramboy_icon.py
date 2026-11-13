@@ -25,8 +25,6 @@ BOX = [
 COL = {'C': (255, 248, 231), 'D': (194, 97, 15), 'O': (247, 162, 58)}
 TOP, BOT = (255, 217, 102), (247, 149, 42)
 
-CELL = 24   # px per pixel; the 16 x 16 map is drawn smaller than the icon so it has room around it
-
 def draw():
     img = Image.new('RGB', (512, 512))
     px = img.load()
@@ -37,22 +35,18 @@ def draw():
         for y in range(band * 32, band * 32 + 32):
             for x in range(512):
                 px[x, y] = c
-    # The drawing covers map columns 1..14 and rows 2..13: centre that block in the icon.
-    ox = round(256 - 8 * CELL); oy = round(256 - 8 * CELL)
-
-    def cell(x0, y0, size, col):
-        for y in range(int(y0), int(y0 + size)):
-            for x in range(int(x0), int(x0 + size)):
-                px[x, y] = col
     for gy, row in enumerate(BOX):
         for gx, ch in enumerate(row):
             if ch in COL:
-                cell(ox + gx * CELL, oy + gy * CELL, CELL, COL[ch])
-    # Two small pixel sparkles (half-size pixels) in the top corners of the drawing.
-    h = CELL // 2
-    for cx, cy in [(ox + 1.5 * CELL, oy + 1.5 * CELL - 8), (ox + 14.5 * CELL, oy + 1.5 * CELL - 8)]:
-        for dx, dy in [(0, 0), (-h, 0), (h, 0), (0, -h), (0, h)]:
-            cell(cx + dx - h / 2, cy + dy - h / 2, h, COL['C'])
+                for y in range(gy * 32, gy * 32 + 32):
+                    for x in range(gx * 32, gx * 32 + 32):
+                        px[x, y] = COL[ch]
+    # Two small pixel sparkles (16 px cells), as on the old icon.
+    for cx, cy in [(56, 56), (456, 56)]:
+        for dx, dy in [(0, 0), (-16, 0), (16, 0), (0, -16), (0, 16)]:
+            for y in range(cy + dy - 8, cy + dy + 8):
+                for x in range(cx + dx - 8, cx + dx + 8):
+                    px[x, y] = COL['C']
     return img
 
 here = os.path.dirname(os.path.abspath(__file__))

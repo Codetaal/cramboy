@@ -10,7 +10,6 @@ CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = n
 - Japanese Pokémon Emerald (and other Japanese games on the same engine, FireRed and LeafGreen): the study overlay works on GBA too. CramBoy follows the game's own text printer as it types, shows the Japanese text as subtitles (bar below the screen in portrait, or a movable box over the game's message box) and you can tap words for the Japanese dictionary. The box keeps its own position for GBA, apart from the DS one.
 - Other GBA games (and non-Japanese versions) have no study overlay; the switch is hidden in the menu for them.
 - The GBA emulator is about 0.6 MB and is stored for offline use.
-- The app icon has more space around the drawing.
 
 ## 0.5.5
 - CheeseLab is now called CramBoy, with a new pixel-art icon: an open box shaped like a game controller.
