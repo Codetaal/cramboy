@@ -2,6 +2,9 @@
 
 CheeseLab uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.5.8
+- The app icon drawing is larger again (85% of the icon's width), close to the first CramBoy icon.
+
 ## 0.5.7
 - The app icon drawing is a little larger again: between 0.5.5 and 0.5.6.
 

@@ -25,7 +25,7 @@ BOX = [
 COL = {'C': (255, 248, 231), 'D': (194, 97, 15), 'O': (247, 162, 58)}
 TOP, BOT = (255, 217, 102), (247, 149, 42)
 
-CELL = 28   # px per pixel; the 16 x 16 map is drawn smaller than the icon so it has room around it
+CELL = 30   # px per pixel; the 16 x 16 map is drawn smaller than the icon so it has room around it
 
 def draw():
     img = Image.new('RGB', (512, 512))
