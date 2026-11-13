@@ -693,6 +693,11 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     document.documentElement.style.setProperty('--sheet-h', sheetH);
     document.documentElement.style.setProperty('--sheet-max', sheetH);
     window.krPillSpot = { x: C.left + mid, y: C.top + rowY + P.lrH / 2 };
+    // Touch mode: the translate button sits just above the handle at the bottom, out of the way.
+    if (touchMode) {
+      var hr = $('ctl-handle').getBoundingClientRect();
+      window.krPillSpot = { x: hr.left + hr.width / 2, y: hr.top - 10 - 24 };
+    }
     // Touch areas (screen coordinates): the whole left part of the controls is the D-pad, the whole right
     // part the face buttons. They start just under the top row and run to the bottom of the phone.
     var zt = C.top + rowY + P.lrH + 2, zb = C.top + C.height;
@@ -784,8 +789,8 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     if (e.type === 'touchstart') {
       for (var c2 = 0; c2 < e.changedTouches.length; c2++) {
         var ct = e.changedTouches[c2], cid = ct.identifier || 0;
-        if (touchMode && !$('ctl-handle').hidden && hit($('ctl-handle'), ct.clientX, ct.clientY, 10)) { setTouchMode(false); ignoreTouches[cid] = 1; }
-        else if (!touchMode && !$('btn-touch').hidden && hit($('btn-touch'), ct.clientX, ct.clientY)) { setTouchMode(true); ignoreTouches[cid] = 1; }
+        if (touchMode && !$('ctl-handle').hidden && hit($('ctl-handle'), ct.clientX, ct.clientY, 10)) { setTouchMode(false); layout(); ignoreTouches[cid] = 1; }
+        else if (!touchMode && !$('btn-touch').hidden && hit($('btn-touch'), ct.clientX, ct.clientY)) { setTouchMode(true); layout(); ignoreTouches[cid] = 1; }
       }
     }
     var hidden = document.body.classList.contains('touch-mode');
