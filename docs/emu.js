@@ -654,22 +654,23 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     window.krPillSpot = { x: C.left + mid, y: C.top + (spotTop + ch - h - 10) / 2 };
     if (window.krLayout) krLayout();
   }
-  // Portrait controls: a big D-pad and big face buttons for thumbs; the small buttons keep their slim size.
+  // Portrait controls: a big D-pad and big face buttons for thumbs, low on the phone; the small buttons
+  // keep their slim size.
   //   top row:    L | menu | translate button | fast forward | R
-  //   middle:     D-pad                         A B X Y
-  //   bottom row:            SELECT | START
+  //   bottom:     D-pad      SELECT / START      A B X Y      (SELECT / START stacked between them)
   var PORTRAIT = {
-    pad: 12, inner: 10, gap: 6, top: 8, lrH: 30, smallH: 26, maxD: 184,
-    // D-pad size that fits the width: two clusters side by side.
-    widthD: function (cw) { return Math.min((cw - 2 * this.pad - 2 * this.inner) / 2, this.maxD); },
+    pad: 12, top: 8, lrH: 30, smallH: 26, smallW: 39, gap: 10, bottom: 6, maxD: 156,
+    // D-pad size that fits the width: two clusters with the SELECT / START column between them.
+    widthD: function (cw) { return Math.min((cw - 2 * this.pad - this.smallW - 2 * 12) / 2, this.maxD); },
     // Height the controls need for that D-pad.
-    need: function (cw) { return this.top + this.lrH + this.gap + this.widthD(cw) + this.gap + this.smallH + 6; }
+    need: function (cw) { return this.top + this.lrH + this.gap + this.widthD(cw) + this.bottom; }
   };
   function layoutPortrait(C, cw, ch) {
     var P = PORTRAIT, pad = P.pad;
-    var D = Math.min(P.widthD(cw), ch - (P.top + P.lrH + P.gap + P.gap + P.smallH + 6));
-    var rowY = P.top, free = ch - P.need(cw) + (P.widthD(cw) - D);
-    var cy = rowY + P.lrH + P.gap + D / 2 + Math.max(0, free / 2);
+    var D = Math.min(P.widthD(cw), ch - (P.top + P.lrH + P.gap + P.bottom));
+    var rowY = P.top;
+    // The clusters sit at the bottom; any spare height stays above them.
+    var cy = ch - P.bottom - D / 2;
     dpadRect = { x: pad, y: cy - D / 2, w: D, h: D };
     place($('dpad'), dpadRect.x, dpadRect.y, D, D);
     // Face buttons: neighbours (Y-X, X-A, ...) keep at least 14 px between them, so a thumb hits one
@@ -680,15 +681,15 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     place(btns.y, ax - D / 2, cy - b / 2, b, b);
     place(btns.a, ax + D / 2 - b, cy - b / 2, b, b);
     // Slim buttons, the same size as before: L / R 84 x 30, the others 39 x 26.
-    var mid = cw / 2, sw = 39, sh = P.smallH, pw = 84;
+    var mid = cw / 2, sw = P.smallW, sh = P.smallH, pw = 84;
     place(btns.l, pad, rowY, pw, P.lrH);
     place(btns.r, cw - pad - pw, rowY, pw, P.lrH);
     var spot = 30, sy = rowY + (P.lrH - sh) / 2;   // room for the translate button between menu and fast forward
     place($('btn-menu'), mid - spot - 4 - sw, sy, sw, sh);
     place($('btn-ff'), mid + spot + 4, sy, sw, sh);
-    var by = Math.min(ch - sh - 2, cy + D / 2 + P.gap);
-    place(btns.select, mid - sw - 3, by, sw, sh);
-    place(btns.start, mid + 3, by, sw, sh);
+    // SELECT above START in the middle, level with the lower half of the clusters.
+    place(btns.select, mid - sw / 2, cy + D / 2 - 2 * sh - 8, sw, sh);
+    place(btns.start, mid - sw / 2, cy + D / 2 - sh, sw, sh);
     var sheetH = Math.round(viewSize().h * 0.8) + 'px';
     document.documentElement.style.setProperty('--sheet-h', sheetH);
     document.documentElement.style.setProperty('--sheet-max', sheetH);
