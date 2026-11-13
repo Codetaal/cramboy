@@ -601,8 +601,10 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     var C = ctl.getBoundingClientRect(), cw = C.width, ch = C.height;
     // Portrait: keep the controls a bit further up from the bottom edge of the phone.
     if (H >= W) ch -= 16;
-    if (H >= W) { layoutPortrait(C, cw, ch); return; }
+    if (H >= W) { setTouchMode(touchMode); layoutPortrait(C, cw, ch); return; }
     touchZones = null;
+    // Touch mode is portrait only: landscape always shows the controls.
+    $('btn-touch').hidden = true; document.body.classList.remove('touch-mode'); $('ctl-handle').hidden = true;
     var pad = 14, topRow = H >= W ? 52 : 40;           // L / R row (portrait: more room below it)
     var D = Math.min(ch - topRow - 10, cw * 0.34, 170);
     var land = W > H;
@@ -681,9 +683,12 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     var spot = 30, sy = rowY + (P.lrH - sh) / 2;   // room for the translate button between menu and fast forward
     place($('btn-menu'), mid - spot - 4 - sw, sy, sw, sh);
     place($('btn-ff'), mid + spot + 4, sy, sw, sh);
-    // SELECT above START in the middle, level with the lower half of the clusters.
+    // SELECT above START in the middle, level with the lower half of the clusters; the touch-mode
+    // button above them.
     place(btns.select, mid - sw / 2, cy + D / 2 - 2 * sh - 8, sw, sh);
     place(btns.start, mid - sw / 2, cy + D / 2 - sh, sw, sh);
+    place($('btn-touch'), mid - sw / 2, cy + D / 2 - 3 * sh - 26, sw, sh);
+    $('btn-touch').hidden = false;
     var sheetH = Math.round(viewSize().h * 0.8) + 'px';
     document.documentElement.style.setProperty('--sheet-h', sheetH);
     document.documentElement.style.setProperty('--sheet-max', sheetH);
@@ -709,6 +714,16 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     return x >= r.left - slop && x <= r.right + slop && y >= r.top - slop && y <= r.bottom + slop;
   }
   var CONTROL_MARGIN = 15;
+  // Touch mode (portrait): all controls hidden, the whole touch screen is free. The handle at the bottom
+  // brings the controls back; nothing else does (manual only). The translate button stays.
+  var touchMode = false, ignoreTouches = {};
+  function setTouchMode(on) {
+    touchMode = !!on;
+    var portrait = viewSize().h >= viewSize().w;
+    document.body.classList.toggle('touch-mode', touchMode && portrait);
+    $('ctl-handle').hidden = !(touchMode && portrait) || uiCurrentMode !== 'player';
+    if (touchMode) { touchKeys = 0; padTouches = {}; for (var k in btns) btns[k].classList.remove('on'); $('dpad').className = ''; $('dpad').style.translate = ''; }
+  }
   // Portrait touch areas, set by layoutPortrait (null in landscape).
   var touchZones = null;
   function inZone(z, x, y) { return z && x >= z.left && x <= z.right && y >= z.top && y <= z.bottom; }
@@ -764,10 +779,30 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     var menuDown = false, ffDown = false, live = {}, padAt = null;
     var started = {};
     if (e.type === 'touchstart') for (var c = 0; c < e.changedTouches.length; c++) started[e.changedTouches[c].identifier || 0] = 1;
+    // Touch mode on / off. The finger that switched it is ignored until it lifts, so it doesn't press
+    // whatever control appears (or disappears) under it.
+    if (e.type === 'touchstart') {
+      for (var c2 = 0; c2 < e.changedTouches.length; c2++) {
+        var ct = e.changedTouches[c2], cid = ct.identifier || 0;
+        if (touchMode && !$('ctl-handle').hidden && hit($('ctl-handle'), ct.clientX, ct.clientY, 10)) { setTouchMode(false); ignoreTouches[cid] = 1; }
+        else if (!touchMode && !$('btn-touch').hidden && hit($('btn-touch'), ct.clientX, ct.clientY)) { setTouchMode(true); ignoreTouches[cid] = 1; }
+      }
+    }
+    var hidden = document.body.classList.contains('touch-mode');
     for (var i = 0; i < e.touches.length; i++) {
       var t = e.touches[i], x = t.clientX, y = t.clientY, id = t.identifier || 0;
       live[id] = 1;
+      if (ignoreTouches[id]) continue;
       var found = false;
+      // Touch mode: no controls, every touch goes to the game's touch screen.
+      if (hidden) {
+        if (!td && x >= bottom.left && x <= bottom.right && y >= bottom.top && y <= bottom.bottom) {
+          td = 1;
+          touchX = Math.max(0, Math.min(255, Math.floor((x - bottom.left) / bottom.width * 256)));
+          touchY = Math.max(0, Math.min(191, Math.floor((y - bottom.top) / bottom.height * 192)));
+        }
+        continue;
+      }
       // A thumb that started on the D-pad area keeps steering it wherever it slides.
       if (touchZones && padTouches[id]) {
         var pk = padKeys(touchZones.pad, id, x, y, false);
@@ -811,6 +846,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     }
     touchKeys = keys; touchDown = td;
     for (var pid in padTouches) if (!live[pid]) delete padTouches[pid];
+    for (var iid in ignoreTouches) if (!live[iid]) delete ignoreTouches[iid];
     $('dpad').className = dpCls;
     // The floating D-pad follows the thumb's centre, and goes home when the thumb lifts.
     if (touchZones) {
@@ -820,7 +856,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     for (var k2 in btns) btns[k2].classList.toggle('on', !!(keys & (1 << KEYS[k2])));
     $('btn-menu').classList.toggle('on', menuDown);
     $('btn-ff').classList.toggle('on', ffDown);
-    if (e.type === 'touchstart') {
+    if (e.type === 'touchstart' && !hidden) {
       var t0 = e.changedTouches[0];
       if (hit($('btn-menu'), t0.clientX, t0.clientY)) openMenu();
       if (hit($('btn-ff'), t0.clientX, t0.clientY)) { fastForward = !fastForward; $('btn-ff').classList.toggle('active', fastForward); }

@@ -73,3 +73,10 @@ body.playing { position: fixed; inset: 0; overflow: hidden; touch-action: none; 
 /* Toggled buttons: menu while open, fast forward while on */
 #player .btn.active { background: #ffd666; color: #16181f; box-shadow: 0 0 0 3px rgba(255, 214, 102, 0.3); }
 #controls.floating .btn.active { background: #ffd666; }
+
+/* Touch mode (portrait): the controls are hidden so the whole touch screen is free; a small handle
+   at the bottom brings them back. */
+body.touch-mode #controls { visibility: hidden; }
+#ctl-handle { position: fixed; left: 50%; bottom: 14px; width: 60px; height: 26px; transform: translateX(-50%); z-index: 20;
+  background: rgba(30, 30, 34, 0.55); border: 1px solid rgba(255, 255, 255, 0.2); color: #e4e4e7;
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }

@@ -81,6 +81,8 @@
   <div id="player" hidden>
     <canvas id="top" width="256" height="192"></canvas>
     <canvas id="bottom" width="256" height="192"></canvas>
+    <!-- Touch mode: the controls are hidden and only this handle stays, to bring them back. -->
+    <div class="btn pill small" id="ctl-handle" aria-label="Show the controls" hidden><span data-hi="chevron-up"></span></div>
     <div id="controls">
       <div class="btn pill" data-k="l">L</div>
       <div class="btn pill" data-k="r">R</div>
@@ -88,6 +90,7 @@
       <div class="btn pill small" id="btn-ff" aria-label="Fast forward"><span data-hi="forward"></span></div>
       <div class="btn pill small" data-k="select" aria-label="Select"><span data-hi="minus"></span></div>
       <div class="btn pill small" data-k="start" aria-label="Start"><span data-hi="plus"></span></div>
+      <div class="btn pill small" id="btn-touch" aria-label="Hide the controls to use the touch screen"><span data-hi="cursor-arrow-ripple"></span></div>
       <div id="dpad"><div class="dpad-h"></div><div class="dpad-v"></div></div>
       <div class="btn round" data-k="x">X</div>
       <div class="btn round" data-k="y">Y</div>
