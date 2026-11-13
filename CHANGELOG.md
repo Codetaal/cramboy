@@ -2,6 +2,9 @@
 
 CheeseLab uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.5.12
+- The translate button has the same see-through look as the floating controls, slightly less transparent so it still stands out.
+
 ## 0.5.11
 - Portrait controls made for thumbs: a bigger D-pad and face buttons low on the phone, with SELECT and START between them. L, R, settings and fast forward keep their slim size, with the translate button between them.
 - Easier to hit: the whole left part of the controls steers the D-pad (it follows your thumb if you slide past its edge), and the whole right part works for A, B, X and Y. Slide from one button to the next without lifting; between two buttons both are pressed.
