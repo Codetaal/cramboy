@@ -3,12 +3,12 @@ Run: python3 tools/make_cramboy_icon.py"""
 from PIL import Image
 import os
 
-# 16 x 16 grid, 32 px per cell. C cream, D dark orange, O orange.
+# 16 x 16 grid. Letters are colours (see COL).
 BOX = [
     "................",
     "................",
-    "....C...O...C...",
-    ".....C..O..C....",
+    "....C...L...C...",
+    ".....C..L..C....",
     "................",
     ".CC..........CC.",
     "..CCC......CCC..",
@@ -22,8 +22,9 @@ BOX = [
     "................",
     "................",
 ]
-COL = {'C': (255, 248, 231), 'D': (194, 97, 15), 'O': (247, 162, 58)}
-TOP, BOT = (255, 217, 102), (247, 149, 42)
+# Grape: C cream, D deep purple (shadow, d-pad), O light purple (buttons), L pale lilac (middle ray).
+COL = {'C': (255, 248, 231), 'D': (74, 40, 150), 'O': (170, 130, 255), 'L': (236, 224, 255)}
+TOP, BOT = (196, 160, 255), (124, 82, 224)
 
 CELL = 30   # px per pixel; the 16 x 16 map is drawn smaller than the icon so it has room around it
 
