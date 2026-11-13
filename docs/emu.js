@@ -590,6 +590,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
       place(screenCanvas[1], (W - sw) / 2, top + sh, sw, sh);
       ctl.style.top = (H - ctrlH) + 'px'; ctl.style.height = ctrlH + 'px';
       ctl.style.opacity = 0.45;
+      document.documentElement.style.setProperty('--ctl-opacity', '0.45');
     } else {
       // Landscape: screens side by side at the top; the space below is for the controls.
       sh = Math.min(H, (W / 2) * 0.75); sw = sh * 4 / 3; top = 0;
@@ -597,6 +598,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
       place(screenCanvas[1], W / 2, top, sw, sh);
       ctl.style.top = '0px'; ctl.style.height = H + 'px';
       ctl.style.opacity = 0.6;
+      document.documentElement.style.setProperty('--ctl-opacity', '0.6');
     }
     var C = ctl.getBoundingClientRect(), cw = C.width, ch = C.height;
     // Portrait: keep the controls a bit further up from the bottom edge of the phone.
