@@ -37,10 +37,10 @@
 /* Portrait: a slowly wobbling blob in the centre of the controls */
 #kr-pill.kr-big {
   width: 48px; height: 48px; z-index: 7;
-  /* Same see-through look as the floating controls: their glass colours and their transparency
+  /* Same see-through look as the floating controls, a little less transparent so it stands out
      (--ctl-opacity is set by the app's layout: 0.45 in portrait, 0.6 in landscape). */
   background: rgba(255, 255, 255, 0.28); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
-  opacity: var(--ctl-opacity, 1);
+  opacity: calc(var(--ctl-opacity, 0.8) + 0.2);
   border-radius: 62% 38% 55% 45% / 48% 60% 40% 52%;
   animation: kr-blob 6s ease-in-out infinite;
 }
