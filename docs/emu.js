@@ -668,9 +668,10 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   function layoutPortrait(C, cw, ch) {
     var P = PORTRAIT, pad = P.pad;
     var D = Math.min(P.widthD(cw), ch - (P.top + P.lrH + P.gap + P.bottom));
-    var rowY = P.top;
-    // The clusters sit at the bottom; any spare height stays above them.
+    // The clusters sit at the bottom and the top row right above them; any spare height (Below mode
+    // can have more room than needed) stays above the top row, so Below and Floating look the same.
     var cy = ch - P.bottom - D / 2;
+    var rowY = Math.max(P.top, cy - D / 2 - P.gap - P.lrH);
     dpadRect = { x: pad, y: cy - D / 2, w: D, h: D };
     place($('dpad'), dpadRect.x, dpadRect.y, D, D);
     // Face buttons: neighbours (Y-X, X-A, ...) keep at least 14 px between them, so a thumb hits one
