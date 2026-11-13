@@ -31,7 +31,7 @@
   border: 0; border-radius: 9px; background: rgba(14, 16, 24, 0.72); color: #ffd666;
   display: grid; place-items: center;
   /* Soft fade between idle and "text on screen" (amber), so the change doesn't catch the eye. */
-  transition: background-color 0.8s ease, color 0.8s ease, box-shadow 0.8s ease;
+  transition: background-color 0.8s ease, color 0.8s ease, box-shadow 0.8s ease, opacity 0.8s ease;
 }
 #kr-pill .hi { width: 20px; height: 20px; stroke-width: 1.8; }
 /* Portrait: a slowly wobbling blob in the centre of the controls */
@@ -45,7 +45,8 @@
   animation: kr-blob 6s ease-in-out infinite;
 }
 #kr-pill.kr-big .hi { width: 24px; height: 24px; }
-#kr-pill.kr-big.kr-live { background: #ffd666; color: #16181f; box-shadow: 0 0 0 3px rgba(255, 214, 102, 0.3); }
+/* Active (text on screen): only 10% transparent, so the amber is clear. */
+#kr-pill.kr-big.kr-live { background: #ffd666; color: #16181f; box-shadow: 0 0 0 3px rgba(255, 214, 102, 0.3); opacity: 0.9; }
 @keyframes kr-blob {
   0%, 100% { border-radius: 62% 38% 55% 45% / 48% 60% 40% 52%; }
   33% { border-radius: 40% 60% 42% 58% / 60% 44% 56% 40%; }
