@@ -2,6 +2,10 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.9.0
+- Review adapts per word: each "Got it" makes the wait longer (1, 3, 8, 20, 50, 125 days...), and words you press Again on come back more often from then on. A word only becomes Known by itself once the next wait would be half a year or more.
+- At most 15 new words a day in Review, so a long game doesn't bury you in reviews. Words you already reviewed always come back when due.
+
 ## 0.8.1
 - CramLab logo: the rim line under the flask's collar is back, like the old logo.
 
