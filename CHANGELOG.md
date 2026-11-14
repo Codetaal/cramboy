@@ -2,6 +2,12 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.10.0
+- New Progress: every line of dialogue and every sign you read is counted, per game. See what share of the words you read you already know, words you've read often but never looked up ("Probably known"), and the most useful new words to learn next.
+- Study menu redesign: a study hub at the top of the menu (Review, Words, Text), Progress, and Study settings on their own page. Review is a full-screen session with a progress bar. The word screens have the tabs Now, Recent and Saved.
+- Clearer colours: black (white in dark mode) for the one main action on each screen; amber only for words you're learning, green for words you know.
+- Export for Anki and Copy list are removed, to focus on the built-in study hub.
+
 ## 0.9.0
 - Review adapts per word: each "Got it" makes the wait longer (1, 3, 8, 20, 50, 125 days...), and words you press Again on come back more often from then on. A word only becomes Known by itself once the next wait would be half a year or more.
 - At most 15 new words a day in Review, so a long game doesn't bury you in reviews. Words you already reviewed always come back when due.
