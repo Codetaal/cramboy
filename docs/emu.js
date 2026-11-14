@@ -16,7 +16,8 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   var touchKeys = 0, keyboardKeys = 0, touchDown = 0, touchX = 0, touchY = 0;
   var fastForward = false, frameNo = 0, lastT = 0, acc = 0;
   var prevSaveFlag = 0, saveDirty = false;
-  var settings = { sound: true, controls: 'floating', resume: false };
+  // ctlOpacity: how see-through the floating controls are (portrait; landscape is 15 points stronger).
+  var settings = { sound: true, controls: 'floating', resume: false, ctlOpacity: 0.45 };
 
   var TAGLINE = '';   // no slogan; the line only shows status messages
   // ---------- startup ----------
@@ -26,7 +27,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     $('btn-open').disabled = false;
     loadLibrary().then(renderLibrary).catch(function () {});
   };
-  KV.get('settings').then(function (s) { if (s) { settings.sound = s.sound !== false; settings.controls = 'floating'; /* the Below layout was removed */ settings.resume = s.resume === true; } }).catch(function () {});
+  KV.get('settings').then(function (s) { if (s) { settings.sound = s.sound !== false; settings.controls = 'floating'; /* the Below layout was removed */ settings.resume = s.resume === true; if (s.ctlOpacity >= 0.15 && s.ctlOpacity <= 1) settings.ctlOpacity = s.ctlOpacity; } }).catch(function () {});
 
   var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var standalone = window.navigator.standalone || matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches;
@@ -590,16 +591,14 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
       place(screenCanvas[0], (W - sw) / 2, top, sw, sh);
       place(screenCanvas[1], (W - sw) / 2, top + sh, sw, sh);
       ctl.style.top = (H - ctrlH) + 'px'; ctl.style.height = ctrlH + 'px';
-      ctl.style.opacity = 0.45;
-      document.documentElement.style.setProperty('--ctl-opacity', '0.45');
+      setControlsOpacity(settings.ctlOpacity);
     } else {
       // Landscape: screens side by side at the top; the space below is for the controls.
       sh = Math.min(H, (W / 2) * 0.75); sw = sh * 4 / 3; top = 0;
       place(screenCanvas[0], W / 2 - sw, top, sw, sh);
       place(screenCanvas[1], W / 2, top, sw, sh);
       ctl.style.top = '0px'; ctl.style.height = H + 'px';
-      ctl.style.opacity = 0.6;
-      document.documentElement.style.setProperty('--ctl-opacity', '0.6');
+      setControlsOpacity(Math.min(1, settings.ctlOpacity + 0.15));
     }
     var C = ctl.getBoundingClientRect(), cw = C.width, ch = C.height;
     // Portrait: keep the controls a bit further up from the bottom edge of the phone.
@@ -904,7 +903,14 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     menuLabels();
     $('menu').hidden = false;
   }
+  // The controls' transparency; the translate button follows it a little stronger (kr/ui.css).
+  function setControlsOpacity(v) {
+    $('controls').style.opacity = v;
+    document.documentElement.style.setProperty('--ctl-opacity', String(v));
+  }
   function menuLabels() {
+    $('m-opacity').value = Math.round(settings.ctlOpacity * 100);
+    $('m-opacity-val').textContent = Math.round(settings.ctlOpacity * 100) + '%';
     var snd = document.querySelector('[data-m=sound]');
     snd.innerHTML = HI(settings.sound ? 'speaker-wave' : 'speaker-x-mark', 'size-5'); snd.classList.toggle('opacity-60', !settings.sound);
     setSeg('subs', window.KRSettings ? KRSettings.getMode() : 'bar');
@@ -927,6 +933,17 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   }
   function saveSettings() { KV.set('settings', settings).catch(function () {}); }
   function closeMenu() { $('menu').hidden = true; $('btn-menu').classList.remove('active'); emuIsRunning = wasRunning || emuIsGameLoaded; }
+  // Controls opacity slider: live while dragging; the menu fades meanwhile so the controls show through.
+  $('m-opacity').addEventListener('input', function () {
+    settings.ctlOpacity = Math.max(0.15, Math.min(1, this.value / 100));
+    $('m-opacity-val').textContent = Math.round(settings.ctlOpacity * 100) + '%';
+    layout();
+  });
+  $('m-opacity').addEventListener('change', function () { saveSettings(); });
+  ['pointerdown', 'touchstart'].forEach(function (t) { $('m-opacity').addEventListener(t, function () { $('menu').classList.add('peek'); }, { passive: true }); });
+  ['pointerup', 'pointercancel', 'touchend', 'touchcancel', 'change'].forEach(function (t) {
+    $('m-opacity').addEventListener(t, function () { $('menu').classList.remove('peek'); }, { passive: true });
+  });
   $('menu').addEventListener('click', function (e) {
     if (e.target === $('menu')) return closeMenu();
     var segBtn = e.target.closest('.seg button');
