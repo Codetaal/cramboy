@@ -161,3 +161,32 @@ console.log('ALL READER TESTS PASSED');
   assert.strictEqual(rr.active.text, 'TV가 있다…', 'a label with a fixed pointer is not dialogue');
   console.log('LABEL TEST PASSED');
 }
+
+// ---- A sign: shown all at once from a message buffer, no cursor (HeartGold town signs) ----
+{
+  u32.fill(0);
+  const rs = new Reader(T);
+  putString(0x100000, encode('가방'), 3);            // menu labels: tiny buffers, no cursor
+  putString(0x100100, encode('조사한다'), 5);
+  rs.scan(u32, u16);
+  putString(0x200000, encode('여기는 연두마을\n시작을 알리는 바람의 마을'), 1024);
+  putString(0x200800, encode('여기는 연두마을\n시작을 알리는 바람의 마을'), 1024);   // the game keeps two copies
+  let rr = rs.scan(u32, u16);
+  assert.strictEqual(rr.active, null, 'not right away: a dialogue would get its cursor in this time');
+  rr = rs.scan(u32, u16);
+  assert(rr.active, 'sign shown after two scans without a cursor');
+  assert.strictEqual(rr.active.text, '여기는 연두마을\n시작을 알리는 바람의 마을');
+  assert.strictEqual(rr.active.shown, rr.active.text.length, 'shown in full');
+  // A typed dialogue from a message buffer still types along with the game
+  u32.fill(0);
+  const rd = new Reader(T); rd.scan(u32, u16);
+  const m = encode('안녕! 반가워'); const md = putString(0x200000, m, 1024);
+  u32[0x300000 >> 2] = 0x02000000 + md + 1 * 2; rd.scan(u32, u16);
+  u32[0x300000 >> 2] = 0x02000000 + md + 3 * 2; rr = rd.scan(u32, u16);
+  for (let k = 0; k < 3; k++) rr = rd.scan(u32, u16);
+  assert.strictEqual(rr.active.text.slice(0, rr.active.shown), '안녕!', 'typed dialogue is not shown in full');
+  // The sign closes: its buffers are freed
+  u32.fill(0); rr = rs.scan(u32, u16);
+  assert(rr.closed, 'subtitle closes with the sign');
+  console.log('SIGN TEST PASSED');
+}

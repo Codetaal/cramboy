@@ -8,6 +8,10 @@
   var STRING_MAGIC = 0xB6F8D2EC;   // pret/pokeheartgold src/pm_string.c; same value in Pokémon White
   var RAM_WORDS = 1 << 20;          // 4 MB main RAM = 1M 32-bit words
   var MAX_CAPACITY = 8192, MAX_LEN = 2048;
+  // Text shown all at once (signs) has no typing cursor. It is told apart from labels and names by
+  // its buffer: the game prints messages from big message buffers (HeartGold: 1024 characters),
+  // while labels sit in buffers just big enough for their few letters.
+  var MESSAGE_BUFFER = 256, INSTANT_SCANS = 2;
 
   // Gen 4: own character table, Hangul at 0x400-0xD65.
   var G4_HANGUL_MIN = 0x400, G4_HANGUL_MAX = 0xD65;
@@ -125,7 +129,7 @@
       total++;
       var mode = this.textMode(u16, dataHalf, size);
       if (!mode) continue;
-      var s = { addr: (i - 1) * 4, dataByte: dataHalf * 2, size: size, cursor: -1, mode: mode };
+      var s = { addr: (i - 1) * 4, dataByte: dataHalf * 2, size: size, maxsize: maxsize, cursor: -1, mode: mode };
       list.push(s);
       var w0 = (s.dataByte >> 2), w1 = ((s.dataByte + size * 2) >> 2);
       for (var w = w0; w <= w1; w++) { owner[w] = list.length; this.marked.push(w); }
@@ -163,7 +167,7 @@
       var key = codesKey(u16, s2.dataByte >> 1, s2.size);
       var prev = this.known.get(s2.addr);
       var isNew = !prev || prev.key !== key;
-      var rec = isNew ? { key: key, firstSeen: this.scanNo, cur0: -1, moved: false } : prev;
+      var rec = isNew ? { key: key, firstSeen: this.scanNo, cur0: -1, moved: false, quiet: 0, hadCursor: false } : prev;
       seenNow.set(s2.addr, rec);
       s2.key = key; s2.firstSeen = rec.firstSeen;
       if (isNew && this.scanNo > 1) fresh.push(s2);
@@ -174,7 +178,13 @@
         if (rec.cur0 < 0) rec.cur0 = s2.cursor;
         else if (s2.cursor !== rec.cur0) rec.moved = true;
       }
-      if (s2.cursor >= 0 && (rec.moved || s2.cursor >= s2.size - 1)) {
+      // Shown all at once (a sign): a message buffer that has gone two scans without ever having a
+      // cursor. (A new dialogue has no cursor for a moment before typing starts; waiting two scans
+      // keeps it from flashing up in full.) It counts as printed to the end.
+      if (s2.cursor >= 0) { rec.hadCursor = true; rec.quiet = 0; } else rec.quiet++;
+      var instant = s2.cursor < 0 && !rec.hadCursor && s2.maxsize >= MESSAGE_BUFFER && rec.quiet >= INSTANT_SCANS;
+      if (instant) s2.cursor = s2.size;
+      if (s2.cursor >= 0 && (rec.moved || instant || s2.cursor >= s2.size - 1)) {
         // Prefer the most recently created string that is being printed. Strings created at the
         // same moment are usually two copies of one message (Gen 5 keeps a raw and a printed copy,
         // and only the printed one's pointer is the live cursor): take the one printed furthest.
