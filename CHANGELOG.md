@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.10.1
+- Fix: subtitles jumped to the last page of a dialogue in HeartGold instead of following the game page by page. (The game's second copy of each message was mistaken for a sign.) Signs still show in full.
+
 ## 0.10.0
 - New Progress: every line of dialogue and every sign you read is counted, per game. See what share of the words you read you already know, words you've read often but never looked up ("Probably known"), and the most useful new words to learn next.
 - Study menu redesign: a study hub at the top of the menu (Review, Words, Text), Progress, and Study settings on their own page. Review is a full-screen session with a progress bar. The word screens have the tabs Now, Recent and Saved.
