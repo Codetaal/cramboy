@@ -562,12 +562,14 @@
       else {
         // Search box (16px text so iPhone doesn't zoom in) and the list, which re-renders on its own
         // while typing so the keyboard stays open.
-        h += '<div class="relative mt-3"><span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">' + HI('magnifying-glass', 'size-5') + '</span>' +
+        h += '<div class="mt-3 flex items-center gap-2"><div class="relative flex-1"><span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">' + HI('magnifying-glass', 'size-5') + '</span>' +
           '<input type="search" id="kr-search" enterkeyhint="search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" ' +
           'placeholder="Search words, meanings, sentences" value="' + esc(savedQuery) + '" ' +
           'class="w-full rounded-xl bg-white py-2.5 pl-10 pr-3 text-base text-zinc-900 shadow-sm outline-none ring-1 ring-zinc-900/5 placeholder:text-zinc-400 focus:ring-2 focus:ring-amber-400 dark:bg-zinc-800 dark:text-zinc-100 dark:ring-white/10"></div>' +
-          '<div id="kr-saved-list">' + savedListHTML(savedQuery) + '</div>' +
-          '<div class="mt-3 grid grid-cols-2 gap-2"><button class="' + C.btn + '" data-act="export">Export for Anki</button><button class="' + C.btn + '" data-act="copy">Copy list</button></div>';
+          // Share: Export for Anki / Copy list, at the top so a long list never hides them.
+          '<button class="' + C.btn + ' !px-3" data-act="share" aria-label="Export or copy" aria-expanded="false">' + HI('arrow-up-on-square', 'size-5 text-amber-600 dark:text-amber-400') + '</button></div>' +
+          '<div id="kr-share" class="mt-2 grid grid-cols-2 gap-2" hidden><button class="' + C.btn + '" data-act="export">Export for Anki</button><button class="' + C.btn + '" data-act="copy">Copy list</button></div>' +
+          '<div id="kr-saved-list">' + savedListHTML(savedQuery) + '</div>';
       }
     } else if (tab === 'recent') {
       var lines = history.slice().reverse();
@@ -603,6 +605,7 @@
       }
       var act = b.dataset.act;
       if (act === 'close') { card.onclick = null; return closeSheet(); }
+      if (act === 'share') { var sr = card.querySelector('#kr-share'); sr.hidden = !sr.hidden; b.setAttribute('aria-expanded', String(!sr.hidden)); return; }
       if (act === 'export') return exportCSV();
       if (act === 'say-now') { var nb = card.querySelector('.kr-now'); return speak(nb ? nb.getAttribute('data-s') : ''); }
       if (act === 'copy') return copyList();
