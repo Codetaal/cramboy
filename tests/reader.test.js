@@ -191,6 +191,24 @@ console.log('ALL READER TESTS PASSED');
   console.log('SIGN TEST PASSED');
 }
 
+// ---- A typed dialogue with a template copy (HeartGold): the copy without a cursor is not a sign ----
+{
+  u32.fill(0);
+  const rt = new Reader(T); rt.scan(u32, u16);
+  // The printed copy (name filled in) and the template (name placeholder), both in message buffers.
+  const typed = encode('여! 캔\f공박사님이 새로운\n포켓몬을 발견했대');
+  const td = putString(0x200000, typed, 1024);
+  putString(0x200800, [0xFFFE, 0x0100, 0, 0].concat(encode('여! \f공박사님이 새로운\n포켓몬을 발견했대')), 1024);
+  let rr;
+  [1, 3, 5, 5, 5, 5].forEach(c => { u32[0x300000 >> 2] = 0x02000000 + td + c * 2; rr = rt.scan(u32, u16); });
+  assert(rr.active, 'the dialogue is shown');
+  assert.strictEqual(rr.active.text.slice(0, rr.active.shown).replace(/\u200B/g, '').trim(), '여! 캔', 'only the first page, like the game; not the whole message at once');
+  // Next page: the cursor moves on
+  u32[0x300000 >> 2] = 0x02000000 + td + typed.length * 2; rr = rt.scan(u32, u16);
+  assert.strictEqual(rr.active.shown, rr.active.text.length, 'second page printed');
+  console.log('TEMPLATE COPY TEST PASSED');
+}
+
 // ---- Place-name banner (HeartGold shows "연두마을" in a 22-character buffer) ----
 {
   u32.fill(0);

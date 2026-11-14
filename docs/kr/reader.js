@@ -12,6 +12,8 @@
   // its buffer: the game prints messages from big message buffers (HeartGold: 1024 characters),
   // while labels sit in buffers just big enough for their few letters.
   var MESSAGE_BUFFER = 256, INSTANT_SCANS = 2;
+  // Strings created within this many scans of each other belong to the same message (its copies).
+  var SIBLING_SCANS = 3;
   // Gen 4 shows the place name in a banner when you enter a town or route ("연두마을"); the game
   // keeps it in its own 22-character buffer (checked on a HeartGold memory snapshot).
   var PLACE_BUFFER = 22;
@@ -165,6 +167,17 @@
 
     // 3) Track newly seen strings (for the "recent text" list) and pick the active dialogue.
     var seenNow = new Map(), fresh = [], best = null;
+    // A message being typed right now, and the moments typed messages appeared. A buffer without a
+    // cursor is only a sign when nothing like that is going on: HeartGold keeps a second copy of each
+    // dialogue (the template with the name placeholders) that never gets a cursor.
+    var typingNow = false, typedAt = [];
+    for (i = 0; i < list.length; i++) {
+      var p0 = this.known.get(list[i].addr);
+      if (list[i].maxsize >= MESSAGE_BUFFER && (list[i].cursor >= 0 || (p0 && p0.hadCursor && p0.key === codesKey(u16, list[i].dataByte >> 1, list[i].size)))) {
+        if (list[i].cursor >= 0) typingNow = true;
+        typedAt.push(p0 ? p0.firstSeen : this.scanNo);
+      }
+    }
     for (i = 0; i < list.length; i++) {
       var s2 = list[i];
       var key = codesKey(u16, s2.dataByte >> 1, s2.size);
@@ -185,7 +198,8 @@
       // cursor. (A new dialogue has no cursor for a moment before typing starts; waiting two scans
       // keeps it from flashing up in full.) It counts as printed to the end.
       if (s2.cursor >= 0) { rec.hadCursor = true; rec.quiet = 0; } else rec.quiet++;
-      var instant = s2.cursor < 0 && !rec.hadCursor && s2.maxsize >= MESSAGE_BUFFER && rec.quiet >= INSTANT_SCANS;
+      var nearTyped = typedAt.some(function (t) { return Math.abs(t - rec.firstSeen) <= SIBLING_SCANS; });
+      var instant = s2.cursor < 0 && !rec.hadCursor && s2.maxsize >= MESSAGE_BUFFER && rec.quiet >= INSTANT_SCANS && !typingNow && !nearTyped;
       if (instant) s2.cursor = s2.size;
       if (s2.cursor >= 0 && (rec.moved || instant || s2.cursor >= s2.size - 1)) {
         // Prefer the most recently created string that is being printed. Strings created at the
