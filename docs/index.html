@@ -106,15 +106,17 @@
         <div id="menu-title" class="min-w-0 flex-1 truncate text-lg font-bold">Menu</div>
         <button class="grid size-10 place-items-center rounded-full bg-white text-zinc-700 shadow-sm ring-1 ring-zinc-900/5 active:scale-95 dark:bg-zinc-800 dark:text-zinc-200 dark:ring-white/10" data-m="sound" aria-label="Sound"></button>
         <button class="flex items-center gap-1.5 rounded-full bg-amber-400 px-4 py-2.5 font-semibold text-amber-950 shadow-sm active:scale-95 active:bg-amber-300" data-m="resume">
-          <span data-hi="play" data-hi-class="size-4"></span>Resume</button>
+          <span data-hi="play" data-hi-class="size-4"></span>Play</button>
       </div>
-      <div class="mt-4 divide-y divide-zinc-100 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-zinc-900/5 dark:divide-white/5 dark:bg-zinc-900 dark:ring-white/10">
+      <h3 class="mt-4 px-1 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Study</h3>
+      <div class="mt-2 divide-y divide-zinc-100 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-zinc-900/5 dark:divide-white/5 dark:bg-zinc-900 dark:ring-white/10">
         <button id="m-study" class="group flex w-full items-center gap-3 px-4 py-2.5 text-left active:bg-zinc-50 dark:active:bg-zinc-800" data-m="study-toggle" role="switch" aria-checked="true">
           <span class="min-w-0 flex-1"><span class="block">Study mode</span><span class="mt-0.5 block text-xs leading-snug text-zinc-500 dark:text-zinc-400">Subtitles, word lookup and saved words</span></span>
           <span class="relative h-[31px] w-[51px] shrink-0 rounded-full bg-zinc-200 transition-colors group-aria-checked:bg-amber-400 dark:bg-zinc-700"><span class="absolute left-0.5 top-0.5 size-[27px] rounded-full bg-white shadow transition-transform group-aria-checked:translate-x-5"></span></span>
         </button>
         <div id="m-subs-row" class="flex items-center gap-2 px-4 py-2.5"><span class="flex-1">Subtitles</span><div class="seg flex rounded-lg bg-zinc-100 p-0.5 text-[13px] dark:bg-zinc-800" data-seg="subs"><button class="rounded-md px-2.5 py-1.5 text-zinc-500 aria-pressed:bg-white aria-pressed:font-semibold aria-pressed:text-zinc-900 aria-pressed:shadow-sm dark:text-zinc-400 dark:aria-pressed:bg-zinc-600 dark:aria-pressed:text-white" data-v="off" aria-pressed="false">Off</button><button class="rounded-md px-2.5 py-1.5 text-zinc-500 aria-pressed:bg-white aria-pressed:font-semibold aria-pressed:text-zinc-900 aria-pressed:shadow-sm dark:text-zinc-400 dark:aria-pressed:bg-zinc-600 dark:aria-pressed:text-white" data-v="bar" aria-pressed="false">Bar</button><button class="rounded-md px-2.5 py-1.5 text-zinc-500 aria-pressed:bg-white aria-pressed:font-semibold aria-pressed:text-zinc-900 aria-pressed:shadow-sm dark:text-zinc-400 dark:aria-pressed:bg-zinc-600 dark:aria-pressed:text-white" data-v="box" aria-pressed="false">In box</button></div></div>
         <button id="m-reset-box" class="flex w-full items-center gap-2 px-4 py-3 text-left text-amber-600 active:bg-zinc-50 dark:text-amber-400 dark:active:bg-zinc-800" data-m="reset-box"><span class="flex-1">Reset subtitle box position</span></button>
+        <button id="m-words-row" class="flex w-full items-center gap-2 px-4 py-3 text-left active:bg-zinc-50 dark:active:bg-zinc-800" data-m="words"><span class="flex-1">Saved words &amp; recent text</span><span class="flex items-center gap-1 text-sm text-zinc-500 dark:text-zinc-400" id="m-words"></span><span data-hi="chevron-right" data-hi-class="size-5 shrink-0 text-zinc-300 dark:text-zinc-600"></span></button>
       </div>
       <h3 class="mt-4 px-1 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Controls</h3>
       <div class="mt-2 rounded-2xl bg-white px-4 py-3 shadow-sm ring-1 ring-zinc-900/5 dark:bg-zinc-900 dark:ring-white/10">
@@ -122,23 +124,22 @@
         <!-- While you drag, the menu fades so you can see the controls behind it. -->
         <input id="m-opacity" type="range" min="15" max="100" step="5" class="mt-2 w-full accent-amber-500" aria-describedby="m-opacity-val">
       </div>
-      <h3 class="mt-4 px-1 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Save data</h3>
+      <h3 class="mt-4 px-1 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Saves</h3>
       <div class="mt-2 divide-y divide-zinc-100 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-zinc-900/5 dark:divide-white/5 dark:bg-zinc-900 dark:ring-white/10">
         <button class="flex w-full items-center gap-2 px-4 py-3 text-left active:bg-zinc-50 dark:active:bg-zinc-800" data-m="export"><span class="flex-1">Export save</span><span class="text-sm text-zinc-500 dark:text-zinc-400">.dsz</span><span data-hi="chevron-right" data-hi-class="size-5 shrink-0 text-zinc-300 dark:text-zinc-600"></span></button>
         <button class="flex w-full items-center gap-2 px-4 py-3 text-left active:bg-zinc-50 dark:active:bg-zinc-800" data-m="import"><span class="flex-1">Import save</span><span class="text-sm text-zinc-500 dark:text-zinc-400">.dsz .sav .dsv</span><span data-hi="chevron-right" data-hi-class="size-5 shrink-0 text-zinc-300 dark:text-zinc-600"></span></button>
-      </div>
-      <input id="file-save" type="file" hidden>
-      <h3 class="mt-4 px-1 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">More</h3>
-      <div class="mt-2 divide-y divide-zinc-100 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-zinc-900/5 dark:divide-white/5 dark:bg-zinc-900 dark:ring-white/10">
-        <button id="m-words-row" class="flex w-full items-center gap-2 px-4 py-3 text-left active:bg-zinc-50 dark:active:bg-zinc-800" data-m="words"><span class="flex-1">Words &amp; text</span><span class="flex items-center gap-1 text-sm text-zinc-500 dark:text-zinc-400" id="m-words"></span><span data-hi="chevron-right" data-hi-class="size-5 shrink-0 text-zinc-300 dark:text-zinc-600"></span></button>
-        <button class="flex w-full items-center gap-2 px-4 py-3 text-left active:bg-zinc-50 dark:active:bg-zinc-800" data-m="advanced"><span class="flex-1">Advanced</span><span class="text-sm text-zinc-500 dark:text-zinc-400">resume, info</span>
-          <span id="m-adv-chev" class="inline-flex transition-transform duration-150"><span data-hi="chevron-right" data-hi-class="size-5 shrink-0 text-zinc-300 dark:text-zinc-600"></span></span></button>
-        <div id="m-advanced" class="bg-zinc-50/60 dark:bg-white/[0.02]" hidden>
-          <button id="m-resume" class="group flex w-full items-center gap-3 px-4 py-3 pl-7 text-left text-[15px] active:bg-zinc-50 dark:active:bg-zinc-800" data-m="resume-toggle" role="switch" aria-checked="false">
+        <button id="m-resume" class="group flex w-full items-center gap-3 px-4 py-3 text-left active:bg-zinc-50 dark:active:bg-zinc-800" data-m="resume-toggle" role="switch" aria-checked="false">
             <span class="min-w-0 flex-1"><span class="block">Resume where you left off</span>
               <span class="mt-1 block text-xs leading-snug text-zinc-500 dark:text-zinc-400"><span class="mr-1 inline-block rounded-full bg-amber-100 px-1.5 py-px align-[1px] text-[10px] font-semibold uppercase tracking-wide text-amber-800 dark:bg-amber-400/15 dark:text-amber-300">Experimental</span>Takes a snapshot every 2 minutes and when you leave. Keep saving in the game too.</span></span>
             <span class="relative h-[31px] w-[51px] shrink-0 rounded-full bg-zinc-200 transition-colors group-aria-checked:bg-amber-400 dark:bg-zinc-700"><span class="absolute left-0.5 top-0.5 size-[27px] rounded-full bg-white shadow transition-transform group-aria-checked:translate-x-5"></span></span>
           </button>
+      </div>
+      <input id="file-save" type="file" hidden>
+      <h3 class="mt-4 px-1 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">More</h3>
+      <div class="mt-2 divide-y divide-zinc-100 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-zinc-900/5 dark:divide-white/5 dark:bg-zinc-900 dark:ring-white/10">
+        <button class="flex w-full items-center gap-2 px-4 py-3 text-left active:bg-zinc-50 dark:active:bg-zinc-800" data-m="advanced"><span class="flex-1">Advanced</span><span class="text-sm text-zinc-500 dark:text-zinc-400">memory dump, info</span>
+          <span id="m-adv-chev" class="inline-flex transition-transform duration-150"><span data-hi="chevron-right" data-hi-class="size-5 shrink-0 text-zinc-300 dark:text-zinc-600"></span></span></button>
+        <div id="m-advanced" class="bg-zinc-50/60 dark:bg-white/[0.02]" hidden>
           <button class="flex w-full items-center gap-2 px-4 py-3 text-left active:bg-zinc-50 dark:active:bg-zinc-800 pl-7 text-[15px]" data-m="snapshot"><span class="flex-1">Export memory dump</span><span data-hi="chevron-right" data-hi-class="size-5 shrink-0 text-zinc-300 dark:text-zinc-600"></span></button>
           <div id="m-info" class="border-t border-zinc-100 px-4 pb-3 pl-7 pt-2.5 text-xs leading-relaxed text-zinc-500 dark:border-white/5 dark:text-zinc-400"></div>
         </div>
