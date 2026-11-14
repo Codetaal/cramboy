@@ -2,6 +2,9 @@
 
 CheeseLab uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.6.1
+- Signs and other text the game shows all at once (instead of typing it) now appear as subtitles too, with tappable words. Menu labels and names are still ignored.
+
 ## 0.6.0
 - Hear it: speaker buttons in the word sheet (word and sentence) and "Hear it" in the Now tab read the text aloud with your phone's own Korean or Japanese voice. Works offline.
 - Known words: tap "I know this word" in the word sheet and it loses its dotted underline in the subtitles (still tappable). Other forms of the same word count too. Undo from the same sheet.
