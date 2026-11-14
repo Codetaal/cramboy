@@ -127,7 +127,7 @@
   }
   function resetBox() { boxGeo = {}; saveSettings(); krLayout(); toast('Subtitle box reset', 'ok'); }
   window.KRReaderStats = function () { return reader.stats; };
-  window.KRSettings = { getMode: function () { return settings.mode; }, setMode: setMode, savedCount: function () { return saved.length; }, dueCount: function () { return dueCount(); },
+  window.KRSettings = { getMode: function () { return settings.mode; }, setMode: setMode, savedCount: function () { return saved.length; }, knownPct: function () { var p = gameProgress(); return p.n ? pct(p.known, p.n) : null; }, dueCount: function () { return dueCount(); },
     getStudy: function () { return settings.study; }, setStudy: setStudy,
     getFrame: function () { return settings.frame; }, setFrame: setFrame, frames: FRAMES };
   window.KRUI = { open: function (tab) { openMenu(tab || 'now'); }, resetBox: resetBox };
@@ -358,7 +358,7 @@
     if (res.place) setPlace(res.place);
     res.fresh.forEach(function (t) {
       t = plain(t).trim();
-      if (t.length >= 2 && otherText.indexOf(t) < 0) { otherText.push(t); if (otherText.length > 150) otherText.shift(); }
+      if (t.length >= 2 && otherText.indexOf(t) < 0) { otherText.push(t); if (otherText.length > 150) otherText.shift(); countText(t); }
     });
     if (res.newMessage && current) archive(current);
     if (res.active) {
@@ -378,7 +378,7 @@
 
   function archive(msg) {
     var t = plain(msg.text).trim();
-    if (t && history[history.length - 1] !== t) { history.push(t); if (history.length > 100) history.shift(); }
+    if (t && history[history.length - 1] !== t) { history.push(t); if (history.length > 100) history.shift(); countText(t); }
   }
 
   // ---------- subtitle panel ----------
@@ -470,11 +470,111 @@
     if (current) renderPanel();
   }
 
+  // ---------- every word you read ----------
+  // Each finished line of dialogue and each new sign is split into words, counted by base form
+  // (세계에 / 세계를 -> 세계), overall and per game. Stored as
+  //   seen[lang] = { w: { base: [times read, times looked up, last sentence] }, g: { gameId: { name, n: words read, w: { base: times } } } }
+  var seen = { ko: { w: {}, g: {} }, ja: { w: {}, g: {} } }, seenTimer = null, seenPending = [];
+  if (store) store.getItem('seen').then(function (v) { if (v && v.ko && v.ja) { mergeSeen(v); } }).catch(function () {});
+  // Counts made before the stored ones loaded are added on top.
+  function mergeSeen(v) {
+    ['ko', 'ja'].forEach(function (l) {
+      var a = seen[l], b = v[l];
+      for (var k in a.w) { var e = b.w[k] || (b.w[k] = [0, 0, '']); e[0] += a.w[k][0]; e[1] += a.w[k][1]; if (a.w[k][2]) e[2] = a.w[k][2]; }
+      for (var g in a.g) { var G = b.g[g] || (b.g[g] = { name: a.g[g].name, n: 0, w: {} }); G.n += a.g[g].n; for (var k2 in a.g[g].w) G.w[k2] = (G.w[k2] || 0) + a.g[g].w[k2]; }
+      seen[l] = b;
+    });
+  }
+  function saveSeen() { if (!store || seenTimer) return; seenTimer = setTimeout(function () { seenTimer = null; store.setItem('seen', seen).catch(function () {}); }, 3000); }
+  function lineWords(text) {
+    if (lang === 'ja') return [].concat.apply([], text.split('\n').map(function (line) { return KRLookupJa.segment(dicts.ja || null, line).filter(function (p) { return p.w; }).map(function (p) { return p.t; }); }));
+    return text.split(/\s+/).filter(function (t) { return /[가-힣]/.test(t); });
+  }
+  function wordKey(tok) { return baseFor(tok) || (lang === 'ja' ? KRLookupJa.clean(tok) : KRLookup.clean(tok)); }
+  function countText(text) {
+    if (!settings.study) return;
+    // Base forms need the dictionary: wait for it.
+    if (!dicts[lang]) { seenPending.push(text); if (seenPending.length === 1) loadDict().then(function () { var p = seenPending; seenPending = []; p.forEach(countText); }).catch(function () {}); return; }
+    var S = seen[lang], gid = game.id || 'unknown', G = S.g[gid] || (S.g[gid] = { name: game.name, n: 0, w: {} });
+    if (game.name) G.name = game.name;
+    var line = text.replace(/\n+/g, ' ');
+    lineWords(text).forEach(function (tok) {
+      var k = wordKey(tok); if (!k) return;
+      var e = S.w[k] || (S.w[k] = [0, 0, '']);
+      e[0]++; e[2] = line.length <= 120 ? line : e[2];
+      G.w[k] = (G.w[k] || 0) + 1; G.n++;
+    });
+    saveSeen();
+  }
+  function noteLookup(base, l) {
+    if (!base) return;
+    var e = seen[l].w[base] || (seen[l].w[base] = [0, 0, '']);
+    e[1]++; saveSeen();
+  }
+  // How a word stands: 'known', 'learning' (saved) or 'new'.
+  function wordState(k, l) { return known[l][k] ? 'known' : saved.some(function (x) { return (x.lang || 'ko') === l && (x.base === k || x.w === k); }) ? 'learning' : 'new'; }
+  // For this game: share of the words read that are known / learning / new (counting every time a word was read).
+  function gameProgress() {
+    var G = seen[lang].g[game.id || 'unknown'];
+    var r = { n: 0, uniq: 0, known: 0, learning: 0, fresh: 0, knownUniq: 0 };
+    if (!G) return r;
+    for (var k in G.w) {
+      var c = G.w[k], st = wordState(k, lang);
+      r.n += c; r.uniq++;
+      if (st === 'known') { r.known += c; r.knownUniq++; } else if (st === 'learning') r.learning += c; else r.fresh += c;
+    }
+    return r;
+  }
+  function pct(a, b) { return b ? Math.round(a / b * 100) : 0; }
+
+  function progressHTML() {
+    var p = gameProgress(), S = seen[lang], G = S.g[game.id || 'unknown'];
+    var h = '<p class="text-2xl font-bold">Progress</p>' + (game.name ? '<p class="' + C.muted + '">' + esc(game.name) + '</p>' : '');
+    if (!p.n) return h + '<p class="mt-4 ' + C.muted + '">Nothing read yet in this game. Play a bit: every line of dialogue and every sign you read is counted here.</p>';
+    var kp = pct(p.known, p.n), lp = pct(p.learning, p.n), fp = Math.max(0, 100 - kp - lp);
+    h += '<div class="mt-4 ' + C.card + '"><p class="text-4xl font-bold">' + kp + '%</p>' +
+      '<p class="text-zinc-600 dark:text-zinc-300">of the words you read in this game are words you know.</p>' +
+      '<div class="mt-3 flex h-2.5 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-700">' +
+        '<div class="bg-emerald-500" style="width:' + kp + '%"></div><div class="bg-amber-400" style="width:' + lp + '%"></div></div>' +
+      '<div class="mt-2 flex gap-3 text-xs text-zinc-500 dark:text-zinc-400">' +
+        '<span class="flex items-center gap-1"><i class="size-2 rounded-full bg-emerald-500"></i>Known ' + kp + '%</span>' +
+        '<span class="flex items-center gap-1"><i class="size-2 rounded-full bg-amber-400"></i>Learning ' + lp + '%</span>' +
+        '<span class="flex items-center gap-1"><i class="size-2 rounded-full bg-zinc-300 dark:bg-zinc-600"></i>New ' + fp + '%</span></div>' +
+      '<p class="mt-3 text-sm ' + C.muted + '">' + p.n.toLocaleString() + ' words read · ' + p.uniq.toLocaleString() + ' different · ' + p.knownUniq.toLocaleString() + ' known</p></div>';
+    // Probably known: read often, never looked up.
+    var likely = Object.keys(S.w).filter(function (k) { var e = S.w[k]; return e[0] >= 15 && !e[1] && wordState(k, lang) === 'new'; })
+      .sort(function (a, b) { return S.w[b][0] - S.w[a][0]; }).slice(0, 8);
+    if (likely.length) {
+      h += '<div class="mt-5 flex items-end px-1"><p class="flex-1 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Probably known</p>' +
+        '<button class="text-sm font-semibold text-zinc-600 active:opacity-60 dark:text-zinc-300" data-act="pg-know-all">Mark all as known</button></div>' +
+        '<p class="mt-0.5 px-1 text-sm ' + C.muted + '">Read many times and never looked up.</p><div class="mt-1.5 ' + C.list + '">' +
+        likely.map(function (k) { return progRow(k, S.w[k][0] + '× read', '<button class="' + C.btn + ' !px-3 !py-1.5 text-sm" data-know="' + esc(k) + '">' + HI('check', 'size-4') + 'Know</button>'); }).join('') + '</div>';
+    }
+    // Worth learning: words you keep looking up first, then the most frequent new words in this game.
+    var worth = Object.keys(G ? G.w : {}).filter(function (k) { return wordState(k, lang) === 'new' && likely.indexOf(k) < 0; })
+      .sort(function (a, b) { var la = (S.w[a] || [0, 0])[1] >= 2, lb = (S.w[b] || [0, 0])[1] >= 2; return la !== lb ? (lb ? 1 : -1) : G.w[b] - G.w[a]; }).slice(0, 10);
+    if (worth.length) {
+      h += '<p class="mt-5 px-1 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Worth learning</p>' +
+        '<p class="mt-0.5 px-1 text-sm ' + C.muted + '">Words you keep looking up, and the most common new words in this game. Tap one to learn it.</p><div class="mt-1.5 ' + C.list + '">' +
+        worth.map(function (k) { var e = S.w[k] || [0, 0]; return progRow(k, G.w[k] + '× read' + (e[1] >= 2 ? ' · looked up ' + e[1] + '×' : ''), HI('chevron-right', 'size-5 text-zinc-300 dark:text-zinc-600'), true); }).join('') + '</div>';
+    }
+    return h;
+  }
+  function progRow(k, sub, right, open) {
+    return '<div class="flex items-center gap-3 px-4 py-2.5' + (open ? ' cursor-pointer active:bg-zinc-100 dark:active:bg-zinc-800" data-pw="' + esc(k) + '"' : '"') + '>' +
+      '<div class="min-w-0 flex-1"><p class="font-bold">' + esc(k) + '</p><p class="text-sm ' + C.muted + '">' + sub + '</p></div>' + right + '</div>';
+  }
+  function markKnown(keys) {
+    keys.forEach(function (k) { known[lang][k] = 1; });
+    persistKnown(); if (current) renderPanel();
+    toast(keys.length === 1 ? 'Known: ' + keys[0] : keys.length + ' words marked as known', 'ok');
+  }
+
   // ---------- word sheet ----------
   // Which Words & text tab the word sheet's back button returns to: the tab the word was
   // tapped in, or Now when it was tapped in the subtitles.
   var menuTab = null, wordBack = 'now';
-  var TAB_LABEL = { now: 'Now', saved: 'Saved words', recent: 'Recent', review: 'Review' };
+  var TAB_LABEL = { now: 'Now', saved: 'Saved words', recent: 'Recent', review: 'Review', progress: 'Progress' };
   // l: the word's own language (a saved word from a game in the other language); default the game's.
   var wlang = 'ko';
   function openWord(raw, sentence, span, l) {
@@ -484,14 +584,14 @@
       wordBack = menuTab || 'now';
       if (span) span.classList.add('kr-sel');
       openSheet('<p class="' + C.muted + '">Looking up…</p>');
-      loadDict('ja').then(function (d) { var r = KRLookupJa.lookup(d, raw, 5); showWord(r.matched, r.matched, sentence, r.hits); })
+      loadDict('ja').then(function (d) { var r = KRLookupJa.lookup(d, raw, 5); noteLookup(r.hits && r.hits[0] ? r.hits[0].word : r.matched, wlang); showWord(r.matched, r.matched, sentence, r.hits); })
         .catch(function () { showWord(KRLookupJa.clean(raw), raw, sentence, null); });
       return;
     }
     wordBack = menuTab || 'now';
     if (span) span.classList.add('kr-sel');
     openSheet('<p class="' + C.muted + '">Looking up…</p>');
-    loadDict(wlang).then(function (d) { showWord(word, raw, sentence, KRLookup.lookup(d, raw, 3)); })
+    loadDict(wlang).then(function (d) { var hits = KRLookup.lookup(d, raw, 3); noteLookup(hits && hits[0] ? hits[0].word : word, wlang); showWord(word, raw, sentence, hits); })
       .catch(function () { showWord(word, raw, sentence, null); });
   }
 
@@ -732,6 +832,7 @@
   function openMenu(tab) {
     if (tab !== 'review') review = null;   // a new session each time you come to Review
     menuTab = tab;
+    if (tab === 'progress') return openProgress();
     var tb = function (id, label) { return '<button class="' + C.tab + '" data-tab="' + id + '" aria-pressed="' + (tab === id) + '">' + label + '</button>'; };
     var h = '<div class="flex rounded-xl bg-zinc-100 p-1 dark:bg-zinc-800">' + tb('now', 'Now') +
       tb('saved', HI('star', 'size-4 text-amber-500 relative -top-[1.25px]') + saved.length) + tb('recent', 'Recent') +
@@ -813,6 +914,18 @@
       if (act === 'rv-say-s' && rx) return speak(rx.s, rx.lang);
       if (act === 'rv-say-w' && rx) return speak(rx.base || rx.w, rx.lang);
       if (act === 'rv-more' && rx) return openWord(rx.w, rx.s || '', null, rx.lang);
+    };
+  }
+
+  function openProgress() {
+    openSheet(progressHTML(), true);
+    card.onclick = function (e) {
+      var b = e.target.closest('[data-know],[data-pw],[data-act]');
+      if (!b) return;
+      if (b.dataset.know) { markKnown([b.dataset.know]); return openProgress(); }
+      if (b.dataset.pw) { var e2 = seen[lang].w[b.dataset.pw]; return openWord(b.dataset.pw, e2 ? e2[2] : '', null, lang); }
+      if (b.dataset.act === 'pg-know-all') { markKnown(Array.prototype.map.call(card.querySelectorAll('[data-know]'), function (n) { return n.dataset.know; })); return openProgress(); }
+      if (b.dataset.act === 'close') { card.onclick = null; closeSheet(); }
     };
   }
 

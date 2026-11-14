@@ -911,7 +911,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     var study = !window.KRSettings || KRSettings.getStudy();
     $('m-study').setAttribute('aria-checked', String(study));
     // Study mode off: hide every study-related row.
-    $('m-subs-row').hidden = !study; $('m-words-row').hidden = !study; $('m-review-row').hidden = !study;
+    $('m-subs-row').hidden = !study; $('m-words-row').hidden = !study; $('m-review-row').hidden = !study; $('m-progress-row').hidden = !study;
     $('m-reset-box').hidden = !study || !window.KRSettings || KRSettings.getMode() !== 'box';
     $('m-frame-row').hidden = $('m-reset-box').hidden;
     var fr = window.KRSettings && KRSettings.getFrame ? KRSettings.getFrame() : 'classic';
@@ -919,6 +919,8 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     var frb = document.querySelector('[data-frame-pick="' + fr + '"]'); $('m-frame-name').textContent = frb ? frb.getAttribute('aria-label').replace(' frame', '') : '';
     var due = window.KRSettings && KRSettings.dueCount ? KRSettings.dueCount() : 0;
     $('m-review').innerHTML = due ? '<span class="rounded-full bg-amber-400 px-2 py-0.5 text-xs font-semibold text-amber-950">' + due + ' due</span>' : 'Nothing due';
+    var kp = window.KRSettings && KRSettings.knownPct ? KRSettings.knownPct() : null;
+    $('m-progress').textContent = kp === null ? '' : kp + '% known';
     $('m-words').innerHTML = window.KRSettings ? HI('star', 'size-4 text-amber-500 relative -top-[1.25px]') + KRSettings.savedCount() : '';
     var st = window.KRReaderStats ? KRReaderStats() : null;
     $('m-info').innerHTML = 'Version ' + APP_VERSION + ' · ' + (gameID ? gameID.trim() : '') +
@@ -984,6 +986,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     if (m === 'import') $('file-save').click();
     if (m === 'words' && window.KRUI) { closeMenu(); KRUI.open('saved'); }
     if (m === 'review' && window.KRUI) { closeMenu(); KRUI.open('review'); }
+    if (m === 'progress' && window.KRUI) { closeMenu(); KRUI.open('progress'); }
     if (m === 'update') return updateNow();
     if (m === 'advanced') {
       var open = $('m-advanced').hidden; $('m-advanced').hidden = !open;
