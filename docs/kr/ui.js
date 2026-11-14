@@ -129,6 +129,60 @@
     if (!store) return;
     store.setItem('saved', saved).catch(function () { toast('Could not save', 'warn'); });
   }
+  // ---------- known words ----------
+  // Words you already know lose their dotted underline in the subtitles (still tappable). Stored per
+  // language, both as seen and in dictionary form, so other forms of the same word count too.
+  var known = { ko: {}, ja: {} }, baseOf = new Map();
+  function loadKnown() {
+    if (!store) return;
+    store.getItem('known').then(function (v) {
+      if (v && typeof v === 'object') ['ko', 'ja'].forEach(function (l) { (v[l] || []).forEach(function (w) { known[l][w] = 1; }); });
+      if (current) renderPanel();
+    }).catch(function () {});
+  }
+  function persistKnown() {
+    if (store) store.setItem('known', { ko: Object.keys(known.ko), ja: Object.keys(known.ja) }).catch(function () { toast('Could not save', 'warn'); });
+  }
+  // Dictionary form of a word as it appears in the text (cached; needs the dictionary).
+  function baseFor(tok) {
+    var key = lang + ':' + tok;
+    if (baseOf.has(key)) return baseOf.get(key);
+    var d = dicts[lang];
+    if (!d) return '';
+    var r = lang === 'ja' ? KRLookupJa.lookup(d, tok, 1) : KRLookup.lookup(d, tok, 1);
+    var hits = lang === 'ja' ? r.hits : r;
+    var b = hits && hits[0] && (lang !== 'ja' || r.matched === KRLookupJa.clean(tok)) ? hits[0].word : '';
+    if (baseOf.size > 5000) baseOf.clear();
+    baseOf.set(key, b);
+    return b;
+  }
+  function isKnown(tok) {
+    var k = known[lang], c = lang === 'ja' ? KRLookupJa.clean(tok) : KRLookup.clean(tok);
+    if (k[c]) return true;
+    var b = baseFor(tok);
+    return !!(b && k[b]);
+  }
+  function wordClass(tok) { return 'kr-w' + (isSaved(tok) ? ' kr-saved' : isKnown(tok) ? ' kr-known' : ''); }
+
+  // ---------- hear it ----------
+  // The phone's own voices (Korean / Japanese are built into iPhone): offline and free.
+  var VOICE_LANG = { ko: 'ko-KR', ja: 'ja-JP' };
+  function speak(text) {
+    text = String(text || '').replace(/[\u200B·…]+/g, ' ').trim();
+    if (!text) return;
+    if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) { toast('Speech isn’t available here', 'warn'); return; }
+    var want = VOICE_LANG[lang], voices = speechSynthesis.getVoices();
+    var v = voices.filter(function (x) { return x.lang && x.lang.replace('_', '-').indexOf(want) === 0; })[0] ||
+            voices.filter(function (x) { return x.lang && x.lang.indexOf(lang) === 0; })[0];
+    if (voices.length && !v) { toast('No ' + (lang === 'ja' ? 'Japanese' : 'Korean') + ' voice on this device', 'warn'); return; }
+    speechSynthesis.cancel();
+    var u = new SpeechSynthesisUtterance(text);
+    u.lang = want; u.rate = 0.9;
+    try { if (v) u.voice = v; } catch (e) {}
+    speechSynthesis.speak(u);
+  }
+  var SPEAK_BTN = 'grid size-10 shrink-0 place-items-center rounded-full text-amber-600 active:bg-amber-100 dark:text-amber-400 dark:active:bg-amber-400/15';
+
   function isSaved(word) { var c = KRLookup.clean(word); return saved.some(function (x) { return x.w === c || x.base === c; }); }
 
   function loadDict(l) {
@@ -136,7 +190,7 @@
     if (dicts[l]) return Promise.resolve(dicts[l]);
     if (!dictLoading[l]) {
       dictLoading[l] = fetch(BASE + LANG[l].file).then(function (r) { return r.json(); })
-        .then(function (d) { dicts[l] = d; if (l === 'ja') renderPanel(); return d; })   // re-split words once the dictionary is there
+        .then(function (d) { dicts[l] = d; baseOf.clear(); if (current) renderPanel(); return d; })   // re-split words / mark known words once the dictionary is there
         .catch(function (e) { dictLoading[l] = null; throw e; });
     }
     return dictLoading[l];
@@ -289,7 +343,7 @@
     if (lang === 'ja') {
       return esc(text).split('\n').map(function (line) {
         return KRLookupJa.segment(dicts.ja || null, line).map(function (p) {
-          return p.w ? '<span class="kr-w' + (isSaved(p.t) ? ' kr-saved' : '') + '" data-w="' + p.t + '">' + p.t + '</span>' : p.t;
+          return p.w ? '<span class="' + wordClass(p.t) + '" data-w="' + p.t + '">' + p.t + '</span>' : p.t;
         }).join('');
       }).join('<br>');
     }
@@ -297,7 +351,7 @@
       return line.split(/( +)/).map(function (tok) {
         if (!tok.trim()) return tok;
         if (!/[가-힣]/.test(tok)) return tok;
-        return '<span class="kr-w' + (isSaved(tok) ? ' kr-saved' : '') + '" data-w="' + tok + '">' + tok + '</span>';
+        return '<span class="' + wordClass(tok) + '" data-w="' + tok + '">' + tok + '</span>';
       }).join('');
     }).join('<br>');
   }
@@ -392,11 +446,16 @@
 
   function showWord(word, raw, sentence, hits) {
     var savedNow = isSaved(word), OUT = HI('arrow-top-right-on-square', 'size-4 text-zinc-400');
+    var base = hits && hits[0] ? hits[0].word : word, knownNow = !!(known[lang][word] || known[lang][base]);
     var h = '<button class="-ml-1.5 -mt-1 mb-1 flex items-center gap-0.5 py-1 pr-2 font-medium text-amber-600 active:opacity-60 dark:text-amber-400" data-act="back">' +
       HI('chevron-left', 'size-5') + TAB_LABEL[wordBack] + '</button>' +
-      '<div class="flex items-center gap-3"><div class="kr-selectable flex-1 break-keep text-[30px] font-bold">' + esc(word) + '</div>' +
+      '<div class="flex items-center gap-1"><div class="kr-selectable min-w-0 break-keep text-[30px] font-bold">' + esc(word) + '</div>' +
+      '<button class="' + SPEAK_BTN + '" data-act="say-word" aria-label="Hear the word">' + HI('speaker-wave', 'size-6') + '</button><div class="flex-1"></div>' +
       '<button class="' + (savedNow ? C.saved : C.save) + '" data-act="save">' +
-      (savedNow ? HI('star', 'size-5') + 'Saved' : HI('star-outline', 'size-5') + 'Save') + '</button></div>';
+      (savedNow ? HI('star', 'size-5') + 'Saved' : HI('star-outline', 'size-5') + 'Save') + '</button></div>' +
+      '<button class="mt-2 flex items-center gap-1.5 rounded-lg px-1 py-1 text-sm font-medium ' +
+      (knownNow ? 'text-emerald-700 dark:text-emerald-400' : 'text-zinc-500 dark:text-zinc-400') + ' active:opacity-60" data-act="known">' +
+      (knownNow ? HI('check', 'size-5') + 'You know this word · undo' : HI('check', 'size-5 opacity-40') + 'I know this word') + '</button>';
     if (hits === null) h += '<p class="mt-3 ' + C.muted + '">Dictionary not available offline yet. Use the links below.</p>';
     else if (!hits.length) h += '<p class="mt-3 ' + C.muted + '">Not in the offline dictionary. Try ' + LANG[lang].dictName + ' below, or long‑press the word above → Look Up.</p>';
     else {
@@ -411,9 +470,9 @@
     }
     if (sentence) {
       var marked = esc(sentence).split(esc(raw)).join('<mark class="' + C.mark + '">' + esc(raw) + '</mark>');
-      h += '<p class="kr-selectable mt-3 ' + C.card + ' leading-relaxed text-zinc-800 dark:text-zinc-200">' + marked + '</p>';
+      h += '<div class="mt-3 flex items-start gap-1 ' + C.card + '"><p class="kr-selectable flex-1 leading-relaxed text-zinc-800 dark:text-zinc-200">' + marked + '</p>' +
+        '<button class="' + SPEAK_BTN + ' -my-1.5 -mr-2" data-act="say-sentence" aria-label="Hear the sentence">' + HI('speaker-wave', 'size-5') + '</button></div>';
     }
-    var base = hits && hits[0] ? hits[0].word : word;
     h += '<div class="mt-3 grid ' + (sentence ? 'grid-cols-2' : 'grid-cols-1') + ' gap-2">' +
       '<a class="' + C.btn + '" target="_blank" rel="noopener" href="' + LANG[lang].dictUrl + encodeURIComponent(base) + '">' + LANG[lang].dictName + ' ' + OUT + '</a>' +
       (sentence ? '<a class="' + C.btn + '" target="_blank" rel="noopener" href="https://translate.google.com/?sl=' + lang + '&tl=en&op=translate&text=' + encodeURIComponent(sentence) + '">Google ' + OUT + '</a>' : '') +
@@ -422,6 +481,15 @@
     openSheet(h, true);
     card.querySelector('[data-act=close]').onclick = closeSheet;
     card.querySelector('[data-act=back]').onclick = function () { openMenu(wordBack); };
+    card.querySelector('[data-act=say-word]').onclick = function () { speak(word); };
+    if (sentence) card.querySelector('[data-act=say-sentence]').onclick = function () { speak(sentence); };
+    card.querySelector('[data-act=known]').onclick = function () {
+      var k = known[lang];
+      if (k[word] || k[base]) { delete k[word]; delete k[base]; toast('Marked as new: ' + base, 'info'); }
+      else { k[word] = 1; k[base] = 1; toast('Known: ' + base, 'ok'); }
+      persistKnown();
+      showWord(word, raw, sentence, hits);
+    };
     card.querySelector('[data-act=save]').onclick = function () {
       if (isSaved(word)) {
         saved = saved.filter(function (x) { return x.w !== word && x.base !== word; });
@@ -449,7 +517,8 @@
       else {
         h += '<div class="kr-now mt-3 ' + C.card + '" data-s="' + esc(full.replace(/\n+/g, ' ')) + '">' +
           wordsHTML(nowText.replace(/\n\n+/g, '\n')) + '</div>' +
-          '<p class="mt-2 px-1 ' + C.muted + '">Tap a word to look it up.</p>';
+          '<div class="mt-2 flex items-center gap-2 px-1"><p class="flex-1 ' + C.muted + '">Tap a word to look it up.</p>' +
+          '<button class="' + C.btn + ' !py-2" data-act="say-now">' + HI('speaker-wave', 'size-5 text-amber-600 dark:text-amber-400') + 'Hear it</button></div>';
       }
     } else if (tab === 'saved') {
       if (!saved.length) h += '<p class="mt-3 ' + C.muted + '">No saved words yet. Tap any word in the subtitles, then Save.</p>';
@@ -492,6 +561,7 @@
       var act = b.dataset.act;
       if (act === 'close') { card.onclick = null; return closeSheet(); }
       if (act === 'export') return exportCSV();
+      if (act === 'say-now') { var nb = card.querySelector('.kr-now'); return speak(nb ? nb.getAttribute('data-s') : ''); }
       if (act === 'copy') return copyList();
     };
   }
@@ -524,4 +594,5 @@
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount); else mount();
   loadSaved();
+  loadKnown();
 })();

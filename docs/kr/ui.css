@@ -114,3 +114,6 @@
 @keyframes kr-bob { 50% { transform: translateY(calc(1.5px * var(--k, 1.46))); } }
 
 /* Heroicons on the game screen */
+
+/* Words you know: no dotted underline (still tappable). */
+.kr-w.kr-known, #kr-sheet .kr-w.kr-known, #kr-box .kr-w.kr-known { border-bottom-color: transparent; }
