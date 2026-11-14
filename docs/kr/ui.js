@@ -555,7 +555,7 @@
         if (to === 'learning') {
           var t = Date.now();
           saved.push({ w: word, base: base, reading: hits && hits[0] ? hits[0].reading || '' : '', gloss: hits && hits[0] ? hits[0].gloss : '', s: sentence || '', t: t, lang: wlang,
-            place: place, game: game.name, due: t, step: 0 });
+            place: place, game: game.name, due: t, iv: 0, ease: EASE, reps: 0 });
           snapshot(t);
           persist(); updatePill();
           toast('Saved: ' + base, 'star');
@@ -606,12 +606,38 @@
   }
 
   // ---------- review: saved words come back, with the moment you saved them ----------
-  // A simple spaced-repetition ladder. A new word is due right away; each "Got it" waits longer
-  // (1, 3, 7, 14, 30 days). "Got it" after the 30-day wait makes the word Known: it leaves the list.
-  // "Again" starts the ladder over and shows the word once more at the end of this session.
-  var LADDER = [1, 3, 7, 14, 30], DAY = 864e5;
+  // Spaced repetition, adapting per word (like a simplified Anki):
+  //  - iv: days until the next review; ease: how fast that grows. A new word's first "Got it" waits
+  //    1 day, then each "Got it" multiplies the wait by the word's ease (2.5 to start: 1, 3, 8, 20, 50,
+  //    125 days...). There is no finish line: a word becomes Known on its own only once the next wait
+  //    would be half a year or more.
+  //  - "Again" starts the word over (next "Got it": 1 day) and lowers its ease, so a word you keep
+  //    forgetting comes back more often from then on. It is shown once more at the end of the session.
+  //  - New words (never reviewed): at most NEW_PER_DAY a day, so a long game doesn't bury you in reviews.
+  var DAY = 864e5, EASE = 2.5, MIN_EASE = 1.3, KNOWN_DAYS = 180, NEW_PER_DAY = 15;
+  // Older saved words used a fixed ladder (step 0..5): carry their progress over.
+  var OLD_LADDER = [1, 3, 7, 14, 30];
+  function sched(x) {
+    if (typeof x.iv !== 'number') { x.iv = x.step ? OLD_LADDER[Math.min(x.step, 5) - 1] : 0; x.ease = EASE; x.reps = x.step || 0; delete x.step; }
+    if (typeof x.ease !== 'number') x.ease = EASE;
+    return x;
+  }
+  function nextIv(x) { sched(x); return x.iv ? Math.max(x.iv + 1, Math.round(x.iv * x.ease)) : 1; }
+  function isNew(x) { return !sched(x).reps; }
+  // How many new words you've started today (kept per calendar day).
+  var newToday = { day: '', n: 0 };
+  function today() { var d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
+  function newLeft() { if (newToday.day !== today()) newToday = { day: today(), n: 0 }; return Math.max(0, NEW_PER_DAY - newToday.n); }
+  if (store) store.getItem('review-day').then(function (v) { if (v && v.day) newToday = v; }).catch(function () {});
   function dueAt(x) { return typeof x.due === 'number' ? x.due : (x.t || 0); }
-  function dueList() { var n = Date.now(); return saved.filter(function (x) { return dueAt(x) <= n; }).sort(function (a, b) { return dueAt(a) - dueAt(b); }); }
+  // Due now: every review that is due, plus new words up to today's limit (oldest saved first).
+  function dueList() {
+    var n = Date.now(), byDue = function (a, b) { return dueAt(a) - dueAt(b); };
+    var due = saved.filter(function (x) { return dueAt(x) <= n; });
+    var reviews = due.filter(function (x) { return !isNew(x); }).sort(byDue);
+    var fresh = due.filter(isNew).sort(function (a, b) { return (a.t || 0) - (b.t || 0); }).slice(0, newLeft());
+    return reviews.concat(fresh);
+  }
   function inDays(d) { return d === 1 ? 'tomorrow' : 'in ' + d + ' days'; }
   // When a time is, in calendar days: "later today", "tomorrow", "in 3 days".
   function whenText(ms) {
@@ -635,14 +661,16 @@
     var x = reviewWord();
     if (!x) {
       var next = saved.slice().sort(function (a, b) { return dueAt(a) - dueAt(b); })[0];
+      var capped = !newLeft() && saved.some(function (y) { return isNew(y) && dueAt(y) <= Date.now(); });
       var msg = !saved.length ? 'No saved words yet. Tap a word in the subtitles and choose Learning; it comes back here to review.'
+        : capped ? 'That’s ' + NEW_PER_DAY + ' new words for today. More tomorrow, so your reviews stay manageable.'
         : 'Next review ' + whenText(dueAt(next)) + '.';
       return '<div class="mt-6 flex flex-col items-center text-center">' + HI('check', 'size-10 text-emerald-500') +
         '<p class="mt-2 text-lg font-bold">' + (review.done ? 'All done for now' : 'Nothing to review') + '</p>' +
         (review.done ? '<p class="' + C.muted + '">' + review.done + (review.done === 1 ? ' review' : ' reviews') + ' this session.</p>' : '') +
         '<p class="mt-1 px-4 ' + C.muted + '">' + msg + '</p></div>';
     }
-    var left = review.queue.length, wl = x.lang || lang, step = x.step || 0;
+    var left = review.queue.length, wl = x.lang || lang;
     var s1 = x.s || '', w = x.w || x.base;
     var sentence = s1 && s1.indexOf(w) >= 0 ? esc(s1).split(esc(w)).join('<mark class="' + C.mark + '">' + esc(w) + '</mark>') : '';
     var h = '<p class="mt-3 px-1 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">' + left + ' to review</p>' +
@@ -656,7 +684,7 @@
       h += '<p class="mt-3 px-1 ' + C.muted + '">What does ' + (sentence ? 'the marked word' : 'this word') + ' mean?</p>' +
         '<button class="mt-2 ' + C.primary + '" data-act="rv-show">Show meaning</button>';
     } else {
-      var gotDays = LADDER[step];
+      var gotDays = nextIv(x), becomesKnown = gotDays >= KNOWN_DAYS;
       h += '<div class="mt-3 ' + C.card + '"><div class="flex items-center gap-1"><p class="kr-selectable min-w-0 flex-1 text-2xl font-bold">' + esc(x.base || x.w) +
         (x.reading ? '<span class="ml-2 text-base font-normal text-zinc-500 dark:text-zinc-400">' + esc(x.reading) + '</span>' : '') + '</p>' +
         '<button class="' + SPEAK_BTN + ' -mr-2" data-act="rv-say-w" aria-label="Hear the word">' + HI('speaker-wave', 'size-6') + '</button></div>' +
@@ -665,7 +693,7 @@
         '<div class="mt-3 grid grid-cols-2 gap-2">' +
         '<button class="' + C.btn + ' flex-col !gap-0 !py-2" data-act="rv-again">Again<span class="text-xs font-normal text-zinc-500 dark:text-zinc-400">see it again soon</span></button>' +
         '<button class="flex flex-col items-center justify-center rounded-xl bg-amber-400 px-3.5 py-2 font-semibold text-amber-950 shadow-sm active:scale-[0.98] active:bg-amber-300" data-act="rv-good">Got it' +
-          '<span class="text-xs font-normal text-amber-900/70">' + (gotDays ? 'see it ' + inDays(gotDays) : 'becomes Known') + '</span></button></div>' +
+          '<span class="text-xs font-normal text-amber-900/70">' + (becomesKnown ? 'becomes Known' : 'see it ' + inDays(gotDays)) + '</span></button></div>' +
         '<button class="mt-2 w-full py-2 text-sm font-medium text-zinc-500 active:opacity-60 dark:text-zinc-400" data-act="rv-known">' + HI('check', 'size-4 inline -mt-0.5') + ' I know this word, stop reviewing it</button>';
     }
     return h;
@@ -681,10 +709,14 @@
     var x = reviewWord(); if (!x) return;
     review.queue.shift(); review.open = false; review.done++;
     var n = Date.now();
-    if (how === 'again') { x.step = 0; x.due = n + 10 * 60000; review.queue.push(x.t); }
-    else if (how === 'good' && (x.step || 0) < LADDER.length) { x.due = n + LADDER[x.step || 0] * DAY; x.step = (x.step || 0) + 1; }
+    sched(x);
+    if (!x.reps && how !== 'known') { newLeft(); newToday.n++; if (store) store.setItem('review-day', newToday).catch(function () {}); }
+    var iv = nextIv(x);
+    x.reps++;
+    if (how === 'again') { x.ease = Math.max(MIN_EASE, x.ease - 0.2); x.iv = 0; x.due = n + 10 * 60000; review.queue.push(x.t); }
+    else if (how === 'good' && iv < KNOWN_DAYS) { x.iv = iv; x.due = n + iv * DAY; }
     else {
-      // Last step passed, or "I know this word": Known, out of the saved list (Learning and Known exclude each other).
+      // Next wait would be half a year or more, or "I know this word": Known, out of the saved list (Learning and Known exclude each other).
       var k = known[x.lang || lang] || known[lang];
       k[x.w] = 1; if (x.base) k[x.base] = 1; persistKnown();
       saved = saved.filter(function (y) { return y !== x; }); dropShot(x.t);
