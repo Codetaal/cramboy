@@ -2,6 +2,9 @@
 
 CheeseLab uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.6.4
+- The menu is grouped into Study, Controls, Saves and More. The top button is now "Play" (back to the game). "Saved words & recent text" sits under Study, and "Resume where you left off" moved from Advanced to Saves.
+
 ## 0.6.3
 - Menu > Controls > Opacity: choose how see-through the floating controls are (15-100%). The menu fades while you drag so you can see the result. The translate button stays a bit stronger than the other controls.
 
