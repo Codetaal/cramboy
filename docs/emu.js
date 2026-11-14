@@ -882,6 +882,8 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   var KB = { ArrowRight: 'right', ArrowLeft: 'left', ArrowDown: 'down', ArrowUp: 'up', Shift: 'select', Enter: 'start',
     z: 'b', x: 'a', a: 'y', s: 'x', q: 'l', w: 'r' };
   function onKey(e) {
+    // Typing in a text field (the saved-words search) is typing, not game buttons.
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable)) return;
     var k = KB[e.key] || KB[e.key.toLowerCase && e.key.toLowerCase()];
     if (!k || uiCurrentMode !== 'player') return;
     e.preventDefault();

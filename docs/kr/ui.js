@@ -503,6 +503,43 @@
     };
   }
 
+  // ---------- saved words list: search and date headings ----------
+  var savedQuery = '';
+  function norm(t) { return String(t || '').toLowerCase().normalize('NFC'); }
+  function savedMatches(x, q) {
+    if (!q) return true;
+    return [x.base, x.w, x.reading, x.gloss, x.s].some(function (f) { return norm(f).indexOf(q) >= 0; });
+  }
+  // Today / Yesterday / This week / Earlier, from the time the word was saved.
+  function dayGroup(t) {
+    var d0 = new Date(); d0.setHours(0, 0, 0, 0);
+    var day = 864e5, start = d0.getTime();
+    if (t >= start) return 'Today';
+    if (t >= start - day) return 'Yesterday';
+    if (t >= start - 6 * day) return 'This week';
+    return 'Earlier';
+  }
+  function savedListHTML(query) {
+    var q = norm(query.trim()), list = saved.slice().reverse().filter(function (x) { return savedMatches(x, q); });
+    if (!list.length) return '<p class="mt-3 px-1 ' + C.muted + '">No saved words match “' + esc(query.trim()) + '”.</p>';
+    var h = q ? '<p class="mt-3 px-1 ' + C.muted + '">' + list.length + ' of ' + saved.length + ' words</p>' : '', group = null;
+    list.forEach(function (x) {
+      var g = dayGroup(x.t || 0);
+      if (g !== group) {
+        if (group !== null) h += '</div>';
+        h += '<p class="mt-4 px-1 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">' + g + '</p><div class="mt-1.5 ' + C.list + '">';
+        group = g;
+      }
+      h += '<div class="flex items-start gap-2 px-4 py-3"><div class="min-w-0 flex-1"><p class="font-bold">' + esc(x.base || x.w) +
+        (x.reading ? ' <span class="font-normal ' + C.muted + '">' + esc(x.reading) + '</span>' : '') +
+        (x.base && x.base !== x.w ? ' <span class="font-normal ' + C.muted + '">' + esc(x.w) + '</span>' : '') + '</p>' +
+        '<p class="text-zinc-600 dark:text-zinc-300">' + esc(x.gloss || '—') + '</p>' +
+        (x.s ? '<p class="mt-0.5 truncate ' + C.muted + '">' + esc(x.s) + '</p>' : '') + '</div>' +
+        '<button class="-mr-2 grid size-9 shrink-0 place-items-center rounded-full text-zinc-400 active:bg-zinc-100 dark:active:bg-zinc-800" data-del="' + x.t + '" aria-label="Remove">' + HI('x-mark', 'size-5') + '</button></div>';
+    });
+    return h + '</div>';
+  }
+
   // ---------- menu: saved words / recent text ----------
   function openMenu(tab) {
     menuTab = tab;
@@ -523,16 +560,14 @@
     } else if (tab === 'saved') {
       if (!saved.length) h += '<p class="mt-3 ' + C.muted + '">No saved words yet. Tap any word in the subtitles, then Save.</p>';
       else {
-        h += '<div class="mt-3 ' + C.list + '">';
-        saved.slice().reverse().forEach(function (x) {
-          h += '<div class="flex items-start gap-2 px-4 py-3"><div class="min-w-0 flex-1"><p class="font-bold">' + esc(x.base || x.w) +
-            (x.reading ? ' <span class="font-normal ' + C.muted + '">' + esc(x.reading) + '</span>' : '') +
-            (x.base && x.base !== x.w ? ' <span class="font-normal ' + C.muted + '">' + esc(x.w) + '</span>' : '') + '</p>' +
-            '<p class="text-zinc-600 dark:text-zinc-300">' + esc(x.gloss || '—') + '</p>' +
-            (x.s ? '<p class="mt-0.5 truncate ' + C.muted + '">' + esc(x.s) + '</p>' : '') + '</div>' +
-            '<button class="-mr-2 grid size-9 shrink-0 place-items-center rounded-full text-zinc-400 active:bg-zinc-100 dark:active:bg-zinc-800" data-del="' + x.t + '" aria-label="Remove">' + HI('x-mark', 'size-5') + '</button></div>';
-        });
-        h += '</div><div class="mt-3 grid grid-cols-2 gap-2"><button class="' + C.btn + '" data-act="export">Export for Anki</button><button class="' + C.btn + '" data-act="copy">Copy list</button></div>';
+        // Search box (16px text so iPhone doesn't zoom in) and the list, which re-renders on its own
+        // while typing so the keyboard stays open.
+        h += '<div class="relative mt-3"><span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">' + HI('magnifying-glass', 'size-5') + '</span>' +
+          '<input type="search" id="kr-search" enterkeyhint="search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" ' +
+          'placeholder="Search words, meanings, sentences" value="' + esc(savedQuery) + '" ' +
+          'class="w-full rounded-xl bg-white py-2.5 pl-10 pr-3 text-base text-zinc-900 shadow-sm outline-none ring-1 ring-zinc-900/5 placeholder:text-zinc-400 focus:ring-2 focus:ring-amber-400 dark:bg-zinc-800 dark:text-zinc-100 dark:ring-white/10"></div>' +
+          '<div id="kr-saved-list">' + savedListHTML(savedQuery) + '</div>' +
+          '<div class="mt-3 grid grid-cols-2 gap-2"><button class="' + C.btn + '" data-act="export">Export for Anki</button><button class="' + C.btn + '" data-act="copy">Copy list</button></div>';
       }
     } else if (tab === 'recent') {
       var lines = history.slice().reverse();
@@ -548,6 +583,8 @@
       if (otherText.length) h += '<p class="mt-3 px-1 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Other text on screen</p>' + block(otherText.slice().reverse().slice(0, 60));
     }
     openSheet(h, true);
+    var search = card.querySelector('#kr-search');
+    if (search) search.oninput = function () { savedQuery = search.value; card.querySelector('#kr-saved-list').innerHTML = savedListHTML(savedQuery); };
     card.onclick = function (e) {
       var b = e.target.closest('[data-tab],[data-act],[data-del],.kr-w');
       if (!b) return;
@@ -557,7 +594,13 @@
         return;
       }
       if (b.dataset.tab) return openMenu(b.dataset.tab);
-      if (b.dataset.del) { saved = saved.filter(function (x) { return String(x.t) !== b.dataset.del; }); persist(); updatePill(); return openMenu('saved'); }
+      if (b.dataset.del) {
+        saved = saved.filter(function (x) { return String(x.t) !== b.dataset.del; }); persist(); updatePill();
+        if (!saved.length) return openMenu('saved');
+        card.querySelector('#kr-saved-list').innerHTML = savedListHTML(savedQuery);
+        var star = card.querySelector('[data-tab=saved]'); if (star) star.lastChild.textContent = saved.length;
+        return;
+      }
       var act = b.dataset.act;
       if (act === 'close') { card.onclick = null; return closeSheet(); }
       if (act === 'export') return exportCSV();
