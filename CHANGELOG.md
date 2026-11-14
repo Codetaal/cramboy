@@ -2,6 +2,12 @@
 
 CheeseLab uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.6.0
+- Hear it: speaker buttons in the word sheet (word and sentence) and "Hear it" in the Now tab read the text aloud with your phone's own Korean or Japanese voice. Works offline.
+- Known words: tap "I know this word" in the word sheet and it loses its dotted underline in the subtitles (still tappable). Other forms of the same word count too. Undo from the same sheet.
+- Saved words: a search box (word, reading, meaning or sentence) and headings for Today, Yesterday, This week and Earlier. Export for Anki and Copy list sit right under the search box, so a long list never hides them.
+- Typing in the search box no longer triggers the game's keyboard shortcuts.
+
 ## 0.5.13
 - While subtitles are on screen, the amber translate button is only 10% transparent, so it is easy to see.
 
