@@ -11,7 +11,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   var KEYS = { right: 0, left: 1, down: 2, up: 3, select: 4, start: 5, b: 6, a: 7, y: 8, x: 9, l: 10, r: 11 };
   var FRAME_MS = 1000 / 60;
 
-  var ready = false, gameID = '', gameTitle = '', romSize = 0;
+  var ready = false, gameID = '', gameTitle = '', gameBanner = '', romSize = 0;
   var ctx2d = screenCanvas.map(function (c) { return c.getContext('2d', { alpha: false }); });
   var touchKeys = 0, keyboardKeys = 0, touchDown = 0, touchX = 0, touchY = 0;
   var fastForward = false, frameNo = 0, lastT = 0, acc = 0;
@@ -301,7 +301,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
         throw 'not a game';
       }
       gameID = h.code[0] === '#' ? name : h.id;
-      gameTitle = h.title;
+      gameTitle = h.title; gameBanner = h.banner || '';
       gameRegion = (h.code || '').charAt(3);
       loader(0, h.banner || h.title || name, h.icon);
       if (libId) {
@@ -332,6 +332,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
         Module._emuSetOpt(0, FW_LANG[gameRegion] !== undefined ? FW_LANG[gameRegion] : 1);
         // The study overlay reads Japanese for Japanese games and Korean otherwise.
         if (window.KRSetLang) KRSetLang(gameRegion === 'J' ? 'ja' : 'ko');
+        if (window.KRSetGame) KRSetGame(gameID, gameBanner || gameTitle);
         var ret = Module._loadROM(romSize);
         if (ret !== 0) {
           loader(false);

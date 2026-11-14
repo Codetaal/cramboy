@@ -129,6 +129,24 @@
     if (!store) return;
     store.setItem('saved', saved).catch(function () { toast('Could not save', 'warn'); });
   }
+  // ---------- where you are ----------
+  // The last place-name banner the game showed, remembered per game, and saved with each word.
+  var game = { id: '', name: '' }, place = '';
+  window.KRSetGame = function (id, name) {
+    game = { id: String(id || '').trim(), name: String(name || '').trim() }; place = '';
+    if (store && game.id) store.getItem('place:' + game.id).then(function (v) { if (typeof v === 'string' && !place) place = v; }).catch(function () {});
+  };
+  function setPlace(p) {
+    if (!p || p === place) return;
+    place = p;
+    if (store && game.id) store.setItem('place:' + game.id, p).catch(function () {});
+  }
+  function whereHTML(pl, gm, cls) {
+    if (!pl && !gm) return '';
+    return '<p class="flex items-center gap-1 ' + (cls || '') + ' text-xs text-zinc-400 dark:text-zinc-500">' + HI('map-pin', 'size-3.5 shrink-0') +
+      '<span class="truncate">' + esc([pl, gm].filter(Boolean).join(' · ')) + '</span></p>';
+  }
+
   // ---------- known words ----------
   // Words you already know lose their dotted underline in the subtitles (still tappable). Stored per
   // language, both as seen and in dictionary form, so other forms of the same word count too.
@@ -183,6 +201,7 @@
   }
   var SPEAK_BTN = 'grid size-10 shrink-0 place-items-center rounded-full text-amber-600 active:bg-amber-100 dark:text-amber-400 dark:active:bg-amber-400/15';
 
+  function savedEntry(word) { var c = KRLookup.clean(word); for (var i = saved.length - 1; i >= 0; i--) if (saved[i].w === c || saved[i].base === c) return saved[i]; return null; }
   function isSaved(word) { var c = KRLookup.clean(word); return saved.some(function (x) { return x.w === c || x.base === c; }); }
 
   function loadDict(l) {
@@ -308,6 +327,7 @@
   };
 
   function handleScan(res) {
+    if (res.place) setPlace(res.place);
     res.fresh.forEach(function (t) {
       t = plain(t).trim();
       if (t.length >= 2 && otherText.indexOf(t) < 0) { otherText.push(t); if (otherText.length > 150) otherText.shift(); }
@@ -473,6 +493,8 @@
       h += '<div class="mt-3 flex items-start gap-1 ' + C.card + '"><p class="kr-selectable flex-1 leading-relaxed text-zinc-800 dark:text-zinc-200">' + marked + '</p>' +
         '<button class="' + SPEAK_BTN + ' -my-1.5 -mr-2" data-act="say-sentence" aria-label="Hear the sentence">' + HI('speaker-wave', 'size-5') + '</button></div>';
     }
+    var where = savedNow ? savedEntry(word) : null;
+    h += whereHTML(where ? where.place : place, where ? where.game : game.name, 'mt-2 px-1');
     h += '<div class="mt-3 grid ' + (sentence ? 'grid-cols-2' : 'grid-cols-1') + ' gap-2">' +
       '<a class="' + C.btn + '" target="_blank" rel="noopener" href="' + LANG[lang].dictUrl + encodeURIComponent(base) + '">' + LANG[lang].dictName + ' ' + OUT + '</a>' +
       (sentence ? '<a class="' + C.btn + '" target="_blank" rel="noopener" href="https://translate.google.com/?sl=' + lang + '&tl=en&op=translate&text=' + encodeURIComponent(sentence) + '">Google ' + OUT + '</a>' : '') +
@@ -495,7 +517,8 @@
         saved = saved.filter(function (x) { return x.w !== word && x.base !== word; });
         toast('Removed ' + base, 'trash');
       } else {
-        saved.push({ w: word, base: base, reading: hits && hits[0] ? hits[0].reading || '' : '', gloss: hits && hits[0] ? hits[0].gloss : '', s: sentence || '', t: Date.now(), lang: lang });
+        saved.push({ w: word, base: base, reading: hits && hits[0] ? hits[0].reading || '' : '', gloss: hits && hits[0] ? hits[0].gloss : '', s: sentence || '', t: Date.now(), lang: lang,
+          place: place, game: game.name });
         toast('Saved: ' + base, 'star');
       }
       persist(); updatePill();
@@ -508,7 +531,7 @@
   function norm(t) { return String(t || '').toLowerCase().normalize('NFC'); }
   function savedMatches(x, q) {
     if (!q) return true;
-    return [x.base, x.w, x.reading, x.gloss, x.s].some(function (f) { return norm(f).indexOf(q) >= 0; });
+    return [x.base, x.w, x.reading, x.gloss, x.s, x.place, x.game].some(function (f) { return norm(f).indexOf(q) >= 0; });
   }
   // Today / Yesterday / This week / Earlier, from the time the word was saved.
   function dayGroup(t) {
@@ -534,7 +557,7 @@
         (x.reading ? ' <span class="font-normal ' + C.muted + '">' + esc(x.reading) + '</span>' : '') +
         (x.base && x.base !== x.w ? ' <span class="font-normal ' + C.muted + '">' + esc(x.w) + '</span>' : '') + '</p>' +
         '<p class="text-zinc-600 dark:text-zinc-300">' + esc(x.gloss || '—') + '</p>' +
-        (x.s ? '<p class="mt-0.5 truncate ' + C.muted + '">' + esc(x.s) + '</p>' : '') + '</div>' +
+        (x.s ? '<p class="mt-0.5 truncate ' + C.muted + '">' + esc(x.s) + '</p>' : '') + whereHTML(x.place, x.game, 'mt-1') + '</div>' +
         '<button class="-mr-2 grid size-9 shrink-0 place-items-center rounded-full text-zinc-400 active:bg-zinc-100 dark:active:bg-zinc-800" data-del="' + x.t + '" aria-label="Remove">' + HI('x-mark', 'size-5') + '</button></div>';
     });
     return h + '</div>';
@@ -613,9 +636,9 @@
   function csvField(s) { s = String(s || ''); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
   function exportCSV() {
     var rows = saved.map(function (x) {
-      return [x.base || x.w, x.gloss, x.s, x.w, x.reading || ''].map(csvField).join(',');
+      return [x.base || x.w, x.gloss, x.s, x.w, x.reading || '', x.place || '', x.game || ''].map(csvField).join(',');
     });
-    var csv = '#separator:comma\n#columns:Word,Meaning,Sentence,As seen,Reading\n' + rows.join('\n') + '\n';
+    var csv = '#separator:comma\n#columns:Word,Meaning,Sentence,As seen,Reading,Place,Game\n' + rows.join('\n') + '\n';
     var name = 'pokemon-words.csv';
     var file = null;
     try { file = new File([csv], name, { type: 'text/csv' }); } catch (e) {}

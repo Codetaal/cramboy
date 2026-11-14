@@ -190,3 +190,19 @@ console.log('ALL READER TESTS PASSED');
   assert(rr.closed, 'subtitle closes with the sign');
   console.log('SIGN TEST PASSED');
 }
+
+// ---- Place-name banner (HeartGold shows "연두마을" in a 22-character buffer) ----
+{
+  u32.fill(0);
+  const rp = new Reader(T); rp.scan(u32, u16);
+  putString(0x100000, encode('크램보이'), 32);           // a name: not a place
+  let rr = rp.scan(u32, u16);
+  assert.strictEqual(rr.place, null);
+  putString(0x150000, encode('연두마을'), 22);
+  rr = rp.scan(u32, u16);
+  assert.strictEqual(rr.place, '연두마을', 'place banner found');
+  assert.strictEqual(rr.active, null, 'the banner is not a subtitle');
+  rr = rp.scan(u32, u16);
+  assert.strictEqual(rr.place, null, 'only reported when it appears');
+  console.log('PLACE TEST PASSED');
+}

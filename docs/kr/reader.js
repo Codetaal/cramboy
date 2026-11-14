@@ -12,6 +12,9 @@
   // its buffer: the game prints messages from big message buffers (HeartGold: 1024 characters),
   // while labels sit in buffers just big enough for their few letters.
   var MESSAGE_BUFFER = 256, INSTANT_SCANS = 2;
+  // Gen 4 shows the place name in a banner when you enter a town or route ("연두마을"); the game
+  // keeps it in its own 22-character buffer (checked on a HeartGold memory snapshot).
+  var PLACE_BUFFER = 22;
 
   // Gen 4: own character table, Hangul at 0x400-0xD65.
   var G4_HANGUL_MIN = 0x400, G4_HANGUL_MAX = 0xD65;
@@ -194,10 +197,12 @@
     }
     this.known = seenNow;
 
-    var result = { fresh: [], active: null, changed: false };
+    var result = { fresh: [], active: null, changed: false, place: null };
     for (i = 0; i < fresh.length; i++) {
       var d = this.decode(u16, fresh[i].dataByte >> 1, fresh[i].size, fresh[i].mode);
       result.fresh.push(d.text);
+      // A new place-name banner: one short line in the place buffer.
+      if (fresh[i].mode === G4 && fresh[i].maxsize === PLACE_BUFFER && d.text.length >= 2 && d.text.indexOf('\n') < 0) result.place = d.text.replace(/\u200B/g, '').trim();
     }
 
     if (best) {
