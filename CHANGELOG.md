@@ -2,6 +2,10 @@
 
 CheeseLab uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.6.2
+- Saved words remember where you were: the place name the game shows when you enter a town or route (for example 연두마을) and the game's name are saved with each word. They show under the word in the word sheet and the saved list, can be searched, and are exported to Anki as two extra columns (Place, Game). Checked on HeartGold.
+- One switch per word in the word sheet: New / Learning / Known. Learning is your saved list (amber, exported to Anki); Known removes the dotted underline. A word is one or the other: marking it Known takes it off your saved list.
+
 ## 0.6.1
 - Signs and other text the game shows all at once (instead of typing it) now appear as subtitles too, with tappable words. Menu labels and names are still ignored.
 

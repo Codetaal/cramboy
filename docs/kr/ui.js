@@ -466,16 +466,21 @@
 
   function showWord(word, raw, sentence, hits) {
     var savedNow = isSaved(word), OUT = HI('arrow-top-right-on-square', 'size-4 text-zinc-400');
-    var base = hits && hits[0] ? hits[0].word : word, knownNow = !!(known[lang][word] || known[lang][base]);
+    var base = hits && hits[0] ? hits[0].word : word, knownNow = !savedNow && !!(known[lang][word] || known[lang][base]);
+    // One status per word: New, Learning (saved to your list) or Known (no underline in the subtitles).
+    var status = savedNow ? 'learning' : knownNow ? 'known' : 'new';
+    var segBtn = function (st, label, icon, on) {
+      return '<button class="flex items-center justify-center gap-1 rounded-lg py-2 text-sm font-semibold transition-colors ' + (status === st ? on : 'text-zinc-500 dark:text-zinc-400') +
+        '" data-status="' + st + '" aria-pressed="' + (status === st) + '">' + (icon ? HI(icon, 'size-4') : '') + label + '</button>';
+    };
     var h = '<button class="-ml-1.5 -mt-1 mb-1 flex items-center gap-0.5 py-1 pr-2 font-medium text-amber-600 active:opacity-60 dark:text-amber-400" data-act="back">' +
       HI('chevron-left', 'size-5') + TAB_LABEL[wordBack] + '</button>' +
       '<div class="flex items-center gap-1"><div class="kr-selectable min-w-0 break-keep text-[30px] font-bold">' + esc(word) + '</div>' +
-      '<button class="' + SPEAK_BTN + '" data-act="say-word" aria-label="Hear the word">' + HI('speaker-wave', 'size-6') + '</button><div class="flex-1"></div>' +
-      '<button class="' + (savedNow ? C.saved : C.save) + '" data-act="save">' +
-      (savedNow ? HI('star', 'size-5') + 'Saved' : HI('star-outline', 'size-5') + 'Save') + '</button></div>' +
-      '<button class="mt-2 flex items-center gap-1.5 rounded-lg px-1 py-1 text-sm font-medium ' +
-      (knownNow ? 'text-emerald-700 dark:text-emerald-400' : 'text-zinc-500 dark:text-zinc-400') + ' active:opacity-60" data-act="known">' +
-      (knownNow ? HI('check', 'size-5') + 'You know this word · undo' : HI('check', 'size-5 opacity-40') + 'I know this word') + '</button>';
+      '<button class="' + SPEAK_BTN + '" data-act="say-word" aria-label="Hear the word">' + HI('speaker-wave', 'size-6') + '</button></div>' +
+      '<div class="mt-2 grid grid-cols-3 gap-1 rounded-xl bg-zinc-200/70 p-1 dark:bg-zinc-800" role="group" aria-label="How well you know this word">' +
+      segBtn('new', 'New', '', 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-white') +
+      segBtn('learning', 'Learning', 'star', 'bg-amber-400 text-amber-950 shadow-sm') +
+      segBtn('known', 'Known', 'check', 'bg-emerald-500 text-white shadow-sm') + '</div>';
     if (hits === null) h += '<p class="mt-3 ' + C.muted + '">Dictionary not available offline yet. Use the links below.</p>';
     else if (!hits.length) h += '<p class="mt-3 ' + C.muted + '">Not in the offline dictionary. Try ' + LANG[lang].dictName + ' below, or long‑press the word above → Look Up.</p>';
     else {
@@ -505,25 +510,25 @@
     card.querySelector('[data-act=back]').onclick = function () { openMenu(wordBack); };
     card.querySelector('[data-act=say-word]').onclick = function () { speak(word); };
     if (sentence) card.querySelector('[data-act=say-sentence]').onclick = function () { speak(sentence); };
-    card.querySelector('[data-act=known]').onclick = function () {
-      var k = known[lang];
-      if (k[word] || k[base]) { delete k[word]; delete k[base]; toast('Marked as new: ' + base, 'info'); }
-      else { k[word] = 1; k[base] = 1; toast('Known: ' + base, 'ok'); }
-      persistKnown();
-      showWord(word, raw, sentence, hits);
-    };
-    card.querySelector('[data-act=save]').onclick = function () {
-      if (isSaved(word)) {
-        saved = saved.filter(function (x) { return x.w !== word && x.base !== word; });
-        toast('Removed ' + base, 'trash');
-      } else {
-        saved.push({ w: word, base: base, reading: hits && hits[0] ? hits[0].reading || '' : '', gloss: hits && hits[0] ? hits[0].gloss : '', s: sentence || '', t: Date.now(), lang: lang,
-          place: place, game: game.name });
-        toast('Saved: ' + base, 'star');
-      }
-      persist(); updatePill();
-      showWord(word, raw, sentence, hits);
-    };
+    Array.prototype.forEach.call(card.querySelectorAll('[data-status]'), function (btn) {
+      btn.onclick = function () {
+        var to = btn.dataset.status;
+        if (to === status) return;
+        var k = known[lang];
+        // Learning and Known exclude each other: a word you know leaves your saved list, and back.
+        if (to !== 'learning' && isSaved(word)) { saved = saved.filter(function (x) { return x.w !== word && x.base !== word && x.w !== base && x.base !== base; }); persist(); updatePill(); }
+        if (to !== 'known') { delete k[word]; delete k[base]; }
+        if (to === 'learning') {
+          saved.push({ w: word, base: base, reading: hits && hits[0] ? hits[0].reading || '' : '', gloss: hits && hits[0] ? hits[0].gloss : '', s: sentence || '', t: Date.now(), lang: lang,
+            place: place, game: game.name });
+          persist(); updatePill();
+          toast('Saved: ' + base, 'star');
+        } else if (to === 'known') { k[word] = 1; k[base] = 1; toast('Known: ' + base, 'ok'); }
+        else toast('Marked as new: ' + base, 'info');
+        persistKnown();
+        showWord(word, raw, sentence, hits);
+      };
+    });
   }
 
   // ---------- saved words list: search and date headings ----------
