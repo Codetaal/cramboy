@@ -48,7 +48,7 @@
   // Tailwind class sets for the sheets
   var C = {
     btn: 'flex items-center justify-center gap-1.5 rounded-xl bg-white px-3.5 py-2.5 font-semibold text-zinc-800 shadow-sm ring-1 ring-zinc-900/5 active:scale-[0.98] dark:bg-zinc-800 dark:text-zinc-100 dark:ring-white/10',
-    primary: 'flex w-full items-center justify-center gap-2 rounded-xl bg-amber-400 px-4 py-3 font-semibold text-amber-950 shadow-sm active:scale-[0.98] active:bg-amber-300',
+    primary: 'flex w-full items-center justify-center gap-2 rounded-xl bg-zinc-900 px-4 py-3 font-semibold text-white shadow-sm active:scale-[0.98] active:bg-zinc-700 dark:bg-white dark:text-zinc-900 dark:active:bg-zinc-200',
     saved: 'flex items-center gap-1.5 rounded-xl bg-amber-100 px-3.5 py-2 font-semibold text-amber-900 ring-1 ring-amber-300 active:scale-95 dark:bg-amber-400/15 dark:text-amber-300 dark:ring-amber-400/30',
     save: 'flex items-center gap-1.5 rounded-xl bg-amber-400 px-3.5 py-2 font-semibold text-amber-950 shadow-sm active:scale-95',
     card: 'rounded-2xl bg-white px-4 py-3 shadow-sm ring-1 ring-zinc-900/5 dark:bg-zinc-900 dark:ring-white/10',
@@ -223,7 +223,7 @@
     try { if (v) u.voice = v; } catch (e) {}
     speechSynthesis.speak(u);
   }
-  var SPEAK_BTN = 'grid size-10 shrink-0 place-items-center rounded-full text-amber-600 active:bg-amber-100 dark:text-amber-400 dark:active:bg-amber-400/15';
+  var SPEAK_BTN = 'grid size-10 shrink-0 place-items-center rounded-full text-zinc-500 active:bg-zinc-200 dark:text-zinc-400 dark:active:bg-zinc-800';
 
   function savedEntry(word) { var c = KRLookup.clean(word); for (var i = saved.length - 1; i >= 0; i--) if (saved[i].w === c || saved[i].base === c) return saved[i]; return null; }
   function isSaved(word) { var c = KRLookup.clean(word); return saved.some(function (x) { return x.w === c || x.base === c; }); }
@@ -458,14 +458,15 @@
   var GRAB = '<div class="mx-auto mb-3 h-1.5 w-10 rounded-full bg-zinc-300 dark:bg-zinc-700"></div>'; // same handle as the menu
   // "Back to game" stays pinned to the bottom of the sheet while the content above it scrolls.
   var BACK = '<div class="sticky bottom-0 -mx-4 mt-auto bg-gradient-to-t from-zinc-50 from-70% to-zinc-50/0 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-5 dark:from-zinc-950 dark:to-zinc-950/0">' +
-    '<button class="' + C.primary + '" data-act="close">' + HI('play', 'size-5') + 'Back to game</button></div>';
-  function openSheet(html, withBack) {
+    '<button class="' + C.btn + ' w-full !py-3" data-act="close">' + HI('play', 'size-5 text-zinc-500 dark:text-zinc-400') + 'Back to game</button></div>';
+  function openSheet(html, withBack, full) {
     if (sheet.hidden) pause();
-    card.innerHTML = GRAB + html + (withBack ? BACK : '<div class="pb-[calc(1.5rem+env(safe-area-inset-bottom))]"></div>');
+    sheet.classList.toggle('kr-full', !!full);
+    card.innerHTML = (full ? '' : GRAB) + html + (withBack ? BACK : '<div class="pb-[calc(1.5rem+env(safe-area-inset-bottom))]"></div>');
     sheet.hidden = false; card.scrollTop = 0;
   }
   function closeSheet() {
-    sheet.hidden = true; resume(); menuTab = null; review = null;
+    sheet.hidden = true; sheet.classList.remove('kr-full'); resume(); menuTab = null; review = null;
     Array.prototype.forEach.call(document.querySelectorAll('.kr-sel'), function (n) { n.classList.remove('kr-sel'); });
     if (current) renderPanel();
   }
@@ -604,7 +605,7 @@
       return '<button class="flex items-center justify-center gap-1 rounded-lg py-2 text-sm font-semibold transition-colors ' + (status === st ? on : 'text-zinc-500 dark:text-zinc-400') +
         '" data-status="' + st + '" aria-pressed="' + (status === st) + '">' + (icon ? HI(icon, 'size-4') : '') + label + '</button>';
     };
-    var h = '<button class="-ml-1.5 -mt-1 mb-1 flex items-center gap-0.5 py-1 pr-2 font-medium text-amber-600 active:opacity-60 dark:text-amber-400" data-act="back">' +
+    var h = '<button class="-ml-1.5 -mt-1 mb-1 flex items-center gap-0.5 py-1 pr-2 font-medium text-zinc-600 active:opacity-60 dark:text-zinc-300" data-act="back">' +
       HI('chevron-left', 'size-5') + TAB_LABEL[wordBack] + '</button>' +
       '<div class="flex items-center gap-1"><div class="kr-selectable min-w-0 break-keep text-[30px] font-bold">' + esc(word) + '</div>' +
       '<button class="' + SPEAK_BTN + '" data-act="say-word" aria-label="Hear the word">' + HI('speaker-wave', 'size-6') + '</button></div>' +
@@ -756,47 +757,74 @@
   // The session: the words due when it started, plus any you pressed Again on.
   var review = null;   // { queue: [t, ...], open: false, done: 0 }
   function reviewWord() { while (review && review.queue.length) { var t = review.queue[0], x = saved.filter(function (y) { return y.t === t; })[0]; if (x) return x; review.queue.shift(); } return null; }
+  // Review session, full screen: progress bar and close at the top, the card in the middle, and the
+  // answer buttons at the bottom within thumb reach. One black button per step (Show meaning / Got it).
   function reviewHTML() {
-    if (!review) review = { queue: dueList().map(function (x) { return x.t; }), open: false, done: 0 };
+    if (!review) review = { queue: dueList().map(function (x) { return x.t; }), open: false, done: 0, total: 0 };
+    if (!review.total) review.total = review.queue.length;
     var x = reviewWord();
+    var total = Math.max(review.total, review.done + review.queue.length), pos = Math.min(total, review.done + (x ? 1 : 0));
+    var h = '<div class="flex items-center gap-3 pb-2 pt-[calc(0.75rem+env(safe-area-inset-top))]">' +
+      '<button class="-ml-2 grid size-10 place-items-center rounded-full text-zinc-500 active:bg-zinc-200 dark:text-zinc-400 dark:active:bg-zinc-800" data-act="close" aria-label="Close">' + HI('x-mark', 'size-6') + '</button>' +
+      '<div class="h-2 flex-1 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800"><div class="h-2 rounded-full bg-zinc-900 transition-[width] dark:bg-white" style="width:' + (total ? Math.round(review.done / total * 100) : 0) + '%"></div></div>' +
+      '<span class="min-w-10 text-right text-sm font-semibold tabular-nums text-zinc-500 dark:text-zinc-400">' + (total ? pos + ' / ' + total : '') + '</span></div>';
     if (!x) {
       var next = saved.slice().sort(function (a, b) { return dueAt(a) - dueAt(b); })[0];
       var capped = !newLeft() && saved.some(function (y) { return isNew(y) && dueAt(y) <= Date.now(); });
       var msg = !saved.length ? 'No saved words yet. Tap a word in the subtitles and choose Learning; it comes back here to review.'
         : capped ? 'That’s ' + NEW_PER_DAY + ' new words for today. More tomorrow, so your reviews stay manageable.'
         : 'Next review ' + whenText(dueAt(next)) + '.';
-      return '<div class="mt-6 flex flex-col items-center text-center">' + HI('check', 'size-10 text-emerald-500') +
-        '<p class="mt-2 text-lg font-bold">' + (review.done ? 'All done for now' : 'Nothing to review') + '</p>' +
+      return h + '<div class="my-auto flex flex-col items-center text-center">' + HI('check', 'size-12 text-emerald-500') +
+        '<p class="mt-2 text-xl font-bold">' + (review.done ? 'All done for now' : 'Nothing to review') + '</p>' +
         (review.done ? '<p class="' + C.muted + '">' + review.done + (review.done === 1 ? ' review' : ' reviews') + ' this session.</p>' : '') +
-        '<p class="mt-1 px-4 ' + C.muted + '">' + msg + '</p></div>';
+        '<p class="mt-1 px-6 ' + C.muted + '">' + msg + '</p></div>' +
+        '<div class="pb-[calc(1.5rem+env(safe-area-inset-bottom))]"><button class="' + C.primary + '" data-act="close">' + HI('play', 'size-5') + 'Back to game</button></div>';
     }
-    var left = review.queue.length, wl = x.lang || lang;
     var s1 = x.s || '', w = x.w || x.base;
     var sentence = s1 && s1.indexOf(w) >= 0 ? esc(s1).split(esc(w)).join('<mark class="' + C.mark + '">' + esc(w) + '</mark>') : '';
-    var h = '<p class="mt-3 px-1 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">' + left + ' to review</p>' +
-      '<div class="mt-1.5 ' + C.card + '">' +
-      '<img data-shot="' + x.t + '" alt="" class="kr-shot mx-auto mb-3 hidden ' + (review.open ? 'kr-shot-back h-24' : 'h-36') + ' w-auto rounded-lg ring-1 ring-zinc-900/10 dark:ring-white/10">' +
-      (sentence ? '<div class="flex items-start gap-1"><p class="kr-selectable flex-1 text-lg leading-relaxed">' + sentence + '</p>' +
-        '<button class="' + SPEAK_BTN + ' -my-1.5 -mr-2" data-act="rv-say-s" aria-label="Hear the sentence">' + HI('speaker-wave', 'size-5') + '</button></div>'
-        : '<p class="text-[30px] font-bold">' + esc(w) + '</p>') +
-      whereHTML(x.place, x.game, 'mt-2') + '</div>';
+    h += '<img data-shot="' + x.t + '" alt="" class="kr-shot mx-auto mt-4 hidden ' + (review.open ? 'kr-shot-back h-32' : 'h-44') + ' w-auto rounded-xl ring-1 ring-zinc-900/10 dark:ring-white/10">' +
+      (sentence ? '<div class="mt-5 flex items-start gap-1"><p class="kr-selectable flex-1 text-xl leading-relaxed">' + sentence + '</p>' +
+        '<button class="' + SPEAK_BTN + ' -my-1 -mr-2" data-act="rv-say-s" aria-label="Hear the sentence">' + HI('speaker-wave', 'size-5') + '</button></div>'
+        : '<p class="mt-6 text-center text-[34px] font-bold">' + esc(w) + '</p>') +
+      whereHTML(x.place, x.game, 'mt-1');
+    var foot;
     if (!review.open) {
-      h += '<p class="mt-3 px-1 ' + C.muted + '">What does ' + (sentence ? 'the marked word' : 'this word') + ' mean?</p>' +
-        '<button class="mt-2 ' + C.primary + '" data-act="rv-show">Show meaning</button>';
+      foot = '<p class="mb-3 text-center ' + C.muted + '">What does ' + (sentence ? 'the marked word' : 'this word') + ' mean?</p>' +
+        '<button class="' + C.primary + '" data-act="rv-show">Show meaning</button>';
     } else {
       var gotDays = nextIv(x), becomesKnown = gotDays >= KNOWN_DAYS;
-      h += '<div class="mt-3 ' + C.card + '"><div class="flex items-center gap-1"><p class="kr-selectable min-w-0 flex-1 text-2xl font-bold">' + esc(x.base || x.w) +
+      h += '<div class="mt-5 ' + C.card + '"><div class="flex items-center gap-1"><p class="kr-selectable min-w-0 flex-1 text-3xl font-bold">' + esc(x.base || x.w) +
         (x.reading ? '<span class="ml-2 text-base font-normal text-zinc-500 dark:text-zinc-400">' + esc(x.reading) + '</span>' : '') + '</p>' +
         '<button class="' + SPEAK_BTN + ' -mr-2" data-act="rv-say-w" aria-label="Hear the word">' + HI('speaker-wave', 'size-6') + '</button></div>' +
-        '<p class="mt-0.5 text-zinc-600 dark:text-zinc-300">' + esc(x.gloss || '—') + '</p>' +
-        '<button class="mt-1 text-sm font-medium text-amber-600 active:opacity-60 dark:text-amber-400" data-act="rv-more">More about this word</button></div>' +
-        '<div class="mt-3 grid grid-cols-2 gap-2">' +
-        '<button class="' + C.btn + ' flex-col !gap-0 !py-2" data-act="rv-again">Again<span class="text-xs font-normal text-zinc-500 dark:text-zinc-400">see it again soon</span></button>' +
-        '<button class="flex flex-col items-center justify-center rounded-xl bg-amber-400 px-3.5 py-2 font-semibold text-amber-950 shadow-sm active:scale-[0.98] active:bg-amber-300" data-act="rv-good">Got it' +
-          '<span class="text-xs font-normal text-amber-900/70">' + (becomesKnown ? 'becomes Known' : 'see it ' + inDays(gotDays)) + '</span></button></div>' +
-        '<button class="mt-2 w-full py-2 text-sm font-medium text-zinc-500 active:opacity-60 dark:text-zinc-400" data-act="rv-known">' + HI('check', 'size-4 inline -mt-0.5') + ' I know this word, stop reviewing it</button>';
+        '<p class="mt-0.5 text-lg text-zinc-700 dark:text-zinc-200">' + esc(x.gloss || '—') + '</p>' +
+        '<button class="mt-1 text-sm font-medium text-zinc-500 underline decoration-zinc-300 underline-offset-2 active:opacity-60 dark:text-zinc-400 dark:decoration-zinc-600" data-act="rv-more">More about this word</button></div>';
+      foot = '<div class="grid grid-cols-2 gap-2">' +
+        '<button class="' + C.btn + ' flex-col !gap-0 !py-2.5" data-act="rv-again">Again<span class="text-xs font-normal text-zinc-500 dark:text-zinc-400">soon</span></button>' +
+        '<button class="' + C.primary + ' flex-col !gap-0 !py-2.5" data-act="rv-good">Got it' +
+          '<span class="text-xs font-normal text-zinc-300 dark:text-zinc-600">' + (becomesKnown ? 'becomes Known' : inDays(gotDays)) + '</span></button></div>' +
+        '<button class="mt-2 flex w-full items-center justify-center gap-1 py-2 text-sm font-medium text-zinc-500 active:opacity-60 dark:text-zinc-400" data-act="rv-known">' + HI('check', 'size-4') + 'I know this word</button>';
     }
-    return h;
+    // The answer area sits at the bottom of the screen.
+    return h + '<div class="mt-auto pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-4">' + foot + '</div>';
+  }
+  function openReview() {
+    menuTab = 'review';
+    openSheet(reviewHTML(), false, true);
+    // The extra bottom padding openSheet adds isn't needed here.
+    if (card.lastChild && !card.lastChild.childNodes.length) card.removeChild(card.lastChild);
+    fillShots();
+    card.onclick = function (e) {
+      var b = e.target.closest('[data-act]'); if (!b) return;
+      var act = b.dataset.act, rx = reviewWord();
+      if (act === 'close') { card.onclick = null; return closeSheet(); }
+      if (act === 'rv-show') { review.open = true; return openReview(); }
+      if (act === 'rv-again') return reviewAnswer('again');
+      if (act === 'rv-good') return reviewAnswer('good');
+      if (act === 'rv-known') return reviewAnswer('known');
+      if (act === 'rv-say-s' && rx) return speak(rx.s, rx.lang);
+      if (act === 'rv-say-w' && rx) return speak(rx.base || rx.w, rx.lang);
+      if (act === 'rv-more' && rx) return openWord(rx.w, rx.s || '', null, rx.lang);
+    };
   }
   // Load the snapshot (if there is one) into the card after it is drawn.
   function fillShots() {
@@ -824,7 +852,7 @@
       if (current) renderPanel();
     }
     persist(); updatePill();
-    openMenu('review');
+    openReview();
   }
   function dueCount() { return dueList().length; }
 
@@ -833,10 +861,10 @@
     if (tab !== 'review') review = null;   // a new session each time you come to Review
     menuTab = tab;
     if (tab === 'progress') return openProgress();
+    if (tab === 'review') return openReview();
     var tb = function (id, label) { return '<button class="' + C.tab + '" data-tab="' + id + '" aria-pressed="' + (tab === id) + '">' + label + '</button>'; };
-    var h = '<div class="flex rounded-xl bg-zinc-100 p-1 dark:bg-zinc-800">' + tb('now', 'Now') +
-      tb('saved', HI('star', 'size-4 text-amber-500 relative -top-[1.25px]') + saved.length) + tb('recent', 'Recent') +
-      tb('review', 'Review' + (function (d) { return d ? '<span class="ml-0.5 rounded-full bg-amber-400 px-1.5 text-xs leading-5 text-amber-950">' + d + '</span>' : ''; })(review ? review.queue.length : dueCount())) + '</div>';
+    var h = '<div class="flex rounded-xl bg-zinc-100 p-1 dark:bg-zinc-800">' + tb('now', 'Now') + tb('recent', 'Recent') +
+      tb('saved', 'Saved <span class="font-normal text-zinc-400">' + saved.length + '</span>') + '</div>';
     if (tab === 'now') {
       // Current dialogue (what has been typed so far), else the last finished message.
       var nowText = current ? plain(current.text.slice(0, current.shown)) : (history.length ? history[history.length - 1] : '');
@@ -846,7 +874,7 @@
         h += '<div class="kr-now mt-3 ' + C.card + '" data-s="' + esc(full.replace(/\n+/g, ' ')) + '">' +
           wordsHTML(nowText.replace(/\n\n+/g, '\n')) + '</div>' +
           '<div class="mt-2 flex items-center gap-2 px-1"><p class="flex-1 ' + C.muted + '">Tap a word to look it up.</p>' +
-          '<button class="' + C.btn + ' !py-2" data-act="say-now">' + HI('speaker-wave', 'size-5 text-amber-600 dark:text-amber-400') + 'Hear it</button></div>';
+          '<button class="' + C.btn + ' !py-2" data-act="say-now">' + HI('speaker-wave', 'size-5 text-zinc-500 dark:text-zinc-400') + 'Hear it</button></div>';
       }
     } else if (tab === 'saved') {
       if (!saved.length) h += '<p class="mt-3 ' + C.muted + '">No saved words yet. Tap any word in the subtitles, then Save.</p>';
@@ -856,13 +884,16 @@
         h += '<div class="relative mt-3"><span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">' + HI('magnifying-glass', 'size-5') + '</span>' +
           '<input type="search" id="kr-search" enterkeyhint="search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" ' +
           'placeholder="Search saved words" value="' + esc(savedQuery) + '" ' +
-          'class="w-full rounded-xl bg-white py-2.5 pl-10 pr-3 text-base text-zinc-900 shadow-sm outline-none ring-1 ring-zinc-900/5 placeholder:text-zinc-400 focus:ring-2 focus:ring-amber-400 dark:bg-zinc-800 dark:text-zinc-100 dark:ring-white/10"></div>' +
+          'class="w-full rounded-xl bg-white py-2.5 pl-10 pr-3 text-base text-zinc-900 shadow-sm outline-none ring-1 ring-zinc-900/5 placeholder:text-zinc-400 focus:ring-2 focus:ring-zinc-400 dark:bg-zinc-800 dark:text-zinc-100 dark:ring-white/10"></div>' +
           // Export for Anki / Copy list at the top, so a long list never hides them.
           '<div class="mt-2 grid grid-cols-2 gap-2"><button class="' + C.btn + '" data-act="export">Export for Anki</button><button class="' + C.btn + '" data-act="copy">Copy list</button></div>' +
+          (function (d) {
+            return d ? '<div class="mt-3 flex items-center gap-3 rounded-2xl bg-amber-50 px-4 py-3 ring-1 ring-amber-200 dark:bg-amber-400/10 dark:ring-amber-400/20">' + HI('academic-cap', 'size-5 text-amber-700 dark:text-amber-400') +
+              '<span class="flex-1 font-semibold text-amber-900 dark:text-amber-200">' + d + (d === 1 ? ' word' : ' words') + ' to review</span>' +
+              '<button class="rounded-lg bg-zinc-900 px-3 py-1.5 text-sm font-semibold text-white active:bg-zinc-700 dark:bg-white dark:text-zinc-900" data-act="go-review">Review</button></div>' : '';
+          })(dueCount()) +
           '<div id="kr-saved-list">' + savedListHTML(savedQuery) + '</div>';
       }
-    } else if (tab === 'review') {
-      h += reviewHTML();
     } else if (tab === 'recent') {
       var lines = history.slice().reverse();
       if (current) lines.unshift(plain(current.text));
@@ -906,14 +937,7 @@
       if (act === 'export') return exportCSV();
       if (act === 'say-now') { var nb = card.querySelector('.kr-now'); return speak(nb ? nb.getAttribute('data-s') : ''); }
       if (act === 'copy') return copyList();
-      var rx = reviewWord();
-      if (act === 'rv-show') { review.open = true; return openMenu('review'); }
-      if (act === 'rv-again') return reviewAnswer('again');
-      if (act === 'rv-good') return reviewAnswer('good');
-      if (act === 'rv-known') return reviewAnswer('known');
-      if (act === 'rv-say-s' && rx) return speak(rx.s, rx.lang);
-      if (act === 'rv-say-w' && rx) return speak(rx.base || rx.w, rx.lang);
-      if (act === 'rv-more' && rx) return openWord(rx.w, rx.s || '', null, rx.lang);
+      if (act === 'go-review') return openMenu('review');
     };
   }
 

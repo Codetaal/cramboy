@@ -156,4 +156,6 @@
 /* Review: the game snapshot keeps its sharp pixels when scaled. */
 .kr-shot { image-rendering: pixelated; aspect-ratio: 4 / 3; }
 /* Short phones: no snapshot once the meaning shows, so the answer buttons stay above Back to game. */
-@media (max-height: 720px) { .kr-shot.kr-shot-back { display: none !important; } }
+@media (max-height: 700px) { .kr-shot.kr-shot-back { display: none !important; } }
+/* Full-screen pages in the sheet (Review). */
+#kr-sheet.kr-full .kr-card { height: 100%; max-height: 100%; border-radius: 0; }

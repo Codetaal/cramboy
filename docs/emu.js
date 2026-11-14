@@ -893,6 +893,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     // The game's own title from its banner (as on the DS menu); the short header name as a fallback.
     $('menu-title').textContent = gameBanner || gameTitle || 'Menu';
     $('m-advanced').hidden = true; $('m-adv-chev').style.transform = '';
+    showMenuPage(null);
     menuLabels();
     $('menu').hidden = false;
   }
@@ -910,18 +911,27 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     $('m-resume').setAttribute('aria-checked', String(!!settings.resume));
     var study = !window.KRSettings || KRSettings.getStudy();
     $('m-study').setAttribute('aria-checked', String(study));
-    // Study mode off: hide every study-related row.
-    $('m-subs-row').hidden = !study; $('m-words-row').hidden = !study; $('m-review-row').hidden = !study; $('m-progress-row').hidden = !study;
-    $('m-reset-box').hidden = !study || !window.KRSettings || KRSettings.getMode() !== 'box';
-    $('m-frame-row').hidden = $('m-reset-box').hidden;
+    // Study mode off: hide the study hub and progress; Study settings stays, to turn it back on.
+    $('m-hub').hidden = !study; $('m-progress-row').hidden = !study;
+    $('m-subs-row').hidden = !study;
+    var boxOn = study && window.KRSettings && KRSettings.getMode() === 'box';
+    $('m-box-h').hidden = !boxOn; $('m-box-list').hidden = !boxOn;
+    var MODES = { off: 'Subtitles off', bar: 'Bar', box: 'In box' };
+    $('m-study-sum').textContent = !study ? 'Off' : 'On · ' + (MODES[window.KRSettings ? KRSettings.getMode() : 'bar'] || '');
     var fr = window.KRSettings && KRSettings.getFrame ? KRSettings.getFrame() : 'classic';
     Array.prototype.forEach.call(document.querySelectorAll('[data-frame-pick]'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.framePick === fr)); });
     var frb = document.querySelector('[data-frame-pick="' + fr + '"]'); $('m-frame-name').textContent = frb ? frb.getAttribute('aria-label').replace(' frame', '') : '';
     var due = window.KRSettings && KRSettings.dueCount ? KRSettings.dueCount() : 0;
-    $('m-review').innerHTML = due ? '<span class="rounded-full bg-amber-400 px-2 py-0.5 text-xs font-semibold text-amber-950">' + due + ' due</span>' : 'Nothing due';
+    // Review is the only amber tile, and only when words are due.
+    $('m-review').textContent = due ? due + ' due' : 'All done';
+    $('m-review').classList.toggle('!text-amber-700', !!due); $('m-review').classList.toggle('dark:!text-amber-400', !!due); $('m-review').classList.toggle('font-semibold', !!due);
+    var rti = $('m-review-tile').querySelector('.m-tile-icon');
+    rti.classList.toggle('!bg-amber-100', !!due); rti.classList.toggle('!text-amber-700', !!due);
+    rti.classList.toggle('dark:!bg-amber-400/15', !!due); rti.classList.toggle('dark:!text-amber-400', !!due);
     var kp = window.KRSettings && KRSettings.knownPct ? KRSettings.knownPct() : null;
     $('m-progress').textContent = kp === null ? '' : kp + '% known';
-    $('m-words').innerHTML = window.KRSettings ? HI('star', 'size-4 text-amber-500 relative -top-[1.25px]') + KRSettings.savedCount() : '';
+    $('m-words').textContent = window.KRSettings ? KRSettings.savedCount() + ' saved' : '';
+    $('m-text').textContent = 'Recent';
     var st = window.KRReaderStats ? KRReaderStats() : null;
     $('m-info').innerHTML = 'Version ' + APP_VERSION + ' · ' + (gameID ? gameID.trim() : '') +
       (lastLoadError ? '<br>Last load problem (retried): ' + lastLoadError.replace(/</g, '&lt;') : '') +
@@ -969,6 +979,11 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   ['pointerup', 'pointercancel', 'touchend', 'touchcancel', 'change'].forEach(function (t) {
     $('m-opacity').addEventListener(t, function () { $('menu').classList.remove('peek'); }, { passive: true });
   });
+  // The menu has one sub-page (Study settings); null shows the main menu.
+  function showMenuPage(id) {
+    $('m-main').hidden = !!id; $('m-page-study').hidden = id !== 'study';
+    document.querySelector('#menu .menu-card').scrollTop = 0;
+  }
   $('menu').addEventListener('click', function (e) {
     if (e.target === $('menu')) return closeMenu();
     var segBtn = e.target.closest('.seg button');
@@ -985,6 +1000,9 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     if (m === 'export') exportSave();
     if (m === 'import') $('file-save').click();
     if (m === 'words' && window.KRUI) { closeMenu(); KRUI.open('saved'); }
+    if (m === 'text' && window.KRUI) { closeMenu(); KRUI.open('recent'); }
+    if (m === 'study-settings') return showMenuPage('study');
+    if (m === 'back') return showMenuPage(null);
     if (m === 'review' && window.KRUI) { closeMenu(); KRUI.open('review'); }
     if (m === 'progress' && window.KRUI) { closeMenu(); KRUI.open('progress'); }
     if (m === 'update') return updateNow();
