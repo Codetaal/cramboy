@@ -520,7 +520,7 @@
     return 'Earlier';
   }
   function savedListHTML(query) {
-    var q = norm(query.trim()), list = saved.slice().reverse().filter(function (x) { return savedMatches(x, q); });
+    var q = norm(query.trim()), list = saved.slice().sort(function (a, b) { return (b.t || 0) - (a.t || 0); }).filter(function (x) { return savedMatches(x, q); });
     if (!list.length) return '<p class="mt-3 px-1 ' + C.muted + '">No saved words match “' + esc(query.trim()) + '”.</p>';
     var h = q ? '<p class="mt-3 px-1 ' + C.muted + '">' + list.length + ' of ' + saved.length + ' words</p>' : '', group = null;
     list.forEach(function (x) {
@@ -564,7 +564,7 @@
         // while typing so the keyboard stays open.
         h += '<div class="mt-3 flex items-center gap-2"><div class="relative flex-1"><span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">' + HI('magnifying-glass', 'size-5') + '</span>' +
           '<input type="search" id="kr-search" enterkeyhint="search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" ' +
-          'placeholder="Search words, meanings, sentences" value="' + esc(savedQuery) + '" ' +
+          'placeholder="Search saved words" value="' + esc(savedQuery) + '" ' +
           'class="w-full rounded-xl bg-white py-2.5 pl-10 pr-3 text-base text-zinc-900 shadow-sm outline-none ring-1 ring-zinc-900/5 placeholder:text-zinc-400 focus:ring-2 focus:ring-amber-400 dark:bg-zinc-800 dark:text-zinc-100 dark:ring-white/10"></div>' +
           // Share: Export for Anki / Copy list, at the top so a long list never hides them.
           '<button class="' + C.btn + ' !px-3" data-act="share" aria-label="Export or copy" aria-expanded="false">' + HI('arrow-up-on-square', 'size-5 text-amber-600 dark:text-amber-400') + '</button></div>' +
