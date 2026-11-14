@@ -885,8 +885,6 @@
           '<input type="search" id="kr-search" enterkeyhint="search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" ' +
           'placeholder="Search saved words" value="' + esc(savedQuery) + '" ' +
           'class="w-full rounded-xl bg-white py-2.5 pl-10 pr-3 text-base text-zinc-900 shadow-sm outline-none ring-1 ring-zinc-900/5 placeholder:text-zinc-400 focus:ring-2 focus:ring-zinc-400 dark:bg-zinc-800 dark:text-zinc-100 dark:ring-white/10"></div>' +
-          // Export for Anki / Copy list at the top, so a long list never hides them.
-          '<div class="mt-2 grid grid-cols-2 gap-2"><button class="' + C.btn + '" data-act="export">Export for Anki</button><button class="' + C.btn + '" data-act="copy">Copy list</button></div>' +
           (function (d) {
             return d ? '<div class="mt-3 flex items-center gap-3 rounded-2xl bg-amber-50 px-4 py-3 ring-1 ring-amber-200 dark:bg-amber-400/10 dark:ring-amber-400/20">' + HI('academic-cap', 'size-5 text-amber-700 dark:text-amber-400') +
               '<span class="flex-1 font-semibold text-amber-900 dark:text-amber-200">' + d + (d === 1 ? ' word' : ' words') + ' to review</span>' +
@@ -934,9 +932,7 @@
       }
       var act = b.dataset.act;
       if (act === 'close') { card.onclick = null; return closeSheet(); }
-      if (act === 'export') return exportCSV();
       if (act === 'say-now') { var nb = card.querySelector('.kr-now'); return speak(nb ? nb.getAttribute('data-s') : ''); }
-      if (act === 'copy') return copyList();
       if (act === 'go-review') return openMenu('review');
     };
   }
@@ -951,28 +947,6 @@
       if (b.dataset.act === 'pg-know-all') { markKnown(Array.prototype.map.call(card.querySelectorAll('[data-know]'), function (n) { return n.dataset.know; })); return openProgress(); }
       if (b.dataset.act === 'close') { card.onclick = null; closeSheet(); }
     };
-  }
-
-  function csvField(s) { s = String(s || ''); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
-  function exportCSV() {
-    var rows = saved.map(function (x) {
-      return [x.base || x.w, x.gloss, x.s, x.w, x.reading || '', x.place || '', x.game || ''].map(csvField).join(',');
-    });
-    var csv = '#separator:comma\n#columns:Word,Meaning,Sentence,As seen,Reading,Place,Game\n' + rows.join('\n') + '\n';
-    var name = 'pokemon-words.csv';
-    var file = null;
-    try { file = new File([csv], name, { type: 'text/csv' }); } catch (e) {}
-    if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
-      navigator.share({ files: [file], title: 'Saved words' }).catch(function () {});
-    } else {
-      var a = document.createElement('a');
-      a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
-      a.download = name; document.body.appendChild(a); a.click(); a.remove();
-    }
-  }
-  function copyList() {
-    var txt = saved.map(function (x) { return (x.base || x.w) + ' — ' + (x.gloss || '') + (x.s ? '\n   ' + x.s : ''); }).join('\n');
-    (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(function () { toast('Copied', 'ok'); }, function () { toast('Copy failed', 'warn'); });
   }
 
   function updatePill() { if (!settings.debug) pill.innerHTML = HI('academic-cap'); }
