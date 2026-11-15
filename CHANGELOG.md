@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.12.1
+- The button at the top of the menu is called Resume again.
+
 ## 0.12.0
 - New: Show FPS (Menu → Advanced, off by default): a small counter at the top-left while playing; 60 is full speed.
 - The translate button follows the Controls opacity slider, always 40 points more visible than the other controls (at least 90% while active).
