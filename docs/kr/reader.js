@@ -9,10 +9,6 @@
   var RAM_WORDS = 1 << 20;          // 4 MB main RAM = 1M 32-bit words
   var MAX_CAPACITY = 8192, MAX_LEN = 2048;
 
-  // Gen 4 shows the place name in a banner when you enter a town or route ("연두마을"); the game
-  // keeps it in its own 22-character buffer (checked on a HeartGold memory snapshot).
-  var PLACE_BUFFER = 22;
-
   // Gen 4: own character table, Hangul at 0x400-0xD65.
   var G4_HANGUL_MIN = 0x400, G4_HANGUL_MAX = 0xD65;
   var G4_NEWLINE = 0xE000, G4_SCROLL = 0x25BC, G4_PAGE = 0x25BD, G4_CTRL = 0xFFFE;
@@ -129,7 +125,7 @@
       total++;
       var mode = this.textMode(u16, dataHalf, size);
       if (!mode) continue;
-      var s = { addr: (i - 1) * 4, dataByte: dataHalf * 2, size: size, maxsize: maxsize, cursor: -1, mode: mode };
+      var s = { addr: (i - 1) * 4, dataByte: dataHalf * 2, size: size, cursor: -1, mode: mode };
       list.push(s);
       var w0 = (s.dataByte >> 2), w1 = ((s.dataByte + size * 2) >> 2);
       for (var w = w0; w <= w1; w++) { owner[w] = list.length; this.marked.push(w); }
@@ -188,12 +184,10 @@
     }
     this.known = seenNow;
 
-    var result = { fresh: [], active: null, changed: false, place: null };
+    var result = { fresh: [], active: null, changed: false };
     for (i = 0; i < fresh.length; i++) {
       var d = this.decode(u16, fresh[i].dataByte >> 1, fresh[i].size, fresh[i].mode);
       result.fresh.push(d.text);
-      // A new place-name banner: one short line in the place buffer.
-      if (fresh[i].mode === G4 && fresh[i].maxsize === PLACE_BUFFER && d.text.length >= 2 && d.text.indexOf('\n') < 0) result.place = d.text.replace(/\u200B/g, '').trim();
     }
 
     if (best) {

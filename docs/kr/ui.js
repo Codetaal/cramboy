@@ -22,7 +22,6 @@
   };
   var saved = [];             // [{w, base, gloss, s, t}]
   var history = [];           // finished dialogue messages (newest last)
-  var otherText = [];         // other Korean text seen (menus, descriptions)
   // mode: 'box' = Pokémon-style box over the game's own text, 'bar' = bar at the top, 'off' = only via 가
   // study: false hides everything Korean-related (subtitles, translate button, word sheets) and stops reading.
   var settings = { mode: 'box', frame: 'classic', study: true, debug: /krdebug/.test(location.search) };
@@ -154,17 +153,9 @@
     store.setItem('saved', saved).catch(function () { toast('Could not save', 'warn'); });
   }
   // ---------- where you are ----------
-  // The last place-name banner the game showed, remembered per game, and saved with each word.
+  // The game you're playing, saved with each word. (Only character dialogue is read: no place names.)
   var game = { id: '', name: '' }, place = '';
-  window.KRSetGame = function (id, name) {
-    game = { id: String(id || '').trim(), name: String(name || '').trim() }; place = '';
-    if (store && game.id) store.getItem('place:' + game.id).then(function (v) { if (typeof v === 'string' && !place) place = v; }).catch(function () {});
-  };
-  function setPlace(p) {
-    if (!p || p === place) return;
-    place = p;
-    if (store && game.id) store.setItem('place:' + game.id, p).catch(function () {});
-  }
+  window.KRSetGame = function (id, name) { game = { id: String(id || '').trim(), name: String(name || '').trim() }; };
   function whereHTML(pl, gm, cls) {
     if (!pl && !gm) return '';
     return '<p class="flex items-center gap-1 ' + (cls || '') + ' text-xs text-zinc-400 dark:text-zinc-500">' + HI('map-pin', 'size-3.5 shrink-0') +
@@ -261,7 +252,7 @@
   // Called by the app when a game loads: read and look up text in that game's language.
   window.KRSetLang = function (l) {
     l = l === 'ja' ? 'ja' : 'ko';
-    if (l !== lang) { lang = l; reader.setLang(l); current = null; history = []; otherText = []; renderPanel(); }
+    if (l !== lang) { lang = l; reader.setLang(l); current = null; history = []; renderPanel(); }
     if (l === 'ja') loadDict('ja').catch(function () {});   // needed to split Japanese into words
   };
 
@@ -375,11 +366,7 @@
   };
 
   function handleScan(res) {
-    if (res.place) setPlace(res.place);
-    res.fresh.forEach(function (t) {
-      t = plain(t).trim();
-      if (t.length >= 2 && otherText.indexOf(t) < 0) { otherText.push(t); if (otherText.length > 150) otherText.shift(); countText(t); }
-    });
+    // Only character dialogue is used (res.fresh, other text on screen, is ignored).
     if (res.newMessage && current) archive(current);
     // A held message (see below) goes away at the next button press or touch.
     if (heldAt && !res.active && (window.krInputAt || 0) > heldAt) closeCurrent();
@@ -977,11 +964,7 @@
       }).join('') + '</div>';
     };
     if (lines.length) h += SEC('Earlier') + block(lines.slice(0, 60));
-    // Other text: signs, menus... without the dialogue lines, which the game also keeps as plain strings.
-    var norm = function (t) { return plain(t).replace(/\s+/g, ' ').trim(); };
-    var said = {}; history.concat(current ? [plain(current.text)] : []).forEach(function (t) { said[norm(t)] = 1; });
-    var other = otherText.filter(function (t) { return !said[norm(t)]; });
-    if (other.length) h += SEC('Signs and other text') + block(other.slice().reverse().slice(0, 60));
+    // Only character dialogue (no signs or other text on screen).
     return h;
   }
   function wordsTabHTML() {
