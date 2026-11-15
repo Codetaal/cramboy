@@ -56,7 +56,9 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
 
   $('btn-open').onclick = function () { unlockAudio(); $('file-rom').click(); };
   $('file-rom').onchange = function () {
-    var f = this.files[0]; this.value = '';
+    var files = Array.prototype.slice.call(this.files); this.value = '';
+    if (files.length > 1) return addMany(files);
+    var f = files[0];
     if (!f) return;
     readHeader(f).then(function (h) {
       // Check before storing, so a wrong file never ends up in the library.
@@ -84,13 +86,40 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     }).then(function () { return library; });
   }
   function saveLibrary() { return KV.set('library', library); }
-  function addToLibrary(blob, h, name) {
+  // Several files picked at once: add them all to the list (one at a time, so storage keeps up),
+  // then show the list. Files that aren't DS games are skipped and named in one message.
+  function addMany(files) {
+    var added = 0, skipped = [], full = false, i = 0;
+    loader(0, 'Adding games', null);
+    function next() {
+      if (i >= files.length) return done();
+      var f = files[i++];
+      $('loader-pct').textContent = 'Adding ' + i + ' of ' + files.length + '…';
+      $('loader-bar').style.width = Math.round((i - 1) / files.length * 100) + '%';
+      return readHeader(f).then(function (h) {
+        if (h.error) { skipped.push(f.name); return; }
+        return addToLibrary(f, h, null, true).then(function (entry) { if (entry) added++; else full = true; });
+      }).catch(function () { skipped.push(f.name); }).then(next);
+    }
+    function done() {
+      loader(false);
+      renderLibrary();
+      if (full) alert('There wasn\'t enough storage to keep all games in your list.');
+      // Short enough for one line: "3 games added, 1 skipped" (skipped: not a DS game).
+      var msg = (added === 1 ? '1 game added' : added + ' games added') + (skipped.length ? ', ' + skipped.length + ' skipped' : '');
+      toast(msg, { icon: skipped.length && !added ? 'warn' : 'ok', ms: 4000 });
+    }
+    next();
+  }
+  function addToLibrary(blob, h, name, quiet) {
     var id = h.id.trim() + '-' + blob.size;
     library = library.filter(function (e) { return e.id !== id; });
     var entry = { id: id, name: name || blob.name || h.title, title: h.banner || h.title, size: blob.size, icon: h.icon, played: Date.now() };
+    if (quiet) entry.unplayed = true;   // added in a batch: not played yet
     library.unshift(entry);
     return KV.set('rom:' + id, blob).then(saveLibrary).then(function () { renderLibrary(); return entry; }, function () {
       library = library.filter(function (e) { return e.id !== id; });
+      if (quiet) return null;
       alert('There wasn\'t enough storage to keep this game in your list. It will still play now, but you\'ll need to open the file again next time.');
       return null;
     });
@@ -157,7 +186,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
                              : '<span class="' + tile + ' text-xs font-medium text-zinc-400 dark:text-zinc-500">DS</span>') +
       '<div class="min-w-0 flex-1"><p class="g-title truncate font-semibold"></p><p class="g-sub truncate text-sm text-zinc-500 dark:text-zinc-400"></p></div>' + HI('chevron-right', 'size-5 shrink-0 text-zinc-300 dark:text-zinc-600');
     cell.querySelector('.g-title').textContent = e.title;
-    cell.querySelector('.g-sub').textContent = 'Played ' + ago(e.played) + ' · ' + sizeText(e.size);
+    cell.querySelector('.g-sub').textContent = (e.unplayed ? 'Added ' : 'Played ') + ago(e.played) + ' · ' + sizeText(e.size);
     wrap.appendChild(del); wrap.appendChild(cell);
     attachSwipe(wrap, cell, function () { unlockAudio(); playFromLibrary(e.id); }, function () { removeWithUndo(e); });
     del.onclick = function () { collapse(wrap, function () { removeWithUndo(e); }); };
@@ -312,7 +341,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
       gameRegion = (h.code || '').charAt(3);
       loader(0, h.banner || h.title || name, h.icon);
       if (libId) {
-        library.forEach(function (e) { if (e.id === libId) e.played = Date.now(); });
+        library.forEach(function (e) { if (e.id === libId) { e.played = Date.now(); delete e.unplayed; } });
         saveLibrary().catch(function () {});
       }
       var size = romSize = blob.size;
