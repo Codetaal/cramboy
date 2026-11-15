@@ -374,21 +374,24 @@
       heldAt = 0;
       current = res.active;
       if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
-      if (res.changed) renderPanel();
+      if (res.changed) { renderPanel(); typedAt = performance.now(); }
       if (!dicts[lang]) loadDict().catch(function () {});
     } else if (res.closed && current && !heldAt) {
-      // Normally a message closes because you pressed a button on its last page. If the game frees a
-      // finished message on its own (HeartGold's intro does this right before a choice), the text is
-      // still on screen: keep the subtitle until the next button press or touch, or the next message.
-      var done = current.shown >= current.text.replace(/\s+$/, '').length;
-      if (done && performance.now() - (window.krInputAt || 0) > HOLD_AFTER_INPUT_MS) heldAt = performance.now();
-      else closeCurrent();
+      // Normally a message closes because you pressed a button after its last page was typed. If the
+      // game frees it with no press since the last letter appeared (HeartGold does this with questions
+      // that are answered with a choice: "어느 쪽인가를 알려주게나" + boy / girl), the text is still on
+      // screen: keep the subtitle, printed in full, until the next button press or touch, or the next
+      // message.
+      if ((window.krInputAt || 0) <= typedAt) {
+        heldAt = performance.now();
+        if (current.shown < current.text.length) { current.shown = current.text.length; renderPanel(); }
+      } else closeCurrent();
     }
     pill.classList.toggle('kr-live', !!current);
     if (settings.debug) pill.textContent = reader.stats.korean + '/' + reader.stats.printers;
   }
 
-  var heldAt = 0, HOLD_AFTER_INPUT_MS = 700;
+  var heldAt = 0, typedAt = 0;   // typedAt: when the subtitle last gained letters
   function closeCurrent() {
     heldAt = 0;
     if (!current) return;
