@@ -127,7 +127,7 @@
   }
   function resetBox() { boxGeo = {}; saveSettings(); krLayout(); toast('Subtitle box reset', 'ok'); }
   window.KRReaderStats = function () { return reader.stats; };
-  window.KRSettings = { getMode: function () { return settings.mode; }, setMode: setMode, savedCount: function () { return saved.length; }, knownPct: function () { var p = gameProgress(); return p.n ? pct(p.known, p.n) : null; }, dueCount: function () { return dueCount(); },
+  window.KRSettings = { getMode: function () { return settings.mode; }, setMode: setMode, savedCount: function () { return saved.length; }, voiceName: function () { var v = bestVoice(lang); return v ? v.name + (/premium/i.test(v.name + v.voiceURI) ? ' (Premium)' : /enhanced/i.test(v.name + v.voiceURI) ? ' (Enhanced)' : '') : ''; }, knownPct: function () { var p = gameProgress(); return p.n ? pct(p.known, p.n) : null; }, dueCount: function () { return dueCount(); },
     getStudy: function () { return settings.study; }, setStudy: setStudy,
     getFrame: function () { return settings.frame; }, setFrame: setFrame, frames: FRAMES };
   window.KRUI = { open: function (tab) { openMenu(tab || 'now'); }, resetBox: resetBox };
@@ -208,14 +208,33 @@
   // ---------- hear it ----------
   // The phone's own voices (Korean / Japanese are built into iPhone): offline and free.
   var VOICE_LANG = { ko: 'ko-KR', ja: 'ja-JP' };
+  // The nicest voice the device offers for a language: Premium, then Enhanced, then Siri, then the
+  // one chosen in the phone's settings (default), then anything but the robotic compact /
+  // Eloquence voices, and only then whatever is left.
+  function voiceRank(x) {
+    var id = ((x.name || '') + ' ' + (x.voiceURI || '')).toLowerCase();
+    if (/premium/.test(id)) return 0;
+    if (/enhanced/.test(id)) return 1;
+    if (/siri/.test(id)) return 2;
+    if (x.default) return 3;
+    if (!/eloquence|compact/.test(id)) return 4;
+    return 5;
+  }
+  function bestVoice(sl) {
+    var want = VOICE_LANG[sl], voices = window.speechSynthesis ? speechSynthesis.getVoices() : [];
+    var mine = voices.filter(function (x) { return x.lang && x.lang.replace('_', '-').indexOf(want) === 0; });
+    if (!mine.length) mine = voices.filter(function (x) { return x.lang && x.lang.indexOf(sl) === 0; });
+    return mine.sort(function (a, b) { return voiceRank(a) - voiceRank(b); })[0] || null;
+  }
+  // iOS fills the voice list a moment after the page loads.
+  if (window.speechSynthesis && speechSynthesis.addEventListener) speechSynthesis.addEventListener('voiceschanged', function () {});
   function speak(text, l) {
     var sl = l || lang;
     text = String(text || '').replace(/[\u200B·…]+/g, ' ').trim();
     if (!text) return;
     if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) { toast('Speech isn’t available here', 'warn'); return; }
     var want = VOICE_LANG[sl], voices = speechSynthesis.getVoices();
-    var v = voices.filter(function (x) { return x.lang && x.lang.replace('_', '-').indexOf(want) === 0; })[0] ||
-            voices.filter(function (x) { return x.lang && x.lang.indexOf(sl) === 0; })[0];
+    var v = bestVoice(sl);
     if (voices.length && !v) { toast('No ' + (sl === 'ja' ? 'Japanese' : 'Korean') + ' voice on this device', 'warn'); return; }
     speechSynthesis.cancel();
     var u = new SpeechSynthesisUtterance(text);

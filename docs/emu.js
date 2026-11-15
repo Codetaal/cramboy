@@ -973,6 +973,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     $('m-info').innerHTML = 'Version ' + APP_VERSION + ' · ' + (gameID ? gameID.trim() : '') +
       (lastLoadError ? '<br>Last load problem (retried): ' + lastLoadError.replace(/</g, '&lt;') : '') +
       (st ? '<br>Reader: ' + st.strings + ' strings in memory, ' + st.korean + ' in the game’s language, ' + st.printers + ' being printed' : '') +
+      (window.KRSettings && KRSettings.voiceName ? '<br>Voice: ' + (KRSettings.voiceName() || 'none found').replace(/</g, '&lt;') : '') +
       '<br>The game saves automatically a few seconds after you save in‑game.' +
       '<br>Emulator: desmume‑wasm (GPL‑2.0). Character table and Pokémon names: PKHeX (GPL‑3.0). Dictionaries: kengdic (MPL‑2.0), JMdict by the EDRDG (CC BY‑SA 4.0). Icons: Heroicons (MIT).';
   }
