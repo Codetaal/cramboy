@@ -2,6 +2,12 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.13.0
+- One Study screen for everything study: Now, Words, Review and Progress, with the study settings behind the gear. The translate button opens it; the game menu has a single Study row showing what needs attention.
+- Now shows the current line on top and earlier lines and signs below (the Recent tab is merged in).
+- Review tab: how many words are ready, a Start button and what's coming up. Closing a session returns to this tab.
+- New setting: new words per day (5, 10, 15, 20 or 30).
+
 ## 0.12.2
 - Speech uses the nicest voice your phone offers (Premium, Enhanced, Siri or the one you chose in Settings) before the robotic basic voice. Menu → Advanced shows which voice is used.
 
