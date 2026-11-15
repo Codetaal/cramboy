@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.15.2
+- Review tab: Back to game is a secondary (soft lilac) button, so Start review is the one main button.
+
 ## 0.15.1
 - Fix: a question answered with a choice (like the professor's boy / girl question in HeartGold) lost its subtitle; it now stays until you answer.
 
