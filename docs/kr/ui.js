@@ -48,7 +48,7 @@
   // Tailwind class sets for the sheets
   var C = {
     btn: 'flex items-center justify-center gap-1.5 rounded-xl bg-white px-3.5 py-2.5 font-semibold text-zinc-800 shadow-sm ring-1 ring-zinc-900/5 active:scale-[0.98] dark:bg-zinc-800 dark:text-zinc-100 dark:ring-white/10',
-    primary: 'flex w-full items-center justify-center gap-2 rounded-xl bg-zinc-900 px-4 py-3 font-semibold text-white shadow-sm active:scale-[0.98] active:bg-zinc-700 dark:bg-white dark:text-zinc-900 dark:active:bg-zinc-200',
+    primary: 'flex w-full items-center justify-center gap-2 rounded-xl bg-amber-400 px-4 py-3 font-semibold text-amber-950 shadow-sm active:scale-[0.98] active:bg-amber-300',
     saved: 'flex items-center gap-1.5 rounded-xl bg-amber-100 px-3.5 py-2 font-semibold text-amber-900 ring-1 ring-amber-300 active:scale-95 dark:bg-amber-400/15 dark:text-amber-300 dark:ring-amber-400/30',
     save: 'flex items-center gap-1.5 rounded-xl bg-amber-400 px-3.5 py-2 font-semibold text-amber-950 shadow-sm active:scale-95',
     card: 'rounded-2xl bg-white px-4 py-3 shadow-sm ring-1 ring-zinc-900/5 dark:bg-zinc-900 dark:ring-white/10',
@@ -766,7 +766,7 @@
     var total = Math.max(review.total, review.done + review.queue.length), pos = Math.min(total, review.done + (x ? 1 : 0));
     var h = '<div class="flex items-center gap-3 pb-2 pt-[calc(0.75rem+env(safe-area-inset-top))]">' +
       '<button class="-ml-2 grid size-10 place-items-center rounded-full text-zinc-500 active:bg-zinc-200 dark:text-zinc-400 dark:active:bg-zinc-800" data-act="close" aria-label="Close">' + HI('x-mark', 'size-6') + '</button>' +
-      '<div class="h-2 flex-1 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800"><div class="h-2 rounded-full bg-zinc-900 transition-[width] dark:bg-white" style="width:' + (total ? Math.round(review.done / total * 100) : 0) + '%"></div></div>' +
+      '<div class="h-2 flex-1 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800"><div class="h-2 rounded-full bg-amber-400 transition-[width]" style="width:' + (total ? Math.round(review.done / total * 100) : 0) + '%"></div></div>' +
       '<span class="min-w-10 text-right text-sm font-semibold tabular-nums text-zinc-500 dark:text-zinc-400">' + (total ? pos + ' / ' + total : '') + '</span></div>';
     if (!x) {
       var next = saved.slice().sort(function (a, b) { return dueAt(a) - dueAt(b); })[0];
@@ -801,7 +801,7 @@
       foot = '<div class="grid grid-cols-2 gap-2">' +
         '<button class="' + C.btn + ' flex-col !gap-0 !py-2.5" data-act="rv-again">Again<span class="text-xs font-normal text-zinc-500 dark:text-zinc-400">soon</span></button>' +
         '<button class="' + C.primary + ' flex-col !gap-0 !py-2.5" data-act="rv-good">Got it' +
-          '<span class="text-xs font-normal text-zinc-300 dark:text-zinc-600">' + (becomesKnown ? 'becomes Known' : inDays(gotDays)) + '</span></button></div>' +
+          '<span class="text-xs font-normal text-amber-900/70">' + (becomesKnown ? 'becomes Known' : inDays(gotDays)) + '</span></button></div>' +
         '<button class="mt-2 flex w-full items-center justify-center gap-1 py-2 text-sm font-medium text-zinc-500 active:opacity-60 dark:text-zinc-400" data-act="rv-known">' + HI('check', 'size-4') + 'I know this word</button>';
     }
     // The answer area sits at the bottom of the screen.
@@ -888,7 +888,7 @@
           (function (d) {
             return d ? '<div class="mt-3 flex items-center gap-3 rounded-2xl bg-amber-50 px-4 py-3 ring-1 ring-amber-200 dark:bg-amber-400/10 dark:ring-amber-400/20">' + HI('academic-cap', 'size-5 text-amber-700 dark:text-amber-400') +
               '<span class="flex-1 font-semibold text-amber-900 dark:text-amber-200">' + d + (d === 1 ? ' word' : ' words') + ' to review</span>' +
-              '<button class="rounded-lg bg-zinc-900 px-3 py-1.5 text-sm font-semibold text-white active:bg-zinc-700 dark:bg-white dark:text-zinc-900" data-act="go-review">Review</button></div>' : '';
+              '<button class="rounded-lg bg-amber-400 px-3 py-1.5 text-sm font-semibold text-amber-950 active:bg-amber-300" data-act="go-review">Review</button></div>' : '';
           })(dueCount()) +
           '<div id="kr-saved-list">' + savedListHTML(savedQuery) + '</div>';
       }
