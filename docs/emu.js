@@ -17,7 +17,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   var fastForward = false, frameNo = 0, lastT = 0, acc = 0;
   var prevSaveFlag = 0, saveDirty = false;
   // ctlOpacity: how see-through the floating controls are (the same in portrait and landscape).
-  var settings = { sound: true, controls: 'floating', resume: false, ctlOpacity: 0.7 };
+  var settings = { sound: true, controls: 'floating', resume: false, ctlOpacity: 0.7, fps: false };
 
   var TAGLINE = '';   // no slogan; the line only shows status messages
   // ---------- startup ----------
@@ -27,7 +27,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     $('btn-open').disabled = false;
     loadLibrary().then(renderLibrary).catch(function () {});
   };
-  KV.get('settings').then(function (s) { if (s) { settings.sound = s.sound !== false; settings.controls = 'floating'; /* the Below layout was removed */ settings.resume = s.resume === true; if (s.ctlOpacity >= 0.15 && s.ctlOpacity <= 1) settings.ctlOpacity = s.ctlOpacity; } }).catch(function () {});
+  KV.get('settings').then(function (s) { if (s) { settings.sound = s.sound !== false; settings.controls = 'floating'; /* the Below layout was removed */ settings.resume = s.resume === true; if (s.ctlOpacity >= 0.15 && s.ctlOpacity <= 1) settings.ctlOpacity = s.ctlOpacity; settings.fps = s.fps === true; $('fps').hidden = !settings.fps; } }).catch(function () {});
 
   var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var standalone = window.navigator.standalone || matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches;
@@ -416,14 +416,20 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   // ---------- main loop ----------
   function loop(t) {
     requestAnimationFrame(loop);
-    if (!emuIsRunning) { lastT = t; acc = 0; return; }
+    if (!emuIsRunning) { lastT = t; acc = 0; fpsT = 0; fpsFrames = 0; return; }
     acc += Math.min(t - lastT, 100); lastT = t;
     var due = 0;
     while (acc >= FRAME_MS - 1 && due < 2) { acc -= FRAME_MS; due++; }
     if (acc > FRAME_MS * 3) acc = 0;
     if (fastForward) due *= 3;
     for (var i = 0; i < due && emuIsRunning; i++) runFrame(i === due - 1);
+    // FPS counter: game frames run per second, updated once a second (fast forward shows ~180).
+    if (settings.fps) {
+      if (!fpsT) fpsT = t;
+      if (t - fpsT >= 1000) { $('fps').textContent = Math.round(fpsFrames * 1000 / (t - fpsT)) + ' FPS'; fpsFrames = 0; fpsT = t; }
+    }
   }
+  var fpsFrames = 0, fpsT = 0;
   requestAnimationFrame(loop);
 
   function runFrame(draw) {
@@ -437,6 +443,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
         ctx2d[s].putImageData(new ImageData(new Uint8ClampedArray(buf, fb + s * 196608, 196608), 256, 192), 0, 0);
       }
     }
+    fpsFrames++;
     if (++frameNo % 30 === 0) checkSave();
   }
 
@@ -938,6 +945,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     snd.innerHTML = HI(settings.sound ? 'speaker-wave' : 'speaker-x-mark', 'size-5'); snd.classList.toggle('opacity-60', !settings.sound);
     setSeg('subs', window.KRSettings ? KRSettings.getMode() : 'bar');
     $('m-resume').setAttribute('aria-checked', String(!!settings.resume));
+    $('m-fps').setAttribute('aria-checked', String(!!settings.fps));
     var study = !window.KRSettings || KRSettings.getStudy();
     $('m-study').setAttribute('aria-checked', String(study));
     // Study mode off: hide the study hub and progress; Study settings stays, to turn it back on.
@@ -1042,6 +1050,12 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     }
     if (m === 'snapshot') exportSnapshot();
     if (m === 'study-toggle' && window.KRSettings) { KRSettings.setStudy(!KRSettings.getStudy()); menuLabels(); }
+    if (m === 'fps-toggle') {
+      settings.fps = !settings.fps; saveSettings();
+      $('m-fps').setAttribute('aria-checked', String(settings.fps));
+      $('fps').hidden = !settings.fps; $('fps').textContent = '– FPS'; fpsT = 0; fpsFrames = 0;
+      return;
+    }
     if (m === 'resume-toggle') {
       settings.resume = !settings.resume; saveSettings(); menuLabels();
       if (settings.resume) { toast('Resume is on', { icon: 'ok' }); lastSnapAt = 0; takeSnapshot(); }
