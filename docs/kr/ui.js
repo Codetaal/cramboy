@@ -458,7 +458,7 @@
   var GRAB = '<div class="mx-auto mb-3 h-1.5 w-10 rounded-full bg-zinc-300 dark:bg-zinc-700"></div>'; // same handle as the menu
   // "Back to game" stays pinned to the bottom of the sheet while the content above it scrolls.
   var BACK = '<div class="sticky bottom-0 -mx-4 mt-auto bg-gradient-to-t from-zinc-50 from-70% to-zinc-50/0 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-5 dark:from-zinc-950 dark:to-zinc-950/0">' +
-    '<button class="' + C.btn + ' w-full !py-3" data-act="close">' + HI('play', 'size-5 text-zinc-500 dark:text-zinc-400') + 'Back to game</button></div>';
+    '<button class="' + C.primary + '" data-act="close">' + HI('play', 'size-5') + 'Back to game</button></div>';
   function openSheet(html, withBack, full) {
     if (sheet.hidden) pause();
     sheet.classList.toggle('kr-full', !!full);
