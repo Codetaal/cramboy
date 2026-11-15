@@ -2,6 +2,10 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.11.1
+- Fix: a faint blurry smudge at the top of the screen on iPhone (the hidden notification's blur).
+- New donation text on the Made by CramLab card.
+
 ## 0.11.0
 - Add a game: pick several games at once. They're all added to your list ("Added today" until you first play them); files that aren't DS games are skipped. Picking one game still starts it right away.
 
