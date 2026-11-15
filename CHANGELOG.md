@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.15.3
+- Box frames: Classic, Poké Ball, Ocean, Night and Sakura. The Poké Ball frame is back in the picker; Gold, Forest and Retro are removed (a removed choice falls back to Classic).
+
 ## 0.15.2
 - Review tab: Back to game is a secondary (soft lilac) button, so Start review is the one main button.
 
