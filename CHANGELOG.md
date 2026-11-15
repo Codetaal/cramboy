@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.10.2
+- Main buttons are yellow again (Play, Review, Show meaning, Got it). Switches, sliders, speaker icons and links stay grey, so the main action on each screen stands out.
+
 ## 0.10.1
 - Fix: subtitles jumped to the last page of a dialogue in HeartGold instead of following the game page by page. (The game's second copy of each message was mistaken for a sign.) Signs still show in full.
 
