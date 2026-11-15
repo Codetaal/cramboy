@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.15.5
+- Switches and the opacity slider use the brand purple again.
+
 ## 0.15.4
 - Fix: long messages in HeartGold (like Mom's first talk) showed in the subtitle all at once; they now follow the game page by page.
 - Study screen: Back to game is the soft lilac secondary button on every tab.
