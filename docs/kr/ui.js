@@ -484,14 +484,13 @@
   var GRAB = '<div class="mx-auto mb-3 h-1.5 w-10 rounded-full bg-zinc-300 dark:bg-zinc-700"></div>'; // same handle as the menu
   // "Back to game" stays pinned to the bottom of the sheet while the content above it scrolls.
   var BACK = '<div class="sticky bottom-0 -mx-4 mt-auto bg-gradient-to-t from-zinc-50 from-70% to-zinc-50/0 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-5 dark:from-zinc-950 dark:to-zinc-950/0">' +
-    '<button class="' + C.primary + '" data-act="close">' + HI('play', 'size-5') + 'Back to game</button></div>';
-  // On a screen with its own main action (Review: "Start review"), Back to game is the secondary button:
-  // soft lilac, same colour family, clearly second.
-  var BACK_SOFT = BACK.replace(C.primary, C.secondary).replace(HI('play', 'size-5'), HI('play', 'size-5 text-violet-500 dark:text-violet-300'));
+    '<button class="' + C.secondary + '" data-act="close">' + HI('play', 'size-5 text-violet-500 dark:text-violet-300') + 'Back to game</button></div>';
+  // Back to game is the secondary button everywhere (soft lilac); solid purple is kept for real actions
+  // (Start review, Show meaning, Got it).
   function openSheet(html, withBack, full) {
     if (sheet.hidden) pause();
     sheet.classList.toggle('kr-full', !!full);
-    card.innerHTML = (full ? '' : GRAB) + html + (withBack === 'soft' ? BACK_SOFT : withBack ? BACK : '<div class="pb-[calc(1.5rem+env(safe-area-inset-bottom))]"></div>');
+    card.innerHTML = (full ? '' : GRAB) + html + (withBack ? BACK : '<div class="pb-[calc(1.5rem+env(safe-area-inset-bottom))]"></div>');
     sheet.hidden = false; card.scrollTop = 0;
   }
   function closeSheet() {
@@ -913,8 +912,7 @@
       else if (tab === 'review') h += reviewStartHTML(due);
       else if (tab === 'progress') h += progressHTML();
     }
-    // Review with words due has its own main button (Start review): Back to game becomes secondary.
-    openSheet(h, tab === 'review' && due ? 'soft' : true);
+    openSheet(h, true);
     var search = card.querySelector('#kr-search');
     if (search) search.oninput = function () { savedQuery = search.value; card.querySelector('#kr-saved-list').innerHTML = savedListHTML(savedQuery); };
     card.onclick = function (e) {
