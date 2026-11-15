@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.15.7
+- Review cards and the word sheet: the target word in the sentence has a clearer highlight (bold purple), also in dark mode.
+
 ## 0.15.6
 - Fix: tapping Know on the Progress tab (or changing a setting) jumped back to the top; the page now stays where it is.
 
