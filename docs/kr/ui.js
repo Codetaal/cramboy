@@ -56,7 +56,7 @@
     muted: 'text-sm text-zinc-500 dark:text-zinc-400',
     badge: 'ml-1.5 rounded-full bg-zinc-100 px-2 py-0.5 align-middle text-xs font-medium text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400',
     tab: 'flex flex-1 items-center justify-center gap-1 rounded-lg py-2 text-sm font-semibold text-zinc-500 aria-pressed:bg-white aria-pressed:text-zinc-900 aria-pressed:shadow-sm dark:text-zinc-400 dark:aria-pressed:bg-zinc-700 dark:aria-pressed:text-white',
-    mark: 'rounded bg-violet-200 px-0.5 text-inherit dark:bg-violet-600/30',
+    mark: 'rounded-md bg-violet-200 px-1 font-semibold text-violet-900 ring-1 ring-violet-300 dark:bg-violet-500/40 dark:text-white dark:ring-violet-400/50',
   };
   sheet.appendChild(card);
 
