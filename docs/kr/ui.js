@@ -897,7 +897,8 @@
       h = '<div class="flex items-center"><p class="flex-1 text-xl font-bold">Study</p>' +
         '<button class="-mr-2 grid size-10 place-items-center rounded-full text-zinc-500 active:bg-zinc-200 dark:text-zinc-400 dark:active:bg-zinc-800" data-tab="settings" aria-label="Study settings">' + HI('cog-6-tooth', 'size-6') + '</button></div>' +
         '<div class="mt-2 flex rounded-xl bg-zinc-100 p-1 dark:bg-zinc-800">' + tb('now', 'Now') + tb('words', 'Words') +
-        tb('review', 'Review' + (due ? ' <span class="rounded-full bg-violet-600 px-1.5 text-[11px] leading-[18px] text-white">' + due + '</span>' : '')) + tb('progress', 'Progress') + '</div>';
+        // Review: a floating badge on the corner of the word, like an app icon with notifications.
+        tb('review', '<span class="relative">Review' + (due ? '<span class="absolute -right-[19px] -top-3 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-[#ff3b30] px-1 text-[11px] font-semibold leading-none text-white ring-2 ring-zinc-100 dark:ring-zinc-800">' + (due > 99 ? '99+' : due) + '</span>' : '') + '</span>') + tb('progress', 'Progress') + '</div>';
       if (tab === 'now') h += nowHTML();
       else if (tab === 'words') h += wordsTabHTML();
       else if (tab === 'review') h += reviewStartHTML(due);
