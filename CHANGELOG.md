@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.12.2
+- Speech uses the nicest voice your phone offers (Premium, Enhanced, Siri or the one you chose in Settings) before the robotic basic voice. Menu → Advanced shows which voice is used.
+
 ## 0.12.1
 - The button at the top of the menu is called Resume again.
 
