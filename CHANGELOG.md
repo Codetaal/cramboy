@@ -2,6 +2,10 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.15.0
+- Back to the original text system: subtitles show only character dialogue (no signs, no place names, no menu labels).
+- Study → Now shows dialogue only; Progress counts words from dialogue only.
+
 ## 0.14.0
 - Purple instead of yellow, matching the CramBoy icon: grape purple for main buttons and badges, lilac for words you're learning.
 - The Review count is a floating red badge on the corner of the word, like app icon notifications.
