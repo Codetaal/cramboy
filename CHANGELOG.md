@@ -2,6 +2,12 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.14.0
+- Purple instead of yellow, matching the CramBoy icon: grape purple for main buttons and badges, lilac for words you're learning.
+- The Review count is a floating red badge on the corner of the word, like app icon notifications.
+- Fix: long dialogues (like Mom's opening speech in HeartGold) showed the whole message at once; subtitles now follow the game page by page.
+- Fix: in HeartGold's intro the subtitle disappeared right before a choice (the game frees the question while it's still on screen); it now stays until your next button press or the next message.
+
 ## 0.13.0
 - One Study screen for everything study: Now, Words, Review and Progress, with the study settings behind the gear. The translate button opens it; the game menu has a single Study row showing what needs attention.
 - Now shows the current line on top and earlier lines and signs below (the Recent tab is merged in).
