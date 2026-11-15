@@ -8,16 +8,7 @@
   var STRING_MAGIC = 0xB6F8D2EC;   // pret/pokeheartgold src/pm_string.c; same value in Pokémon White
   var RAM_WORDS = 1 << 20;          // 4 MB main RAM = 1M 32-bit words
   var MAX_CAPACITY = 8192, MAX_LEN = 2048;
-  // Text shown all at once (signs) has no typing cursor. It is told apart from labels and names by
-  // its buffer: the game prints messages from big message buffers (HeartGold: 1024 characters),
-  // while labels sit in buffers just big enough for their few letters.
-  var MESSAGE_BUFFER = 256, INSTANT_SCANS = 2;
-  // Strings created within this many scans of each other belong to the same message (its copies).
-  var SIBLING_SCANS = 3;
-  // Cursor pointers stored this close to the string are the message's own helper data, not the printer.
-  var NEAR_BYTES = 0x400;
-  // This many pointers to the same spot are leftovers, not the printer's cursor.
-  var CROWD = 3;
+
   // Gen 4 shows the place name in a banner when you enter a town or route ("연두마을"); the game
   // keeps it in its own 22-character buffer (checked on a HeartGold memory snapshot).
   var PLACE_BUFFER = 22;
@@ -41,8 +32,6 @@
     this.known = new Map();             // addr -> {text, firstSeen}
     this.scanNo = 0;
     this.current = null;                // {addr, text, codesKey, chars, cursor}
-    this.ptrVals = new Map();           // string addr -> Map(pointer word -> cursor) at the last scan
-    this.liveWord = new Map();          // string addr -> the pointer word seen moving (the printer)
     this.stats = { strings: 0, korean: 0, printers: 0 };
   }
 
@@ -56,7 +45,7 @@
         if (x >= UNI_KANA_MIN && x <= UNI_KANA_MAX) this.g4Kana[i] = 1;
       }
     }
-    this.known = new Map(); this.current = null; this.ptrVals = new Map(); this.liveWord = new Map();
+    this.known = new Map(); this.current = null;
   };
 
   // Decode a run of 16-bit codes into display text.
@@ -148,13 +137,9 @@
     this.stats.strings = total;
     this.stats.korean = list.length;
 
-    // 2) Find pointers that land inside a Korean string's characters: the text printer's "current
-    //    character" cursor. Long dialogues have misleading pointers too (seen in HeartGold):
-    //    - a crowd of leftovers that all point at the end of the message,
-    //    - helper pointers stored right next to the message (a few characters ahead of the cursor).
-    //    The printer cursor is a single pointer stored elsewhere that moves while typing. Once seen
-    //    moving, that same pointer is followed (also while it waits, or sits at the end among the crowd).
-    var printers = 0, cands = new Map();   // string index -> [[word, cursor], ...]
+    // 2) Find pointers that land inside a Korean string's characters:
+    //    the text printer's "current character" cursor.
+    var printers = 0;
     if (list.length) {
       for (i = 0; i < RAM_WORDS; i++) {
         var v = u32[i];
@@ -167,55 +152,22 @@
         // rel 0 = pointer to the start of the text, used all over the place; the
         // printer cursor has moved past the first character.
         if (rel <= 0 || rel > st.size * 2 || (rel & 1)) continue;
-        // Ignore pointers stored near the string: heap headers, the string's own body and the
-        // message's helper data around it.
-        if (i * 4 >= st.addr - NEAR_BYTES && i * 4 < st.dataByte + st.size * 2 + NEAR_BYTES) continue;
-        var c0 = cands.get(o - 1); if (!c0) cands.set(o - 1, c0 = []);
-        c0.push([i, rel >> 1]);
+        // Ignore the word right before the string (heap headers) and the string's own body.
+        if (i * 4 >= st.addr - 16 && i * 4 < st.dataByte + st.size * 2) continue;
+        var cur = rel >> 1;
+        if (cur > st.cursor) { if (st.cursor < 0) printers++; st.cursor = cur; }
       }
-      var self = this, vals = new Map();
-      cands.forEach(function (arr, idx) {
-        var st = list[idx], last = self.ptrVals.get(st.addr), live = self.liveWord.get(st.addr), cur = -1, word = -1;
-        var now = new Map(); arr.forEach(function (a) { now.set(a[0], a[1]); });
-        vals.set(st.addr, now);
-        // A pointer that moved since the last scan is the printer typing: follow the furthest one.
-        if (last) arr.forEach(function (a) { if (last.has(a[0]) && last.get(a[0]) !== a[1] && a[1] > cur) { cur = a[1]; word = a[0]; } });
-        if (word >= 0) self.liveWord.set(st.addr, word);
-        // Nothing moved: keep following the pointer that moved before (e.g. waiting for a button press).
-        else if (live !== undefined && now.has(live)) cur = now.get(live);
-        else {
-          // Not seen moving yet: the furthest pointer that isn't part of a crowd.
-          var count = {}; arr.forEach(function (a) { count[a[1]] = (count[a[1]] || 0) + 1; });
-          var single = arr.filter(function (a) { return count[a[1]] < CROWD; });
-          (single.length ? single : arr).forEach(function (a) { if (a[1] > cur) cur = a[1]; });
-        }
-        st.cursor = cur; printers++;
-      });
-      // Forget strings that are gone.
-      this.ptrVals = vals;
-      this.liveWord.forEach(function (w, addr) { if (!vals.has(addr)) self.liveWord.delete(addr); });
     }
     this.stats.printers = printers;
 
     // 3) Track newly seen strings (for the "recent text" list) and pick the active dialogue.
     var seenNow = new Map(), fresh = [], best = null;
-    // A message being typed right now, and the moments typed messages appeared. A buffer without a
-    // cursor is only a sign when nothing like that is going on: HeartGold keeps a second copy of each
-    // dialogue (the template with the name placeholders) that never gets a cursor.
-    var typingNow = false, typedAt = [];
-    for (i = 0; i < list.length; i++) {
-      var p0 = this.known.get(list[i].addr);
-      if (list[i].maxsize >= MESSAGE_BUFFER && (list[i].cursor >= 0 || (p0 && p0.hadCursor && p0.key === codesKey(u16, list[i].dataByte >> 1, list[i].size)))) {
-        if (list[i].cursor >= 0) typingNow = true;
-        typedAt.push(p0 ? p0.firstSeen : this.scanNo);
-      }
-    }
     for (i = 0; i < list.length; i++) {
       var s2 = list[i];
       var key = codesKey(u16, s2.dataByte >> 1, s2.size);
       var prev = this.known.get(s2.addr);
       var isNew = !prev || prev.key !== key;
-      var rec = isNew ? { key: key, firstSeen: this.scanNo, cur0: -1, moved: false, quiet: 0, hadCursor: false } : prev;
+      var rec = isNew ? { key: key, firstSeen: this.scanNo, cur0: -1, moved: false } : prev;
       seenNow.set(s2.addr, rec);
       s2.key = key; s2.firstSeen = rec.firstSeen;
       if (isNew && this.scanNo > 1) fresh.push(s2);
@@ -226,14 +178,7 @@
         if (rec.cur0 < 0) rec.cur0 = s2.cursor;
         else if (s2.cursor !== rec.cur0) rec.moved = true;
       }
-      // Shown all at once (a sign): a message buffer that has gone two scans without ever having a
-      // cursor. (A new dialogue has no cursor for a moment before typing starts; waiting two scans
-      // keeps it from flashing up in full.) It counts as printed to the end.
-      if (s2.cursor >= 0) { rec.hadCursor = true; rec.quiet = 0; } else rec.quiet++;
-      var nearTyped = typedAt.some(function (t) { return Math.abs(t - rec.firstSeen) <= SIBLING_SCANS; });
-      var instant = s2.cursor < 0 && !rec.hadCursor && s2.maxsize >= MESSAGE_BUFFER && rec.quiet >= INSTANT_SCANS && !typingNow && !nearTyped;
-      if (instant) s2.cursor = s2.size;
-      if (s2.cursor >= 0 && (rec.moved || instant || s2.cursor >= s2.size - 1)) {
+      if (s2.cursor >= 0 && (rec.moved || s2.cursor >= s2.size - 1)) {
         // Prefer the most recently created string that is being printed. Strings created at the
         // same moment are usually two copies of one message (Gen 5 keeps a raw and a printed copy,
         // and only the printed one's pointer is the live cursor): take the one printed furthest.
