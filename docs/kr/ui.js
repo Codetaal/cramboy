@@ -104,7 +104,7 @@
     renderPanel();
   }
   function saveSettings() {
-    if (store) store.setItem('settings', { mode: settings.mode, box: boxGeo, study: settings.study, frame: settings.frame }).catch(function () {});
+    if (store) store.setItem('settings', { mode: settings.mode, box: boxGeo, study: settings.study, frame: settings.frame, newPerDay: settings.newPerDay }).catch(function () {});
   }
   function setStudy(on) {
     settings.study = !!on;
@@ -142,6 +142,7 @@
       if (v.box && typeof v.box === 'object') boxGeo = v.box;
       settings.study = v.study !== false;
       settings.frame = FRAMES.indexOf(v.frame) >= 0 ? v.frame : 'classic';
+      if (v.newPerDay) settings.newPerDay = v.newPerDay;
       box.dataset.frame = settings.frame;
       applyStudy();
       krLayout();
@@ -549,11 +550,11 @@
 
   function progressHTML() {
     var p = gameProgress(), S = seen[lang], G = S.g[game.id || 'unknown'];
-    var h = '<p class="text-2xl font-bold">Progress</p>' + (game.name ? '<p class="' + C.muted + '">' + esc(game.name) + '</p>' : '');
+    var h = '';
     if (!p.n) return h + '<p class="mt-4 ' + C.muted + '">Nothing read yet in this game. Play a bit: every line of dialogue and every sign you read is counted here.</p>';
     var kp = pct(p.known, p.n), lp = pct(p.learning, p.n), fp = Math.max(0, 100 - kp - lp);
     h += '<div class="mt-4 ' + C.card + '"><p class="text-4xl font-bold">' + kp + '%</p>' +
-      '<p class="text-zinc-600 dark:text-zinc-300">of the words you read in this game are words you know.</p>' +
+      '<p class="text-zinc-600 dark:text-zinc-300">of the words you read in ' + (game.name ? esc(game.name) : 'this game') + ' are words you know.</p>' +
       '<div class="mt-3 flex h-2.5 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-700">' +
         '<div class="bg-emerald-500" style="width:' + kp + '%"></div><div class="bg-amber-400" style="width:' + lp + '%"></div></div>' +
       '<div class="mt-2 flex gap-3 text-xs text-zinc-500 dark:text-zinc-400">' +
@@ -594,7 +595,7 @@
   // Which Words & text tab the word sheet's back button returns to: the tab the word was
   // tapped in, or Now when it was tapped in the subtitles.
   var menuTab = null, wordBack = 'now';
-  var TAB_LABEL = { now: 'Now', saved: 'Saved words', recent: 'Recent', review: 'Review', progress: 'Progress' };
+  var TAB_LABEL = { now: 'Study', words: 'Words', review: 'Review', progress: 'Progress', session: 'Review', settings: 'Study settings' };
   // l: the word's own language (a saved word from a game in the other language); default the game's.
   var wlang = 'ko';
   function openWord(raw, sentence, span, l) {
@@ -733,8 +734,9 @@
   //    would be half a year or more.
   //  - "Again" starts the word over (next "Got it": 1 day) and lowers its ease, so a word you keep
   //    forgetting comes back more often from then on. It is shown once more at the end of the session.
-  //  - New words (never reviewed): at most NEW_PER_DAY a day, so a long game doesn't bury you in reviews.
-  var DAY = 864e5, EASE = 2.5, MIN_EASE = 1.3, KNOWN_DAYS = 180, NEW_PER_DAY = 15;
+  //  - New words (never reviewed): at most newPerDay() a day (a setting, 15 by default), so a long game doesn't bury you in reviews.
+  var DAY = 864e5, EASE = 2.5, MIN_EASE = 1.3, KNOWN_DAYS = 180;
+  function newPerDay() { return [5, 10, 15, 20, 30].indexOf(settings.newPerDay) >= 0 ? settings.newPerDay : 15; }
   // Older saved words used a fixed ladder (step 0..5): carry their progress over.
   var OLD_LADDER = [1, 3, 7, 14, 30];
   function sched(x) {
@@ -747,7 +749,7 @@
   // How many new words you've started today (kept per calendar day).
   var newToday = { day: '', n: 0 };
   function today() { var d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
-  function newLeft() { if (newToday.day !== today()) newToday = { day: today(), n: 0 }; return Math.max(0, NEW_PER_DAY - newToday.n); }
+  function newLeft() { if (newToday.day !== today()) newToday = { day: today(), n: 0 }; return Math.max(0, newPerDay() - newToday.n); }
   if (store) store.getItem('review-day').then(function (v) { if (v && v.day) newToday = v; }).catch(function () {});
   function dueAt(x) { return typeof x.due === 'number' ? x.due : (x.t || 0); }
   // Due now: every review that is due, plus new words up to today's limit (oldest saved first).
@@ -791,13 +793,13 @@
       var next = saved.slice().sort(function (a, b) { return dueAt(a) - dueAt(b); })[0];
       var capped = !newLeft() && saved.some(function (y) { return isNew(y) && dueAt(y) <= Date.now(); });
       var msg = !saved.length ? 'No saved words yet. Tap a word in the subtitles and choose Learning; it comes back here to review.'
-        : capped ? 'That’s ' + NEW_PER_DAY + ' new words for today. More tomorrow, so your reviews stay manageable.'
+        : capped ? 'That’s ' + newPerDay() + ' new words for today. More tomorrow, so your reviews stay manageable.'
         : 'Next review ' + whenText(dueAt(next)) + '.';
       return h + '<div class="my-auto flex flex-col items-center text-center">' + HI('check', 'size-12 text-emerald-500') +
         '<p class="mt-2 text-xl font-bold">' + (review.done ? 'All done for now' : 'Nothing to review') + '</p>' +
         (review.done ? '<p class="' + C.muted + '">' + review.done + (review.done === 1 ? ' review' : ' reviews') + ' this session.</p>' : '') +
         '<p class="mt-1 px-6 ' + C.muted + '">' + msg + '</p></div>' +
-        '<div class="pb-[calc(1.5rem+env(safe-area-inset-bottom))]"><button class="' + C.primary + '" data-act="close">' + HI('play', 'size-5') + 'Back to game</button></div>';
+        '<div class="pb-[calc(1.5rem+env(safe-area-inset-bottom))]"><button class="' + C.primary + '" data-act="done">' + HI('play', 'size-5') + 'Back to game</button></div>';
     }
     var s1 = x.s || '', w = x.w || x.base;
     var sentence = s1 && s1.indexOf(w) >= 0 ? esc(s1).split(esc(w)).join('<mark class="' + C.mark + '">' + esc(w) + '</mark>') : '';
@@ -835,7 +837,8 @@
     card.onclick = function (e) {
       var b = e.target.closest('[data-act]'); if (!b) return;
       var act = b.dataset.act, rx = reviewWord();
-      if (act === 'close') { card.onclick = null; return closeSheet(); }
+      if (act === 'close') return openMenu('review');   // ✕ goes back to the Review tab
+      if (act === 'done') { card.onclick = null; return closeSheet(); }
       if (act === 'rv-show') { review.open = true; return openReview(); }
       if (act === 'rv-again') return reviewAnswer('again');
       if (act === 'rv-good') return reviewAnswer('good');
@@ -876,60 +879,35 @@
   function dueCount() { return dueList().length; }
 
   // ---------- menu: saved words / recent text ----------
+  // ---------- the Study screen ----------
+  // One place for everything study: Now | Words | Review | Progress, and the settings behind the gear.
+  // The translate button opens it on Now; the game menu has one "Study" row that opens it too.
+  var OLD_TABS = { saved: 'words', recent: 'now' };
   function openMenu(tab) {
-    if (tab !== 'review') review = null;   // a new session each time you come to Review
+    tab = OLD_TABS[tab] || tab || 'now';
+    if (!settings.study) tab = 'settings';   // study mode off: only the settings (to turn it back on)
+    if (tab !== 'session') review = null;    // a review session starts fresh each time
     menuTab = tab;
-    if (tab === 'progress') return openProgress();
-    if (tab === 'review') return openReview();
-    var tb = function (id, label) { return '<button class="' + C.tab + '" data-tab="' + id + '" aria-pressed="' + (tab === id) + '">' + label + '</button>'; };
-    var h = '<div class="flex rounded-xl bg-zinc-100 p-1 dark:bg-zinc-800">' + tb('now', 'Now') + tb('recent', 'Recent') +
-      tb('saved', 'Saved <span class="font-normal text-zinc-400">' + saved.length + '</span>') + '</div>';
-    if (tab === 'now') {
-      // Current dialogue (what has been typed so far), else the last finished message.
-      var nowText = current ? plain(current.text.slice(0, current.shown)) : (history.length ? history[history.length - 1] : '');
-      var full = current ? plain(current.text) : nowText;
-      if (!nowText.trim()) h += '<p class="mt-3 ' + C.muted + '">No dialogue on screen right now. Older text is under Recent.</p>';
-      else {
-        h += '<div class="kr-now mt-3 ' + C.card + '" data-s="' + esc(full.replace(/\n+/g, ' ')) + '">' +
-          wordsHTML(nowText.replace(/\n\n+/g, '\n')) + '</div>' +
-          '<div class="mt-2 flex items-center gap-2 px-1"><p class="flex-1 ' + C.muted + '">Tap a word to look it up.</p>' +
-          '<button class="' + C.btn + ' !py-2" data-act="say-now">' + HI('speaker-wave', 'size-5 text-zinc-500 dark:text-zinc-400') + 'Hear it</button></div>';
-      }
-    } else if (tab === 'saved') {
-      if (!saved.length) h += '<p class="mt-3 ' + C.muted + '">No saved words yet. Tap any word in the subtitles, then Save.</p>';
-      else {
-        // Search box (16px text so iPhone doesn't zoom in) and the list, which re-renders on its own
-        // while typing so the keyboard stays open.
-        h += '<div class="relative mt-3"><span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">' + HI('magnifying-glass', 'size-5') + '</span>' +
-          '<input type="search" id="kr-search" enterkeyhint="search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" ' +
-          'placeholder="Search saved words" value="' + esc(savedQuery) + '" ' +
-          'class="w-full rounded-xl bg-white py-2.5 pl-10 pr-3 text-base text-zinc-900 shadow-sm outline-none ring-1 ring-zinc-900/5 placeholder:text-zinc-400 focus:ring-2 focus:ring-zinc-400 dark:bg-zinc-800 dark:text-zinc-100 dark:ring-white/10"></div>' +
-          (function (d) {
-            return d ? '<div class="mt-3 flex items-center gap-3 rounded-2xl bg-amber-50 px-4 py-3 ring-1 ring-amber-200 dark:bg-amber-400/10 dark:ring-amber-400/20">' + HI('academic-cap', 'size-5 text-amber-700 dark:text-amber-400') +
-              '<span class="flex-1 font-semibold text-amber-900 dark:text-amber-200">' + d + (d === 1 ? ' word' : ' words') + ' to review</span>' +
-              '<button class="rounded-lg bg-amber-400 px-3 py-1.5 text-sm font-semibold text-amber-950 active:bg-amber-300" data-act="go-review">Review</button></div>' : '';
-          })(dueCount()) +
-          '<div id="kr-saved-list">' + savedListHTML(savedQuery) + '</div>';
-      }
-    } else if (tab === 'recent') {
-      var lines = history.slice().reverse();
-      if (current) lines.unshift(plain(current.text));
-      if (!lines.length && !otherText.length) h += '<p class="mt-3 ' + C.muted + '">Nothing yet. Talk to someone in the game.</p>';
-      var block = function (arr) {
-        return '<div class="mt-3 ' + C.list + '">' + arr.map(function (t) {
-          var s1 = t.replace(/\n+/g, ' ');
-          return '<div class="px-4 py-2.5 leading-relaxed" data-s="' + esc(s1) + '">' + wordsHTML(s1) + '</div>';
-        }).join('') + '</div>';
-      };
-      if (lines.length) h += block(lines);
-      if (otherText.length) h += '<p class="mt-3 px-1 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Other text on screen</p>' + block(otherText.slice().reverse().slice(0, 60));
+    if (tab === 'session') return openReview();
+    var h;
+    if (tab === 'settings') h = settingsHTML();
+    else {
+      var due = dueCount();
+      var tb = function (id, label) { return '<button class="' + C.tab + '" data-tab="' + id + '" aria-pressed="' + (tab === id) + '">' + label + '</button>'; };
+      h = '<div class="flex items-center"><p class="flex-1 text-xl font-bold">Study</p>' +
+        '<button class="-mr-2 grid size-10 place-items-center rounded-full text-zinc-500 active:bg-zinc-200 dark:text-zinc-400 dark:active:bg-zinc-800" data-tab="settings" aria-label="Study settings">' + HI('cog-6-tooth', 'size-6') + '</button></div>' +
+        '<div class="mt-2 flex rounded-xl bg-zinc-100 p-1 dark:bg-zinc-800">' + tb('now', 'Now') + tb('words', 'Words') +
+        tb('review', 'Review' + (due ? ' <span class="rounded-full bg-amber-400 px-1.5 text-[11px] leading-[18px] text-amber-950">' + due + '</span>' : '')) + tb('progress', 'Progress') + '</div>';
+      if (tab === 'now') h += nowHTML();
+      else if (tab === 'words') h += wordsTabHTML();
+      else if (tab === 'review') h += reviewStartHTML(due);
+      else if (tab === 'progress') h += progressHTML();
     }
     openSheet(h, true);
-    fillShots();
     var search = card.querySelector('#kr-search');
     if (search) search.oninput = function () { savedQuery = search.value; card.querySelector('#kr-saved-list').innerHTML = savedListHTML(savedQuery); };
     card.onclick = function (e) {
-      var b = e.target.closest('[data-tab],[data-act],[data-del],[data-open],.kr-w');
+      var b = e.target.closest('[data-tab],[data-act],[data-del],[data-open],[data-know],[data-pw],[data-mode],[data-frame-pick],[data-npd],.kr-w');
       if (!b) return;
       if (b.dataset.open) {
         var x = saved.filter(function (y) { return String(y.t) === b.dataset.open; })[0];
@@ -944,29 +922,115 @@
       if (b.dataset.tab) return openMenu(b.dataset.tab);
       if (b.dataset.del) {
         saved = saved.filter(function (x) { var hit = String(x.t) === b.dataset.del; if (hit) dropShot(x.t); return !hit; }); persist(); updatePill();
-        if (!saved.length) return openMenu('saved');
+        if (!saved.length) return openMenu('words');
         card.querySelector('#kr-saved-list').innerHTML = savedListHTML(savedQuery);
-        var star = card.querySelector('[data-tab=saved]'); if (star) star.lastChild.textContent = saved.length;
+        var cnt = card.querySelector('#kr-search'); if (cnt) cnt.placeholder = 'Search ' + saved.length + ' saved ' + (saved.length === 1 ? 'word' : 'words');
         return;
       }
+      if (b.dataset.know) { markKnown([b.dataset.know]); return openMenu('progress'); }
+      if (b.dataset.pw) { var e2 = seen[lang].w[b.dataset.pw]; return openWord(b.dataset.pw, e2 ? e2[2] : '', null, lang); }
+      if (b.dataset.mode) { setMode(b.dataset.mode); return openMenu('settings'); }
+      if (b.dataset.framePick) { setFrame(b.dataset.framePick); return openMenu('settings'); }
+      if (b.dataset.npd) { settings.newPerDay = +b.dataset.npd; saveSettings(); return openMenu('settings'); }
       var act = b.dataset.act;
       if (act === 'close') { card.onclick = null; return closeSheet(); }
       if (act === 'say-now') { var nb = card.querySelector('.kr-now'); return speak(nb ? nb.getAttribute('data-s') : ''); }
-      if (act === 'go-review') return openMenu('review');
+      if (act === 'start-review') return openMenu('session');
+      if (act === 'pg-know-all') { markKnown(Array.prototype.map.call(card.querySelectorAll('[data-know]'), function (n) { return n.dataset.know; })); return openMenu('progress'); }
+      if (act === 'study-toggle') { setStudy(!settings.study); if (settings.study) openMenu('settings'); else toast('Study mode off', 'ok'); return; }
+      if (act === 'reset-box') { resetBox(); return; }
     };
+  }
+  var SEC = function (t, extra) { return '<p class="mt-5 px-1 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400' + (extra || '') + '">' + t + '</p>'; };
+  // Now: the current line on top, earlier dialogue and other text below.
+  function nowHTML() {
+    var nowText = current ? plain(current.text.slice(0, current.shown)) : (history.length ? history[history.length - 1] : '');
+    var full = current ? plain(current.text) : nowText, h = '';
+    if (!nowText.trim()) h += '<p class="mt-4 ' + C.muted + '">No dialogue on screen right now. Talk to someone in the game.</p>';
+    else h += '<div class="kr-now mt-4 ' + C.card + '" data-s="' + esc(full.replace(/\n+/g, ' ')) + '"><div class="flex items-start gap-1"><div class="flex-1 text-xl leading-relaxed">' +
+        wordsHTML(nowText.replace(/\n\n+/g, '\n')) + '</div>' +
+        '<button class="' + SPEAK_BTN + ' -my-1 -mr-2" data-act="say-now" aria-label="Hear it">' + HI('speaker-wave', 'size-5') + '</button></div>' +
+        '<p class="mt-1 text-sm ' + C.muted + '">Tap a word to look it up</p></div>';
+    // Earlier: finished dialogue, newest first (the current line is shown above).
+    var lines = history.slice().reverse();
+    if (!current && lines.length) lines.shift();
+    var block = function (arr) {
+      return '<div class="mt-1.5 ' + C.list + '">' + arr.map(function (t) {
+        var s1 = t.replace(/\n+/g, ' ');
+        return '<div class="px-4 py-2.5 leading-relaxed" data-s="' + esc(s1) + '">' + wordsHTML(s1) + '</div>';
+      }).join('') + '</div>';
+    };
+    if (lines.length) h += SEC('Earlier') + block(lines.slice(0, 60));
+    // Other text: signs, menus... without the dialogue lines, which the game also keeps as plain strings.
+    var norm = function (t) { return plain(t).replace(/\s+/g, ' ').trim(); };
+    var said = {}; history.concat(current ? [plain(current.text)] : []).forEach(function (t) { said[norm(t)] = 1; });
+    var other = otherText.filter(function (t) { return !said[norm(t)]; });
+    if (other.length) h += SEC('Signs and other text') + block(other.slice().reverse().slice(0, 60));
+    return h;
+  }
+  function wordsTabHTML() {
+    if (!saved.length) return '<p class="mt-4 ' + C.muted + '">No saved words yet. Tap a word in the subtitles and choose Learning.</p>';
+    // Search box (16px text so iPhone doesn't zoom in) and the list, which re-renders on its own
+    // while typing so the keyboard stays open.
+    return '<div class="relative mt-3"><span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">' + HI('magnifying-glass', 'size-5') + '</span>' +
+      '<input type="search" id="kr-search" enterkeyhint="search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" ' +
+      'placeholder="Search ' + saved.length + ' saved ' + (saved.length === 1 ? 'word' : 'words') + '" value="' + esc(savedQuery) + '" ' +
+      'class="w-full rounded-xl bg-white py-2.5 pl-10 pr-3 text-base text-zinc-900 shadow-sm outline-none ring-1 ring-zinc-900/5 placeholder:text-zinc-400 focus:ring-2 focus:ring-zinc-400 dark:bg-zinc-800 dark:text-zinc-100 dark:ring-white/10"></div>' +
+      '<div id="kr-saved-list">' + savedListHTML(savedQuery) + '</div>';
+  }
+  // Review: how many are due, one Start button, and what is coming up. The session is full screen.
+  function reviewStartHTML(due) {
+    var n = Date.now(), d0 = new Date(); d0.setHours(0, 0, 0, 0);
+    var endTomorrow = d0.getTime() + 2 * DAY, endWeek = d0.getTime() + 8 * DAY;
+    var later = saved.filter(function (x) { return dueAt(x) > n; });
+    var tomorrow = later.filter(function (x) { return dueAt(x) < endTomorrow; }).length;
+    var week = later.filter(function (x) { return dueAt(x) < endWeek; }).length;
+    var mins = Math.max(1, Math.round(due * 10 / 60));
+    var h = '<div class="mt-4 ' + C.card + ' text-center">' +
+      '<span class="mx-auto grid size-12 place-items-center rounded-2xl ' + (due ? 'bg-amber-100 text-amber-700 dark:bg-amber-400/15 dark:text-amber-400' : 'bg-emerald-100 text-emerald-600 dark:bg-emerald-400/15 dark:text-emerald-400') + '">' + HI(due ? 'academic-cap' : 'check', 'size-6') + '</span>';
+    if (due) h += '<p class="mt-2 text-3xl font-bold">' + due + (due === 1 ? ' word' : ' words') + '</p><p class="' + C.muted + '">ready to review · about ' + mins + (mins === 1 ? ' minute' : ' minutes') + '</p>' +
+      '<button class="mt-4 ' + C.primary + '" data-act="start-review">Start review</button>';
+    else h += '<p class="mt-2 text-xl font-bold">Nothing to review right now</p><p class="mt-0.5 px-2 ' + C.muted + '">' +
+      (!saved.length ? 'Tap a word in the subtitles and choose Learning; it comes back here to review.'
+        : !newLeft() && saved.some(function (y) { return isNew(y) && dueAt(y) <= n; }) ? 'That’s ' + newPerDay() + ' new words for today. More tomorrow.'
+        : 'Next review ' + whenText(Math.min.apply(null, saved.map(dueAt))) + '.') + '</p>';
+    h += '</div>' + SEC('Coming up') + '<div class="mt-1.5 ' + C.list + '">' +
+      [['Tomorrow', tomorrow], ['This week', week], ['New words left today', newLeft() + ' of ' + newPerDay()]].map(function (r) {
+        return '<div class="flex items-center px-4 py-3"><span class="flex-1">' + r[0] + '</span><span class="' + C.muted + '">' + (typeof r[1] === 'number' ? r[1] + (r[1] === 1 ? ' word' : ' words') : r[1]) + '</span></div>';
+      }).join('') + '</div>' +
+      '<p class="mt-3 px-1 text-sm ' + C.muted + '">Words you mark as Learning come back here at growing intervals until you know them.</p>';
+    return h;
+  }
+  // Study settings, behind the gear.
+  var FRAME_NAMES = { classic: 'Classic', gold: 'Gold', ocean: 'Ocean', forest: 'Forest', night: 'Night', retro: 'Retro', sakura: 'Sakura' };
+  function settingsHTML() {
+    var SW = function (on) { return '<span class="relative h-[31px] w-[51px] shrink-0 rounded-full transition-colors ' + (on ? 'bg-zinc-900 dark:bg-zinc-300' : 'bg-zinc-200 dark:bg-zinc-700') + '"><span class="absolute left-0.5 top-0.5 size-[27px] rounded-full bg-white shadow transition-transform' + (on ? ' translate-x-5' : '') + '"></span></span>'; };
+    var seg = function (attr, opts, cur) {
+      return '<div class="flex rounded-lg bg-zinc-100 p-0.5 text-[13px] dark:bg-zinc-800">' + opts.map(function (o) {
+        return '<button class="rounded-md px-2.5 py-1.5 text-zinc-500 aria-pressed:bg-white aria-pressed:font-semibold aria-pressed:text-zinc-900 aria-pressed:shadow-sm dark:text-zinc-400 dark:aria-pressed:bg-zinc-600 dark:aria-pressed:text-white" ' + attr + '="' + o[0] + '" aria-pressed="' + (String(o[0]) === String(cur)) + '">' + o[1] + '</button>';
+      }).join('') + '</div>';
+    };
+    var h = (settings.study ? '<button class="-ml-1.5 -mt-1 flex items-center gap-0.5 py-1 pr-2 font-medium text-zinc-600 active:opacity-60 dark:text-zinc-300" data-tab="now">' + HI('chevron-left', 'size-5') + 'Study</button>' : '') +
+      '<p class="mt-1 text-2xl font-bold">Study settings</p>' +
+      '<div class="mt-4 ' + C.list + '"><button class="flex w-full items-center gap-3 px-4 py-3 text-left" data-act="study-toggle" role="switch" aria-checked="' + settings.study + '"><span class="flex-1">Study mode<span class="block text-sm ' + C.muted + '">' +
+        (settings.study ? 'Subtitles, word lookup, review and progress' : 'Off: no subtitles and no translate button') + '</span></span>' + SW(settings.study) + '</button></div>';
+    if (!settings.study) return h;
+    h += SEC('Subtitles') + '<div class="mt-1.5 ' + C.list + '">' +
+      '<div class="flex items-center gap-2 px-4 py-2.5"><span class="flex-1">Show</span>' + seg('data-mode', [['off', 'Off'], ['bar', 'Bar'], ['box', 'In box']], settings.mode) + '</div>';
+    if (settings.mode === 'box') {
+      h += '<div class="px-4 py-2.5"><div class="flex items-center"><span class="flex-1">Box frame</span><span class="text-sm ' + C.muted + '">' + (FRAME_NAMES[settings.frame] || '') + '</span></div>' +
+        '<div class="-mx-1.5 mt-0.5 flex gap-0.5 overflow-x-auto px-0.5 py-1">' + Object.keys(FRAME_NAMES).map(function (f) {
+          return '<button class="grid place-items-center rounded-xl p-1.5 ring-2 ring-transparent aria-pressed:ring-zinc-900 dark:aria-pressed:ring-white" data-frame-pick="' + f + '" aria-label="' + FRAME_NAMES[f] + ' frame" aria-pressed="' + (settings.frame === f) + '"><span class="kr-frame-swatch" data-frame="' + f + '"></span></button>';
+        }).join('') + '</div></div>' +
+        '<button class="flex w-full items-center px-4 py-3 text-left text-zinc-600 active:bg-zinc-50 dark:text-zinc-300 dark:active:bg-zinc-800" data-act="reset-box">Reset box position</button>';
+    }
+    h += '</div>' + SEC('Review') + '<div class="mt-1.5 ' + C.list + '"><div class="flex items-center gap-2 px-4 py-2.5"><span class="flex-1">New words per day</span>' +
+      seg('data-npd', [[5, '5'], [10, '10'], [15, '15'], [20, '20'], [30, '30']], newPerDay()) + '</div></div>';
+    return h;
   }
 
-  function openProgress() {
-    openSheet(progressHTML(), true);
-    card.onclick = function (e) {
-      var b = e.target.closest('[data-know],[data-pw],[data-act]');
-      if (!b) return;
-      if (b.dataset.know) { markKnown([b.dataset.know]); return openProgress(); }
-      if (b.dataset.pw) { var e2 = seen[lang].w[b.dataset.pw]; return openWord(b.dataset.pw, e2 ? e2[2] : '', null, lang); }
-      if (b.dataset.act === 'pg-know-all') { markKnown(Array.prototype.map.call(card.querySelectorAll('[data-know]'), function (n) { return n.dataset.know; })); return openProgress(); }
-      if (b.dataset.act === 'close') { card.onclick = null; closeSheet(); }
-    };
-  }
+
+
 
   function updatePill() { if (!settings.debug) pill.innerHTML = HI('academic-cap'); }
   // Uses the app-wide toast (emu.js), so every notification looks the same.

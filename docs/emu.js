@@ -929,7 +929,6 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     // The game's own title from its banner (as on the DS menu); the short header name as a fallback.
     $('menu-title').textContent = gameBanner || gameTitle || 'Menu';
     $('m-advanced').hidden = true; $('m-adv-chev').style.transform = '';
-    showMenuPage(null);
     menuLabels();
     $('menu').hidden = false;
   }
@@ -943,32 +942,19 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     $('m-opacity-val').textContent = Math.round(settings.ctlOpacity * 100) + '%';
     var snd = document.querySelector('[data-m=sound]');
     snd.innerHTML = HI(settings.sound ? 'speaker-wave' : 'speaker-x-mark', 'size-5'); snd.classList.toggle('opacity-60', !settings.sound);
-    setSeg('subs', window.KRSettings ? KRSettings.getMode() : 'bar');
     $('m-resume').setAttribute('aria-checked', String(!!settings.resume));
     $('m-fps').setAttribute('aria-checked', String(!!settings.fps));
     var study = !window.KRSettings || KRSettings.getStudy();
-    $('m-study').setAttribute('aria-checked', String(study));
-    // Study mode off: hide the study hub and progress; Study settings stays, to turn it back on.
-    $('m-hub').hidden = !study; $('m-progress-row').hidden = !study;
-    $('m-subs-row').hidden = !study;
-    var boxOn = study && window.KRSettings && KRSettings.getMode() === 'box';
-    $('m-box-h').hidden = !boxOn; $('m-box-list').hidden = !boxOn;
-    var MODES = { off: 'Subtitles off', bar: 'Bar', box: 'In box' };
-    $('m-study-sum').textContent = !study ? 'Off' : 'On · ' + (MODES[window.KRSettings ? KRSettings.getMode() : 'bar'] || '');
-    var fr = window.KRSettings && KRSettings.getFrame ? KRSettings.getFrame() : 'classic';
-    Array.prototype.forEach.call(document.querySelectorAll('[data-frame-pick]'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.framePick === fr)); });
-    var frb = document.querySelector('[data-frame-pick="' + fr + '"]'); $('m-frame-name').textContent = frb ? frb.getAttribute('aria-label').replace(' frame', '') : '';
-    var due = window.KRSettings && KRSettings.dueCount ? KRSettings.dueCount() : 0;
-    // Review is the only amber tile, and only when words are due.
-    $('m-review').textContent = due ? due + ' due' : 'All done';
-    $('m-review').classList.toggle('!text-amber-700', !!due); $('m-review').classList.toggle('dark:!text-amber-400', !!due); $('m-review').classList.toggle('font-semibold', !!due);
-    var rti = $('m-review-tile').querySelector('.m-tile-icon');
-    rti.classList.toggle('!bg-amber-100', !!due); rti.classList.toggle('!text-amber-700', !!due);
-    rti.classList.toggle('dark:!bg-amber-400/15', !!due); rti.classList.toggle('dark:!text-amber-400', !!due);
-    var kp = window.KRSettings && KRSettings.knownPct ? KRSettings.knownPct() : null;
-    $('m-progress').textContent = kp === null ? '' : kp + '% known';
-    $('m-words').textContent = window.KRSettings ? KRSettings.savedCount() + ' saved' : '';
-    $('m-text').textContent = 'Recent';
+    // The Study row: what needs attention (words to review, % known); amber when words are due.
+    var due = study && window.KRSettings && KRSettings.dueCount ? KRSettings.dueCount() : 0;
+    var kp = study && window.KRSettings && KRSettings.knownPct ? KRSettings.knownPct() : null;
+    var parts = [];
+    if (due) parts.push(due + ' to review');
+    if (kp !== null) parts.push(kp + '% known');
+    if (study && !parts.length) parts.push(window.KRSettings ? KRSettings.savedCount() + ' saved words' : '');
+    $('m-study-sum').textContent = !study ? 'Off · tap to turn on' : parts.join(' · ');
+    ['!text-amber-700', 'dark:!text-amber-400', 'font-semibold'].forEach(function (c) { $('m-study-sum').classList.toggle(c, !!due); });
+    ['!bg-amber-100', '!text-amber-700', 'dark:!bg-amber-400/15', 'dark:!text-amber-400'].forEach(function (c) { $('m-study-icon').classList.toggle(c, !!due); });
     var st = window.KRReaderStats ? KRReaderStats() : null;
     $('m-info').innerHTML = 'Version ' + APP_VERSION + ' · ' + (gameID ? gameID.trim() : '') +
       (lastLoadError ? '<br>Last load problem (retried): ' + lastLoadError.replace(/</g, '&lt;') : '') +
@@ -977,9 +963,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
       '<br>The game saves automatically a few seconds after you save in‑game.' +
       '<br>Emulator: desmume‑wasm (GPL‑2.0). Character table and Pokémon names: PKHeX (GPL‑3.0). Dictionaries: kengdic (MPL‑2.0), JMdict by the EDRDG (CC BY‑SA 4.0). Icons: Heroicons (MIT).';
   }
-  function setSeg(name, v) {
-    Array.prototype.forEach.call(document.querySelectorAll('[data-seg=' + name + '] button'), function (b) { b.setAttribute('aria-pressed', b.dataset.v === v ? 'true' : 'false'); });
-  }
+
   // Menu > Advanced > Update now: drop the offline copy of the app and load the newest one.
   // Games, saves and words live in IndexedDB (kv.js), not in this cache, so they stay.
   // Installs a fresh offline copy and reloads from it. The worker is registered under a new script URL,
@@ -1017,32 +1001,15 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   ['pointerup', 'pointercancel', 'touchend', 'touchcancel', 'change'].forEach(function (t) {
     $('m-opacity').addEventListener(t, function () { $('menu').classList.remove('peek'); }, { passive: true });
   });
-  // The menu has one sub-page (Study settings); null shows the main menu.
-  function showMenuPage(id) {
-    $('m-main').hidden = !!id; $('m-page-study').hidden = id !== 'study';
-    document.querySelector('#menu .menu-card').scrollTop = 0;
-  }
   $('menu').addEventListener('click', function (e) {
     if (e.target === $('menu')) return closeMenu();
-    var segBtn = e.target.closest('.seg button');
-    if (segBtn) {
-      var seg = segBtn.parentNode.dataset.seg, v = segBtn.dataset.v;
-      if (seg === 'subs' && window.KRSettings) KRSettings.setMode(v);
-      return menuLabels();
-    }
-    var fp = e.target.closest('[data-frame-pick]');
-    if (fp && window.KRSettings) { KRSettings.setFrame(fp.dataset.framePick); menuLabels(); return; }
     var el = e.target.closest('[data-m]'), m = el && el.dataset.m;
     if (m === 'resume') closeMenu();
     if (m === 'sound') { settings.sound = !settings.sound; saveSettings(); menuLabels(); }
     if (m === 'export') exportSave();
     if (m === 'import') $('file-save').click();
-    if (m === 'words' && window.KRUI) { closeMenu(); KRUI.open('saved'); }
-    if (m === 'text' && window.KRUI) { closeMenu(); KRUI.open('recent'); }
-    if (m === 'study-settings') return showMenuPage('study');
-    if (m === 'back') return showMenuPage(null);
-    if (m === 'review' && window.KRUI) { closeMenu(); KRUI.open('review'); }
-    if (m === 'progress' && window.KRUI) { closeMenu(); KRUI.open('progress'); }
+    // Study: the Study screen (its settings when study mode is off).
+    if (m === 'study' && window.KRUI) { closeMenu(); KRUI.open('now'); }
     if (m === 'update') return updateNow();
     if (m === 'advanced') {
       var open = $('m-advanced').hidden; $('m-advanced').hidden = !open;
@@ -1050,7 +1017,6 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
       if (open) setTimeout(function () { $('m-advanced').scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }, 0);
     }
     if (m === 'snapshot') exportSnapshot();
-    if (m === 'study-toggle' && window.KRSettings) { KRSettings.setStudy(!KRSettings.getStudy()); menuLabels(); }
     if (m === 'fps-toggle') {
       settings.fps = !settings.fps; saveSettings();
       $('m-fps').setAttribute('aria-checked', String(settings.fps));
@@ -1062,7 +1028,6 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
       if (settings.resume) { toast('Resume is on', { icon: 'ok' }); lastSnapAt = 0; takeSnapshot(); }
       else deleteSnapshots().then(function () { toast('Resume is off; snapshots deleted', { icon: 'trash' }); });
     }
-    if (m === 'reset-box' && window.KRUI) { KRUI.resetBox(); closeMenu(); }
     if (m === 'home') {
       // Reload once the snapshot is stored (or after 1.5 s at most, if storage is slow).
       var left = false, leave = function () { if (!left) { left = true; location.reload(); } };
