@@ -2,6 +2,10 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.15.4
+- Fix: long messages in HeartGold (like Mom's first talk) showed in the subtitle all at once; they now follow the game page by page.
+- Study screen: Back to game is the soft lilac secondary button on every tab.
+
 ## 0.15.3
 - Box frames: Classic, Poké Ball, Ocean, Night and Sakura. The Poké Ball frame is back in the picker; Gold, Forest and Retro are removed (a removed choice falls back to Classic).
 
