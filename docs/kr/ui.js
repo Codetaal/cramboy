@@ -493,6 +493,8 @@
     card.innerHTML = (full ? '' : GRAB) + html + (withBack ? BACK : '<div class="pb-[calc(1.5rem+env(safe-area-inset-bottom))]"></div>');
     sheet.hidden = false; card.scrollTop = 0;
   }
+  // Redraw the open tab after a change made on it (Know, a setting) without jumping back to the top.
+  function stay(tab) { var y = card.scrollTop; openMenu(tab); card.scrollTop = y; }
   function closeSheet() {
     sheet.hidden = true; sheet.classList.remove('kr-full'); resume(); menuTab = null; review = null;
     Array.prototype.forEach.call(document.querySelectorAll('.kr-sel'), function (n) { n.classList.remove('kr-sel'); });
@@ -936,17 +938,17 @@
         var cnt = card.querySelector('#kr-search'); if (cnt) cnt.placeholder = 'Search ' + saved.length + ' saved ' + (saved.length === 1 ? 'word' : 'words');
         return;
       }
-      if (b.dataset.know) { markKnown([b.dataset.know]); return openMenu('progress'); }
+      if (b.dataset.know) { markKnown([b.dataset.know]); return stay('progress'); }
       if (b.dataset.pw) { var e2 = seen[lang].w[b.dataset.pw]; return openWord(b.dataset.pw, e2 ? e2[2] : '', null, lang); }
-      if (b.dataset.mode) { setMode(b.dataset.mode); return openMenu('settings'); }
-      if (b.dataset.framePick) { setFrame(b.dataset.framePick); return openMenu('settings'); }
-      if (b.dataset.npd) { settings.newPerDay = +b.dataset.npd; saveSettings(); return openMenu('settings'); }
+      if (b.dataset.mode) { setMode(b.dataset.mode); return stay('settings'); }
+      if (b.dataset.framePick) { setFrame(b.dataset.framePick); return stay('settings'); }
+      if (b.dataset.npd) { settings.newPerDay = +b.dataset.npd; saveSettings(); return stay('settings'); }
       var act = b.dataset.act;
       if (act === 'close') { card.onclick = null; return closeSheet(); }
       if (act === 'say-now') { var nb = card.querySelector('.kr-now'); return speak(nb ? nb.getAttribute('data-s') : ''); }
       if (act === 'start-review') return openMenu('session');
-      if (act === 'pg-know-all') { markKnown(Array.prototype.map.call(card.querySelectorAll('[data-know]'), function (n) { return n.dataset.know; })); return openMenu('progress'); }
-      if (act === 'study-toggle') { setStudy(!settings.study); if (settings.study) openMenu('settings'); else toast('Study mode off', 'ok'); return; }
+      if (act === 'pg-know-all') { markKnown(Array.prototype.map.call(card.querySelectorAll('[data-know]'), function (n) { return n.dataset.know; })); return stay('progress'); }
+      if (act === 'study-toggle') { setStudy(!settings.study); if (settings.study) stay('settings'); else toast('Study mode off', 'ok'); return; }
       if (act === 'reset-box') { resetBox(); return; }
     };
   }
