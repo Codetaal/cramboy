@@ -381,21 +381,36 @@
       if (t.length >= 2 && otherText.indexOf(t) < 0) { otherText.push(t); if (otherText.length > 150) otherText.shift(); countText(t); }
     });
     if (res.newMessage && current) archive(current);
+    // A held message (see below) goes away at the next button press or touch.
+    if (heldAt && !res.active && (window.krInputAt || 0) > heldAt) closeCurrent();
     if (res.active) {
+      heldAt = 0;
       current = res.active;
       if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
       if (res.changed) renderPanel();
       if (!dicts[lang]) loadDict().catch(function () {});
-    } else if (res.closed && current) {
-      archive(current);
-      current = null;
-      box.classList.add('kr-hidden');   // the game's own box has closed too
-      hideTimer = setTimeout(function () { setPanelVisible(false); hideTimer = null; }, HIDE_AFTER_MS);
+    } else if (res.closed && current && !heldAt) {
+      // Normally a message closes because you pressed a button on its last page. If the game frees a
+      // finished message on its own (HeartGold's intro does this right before a choice), the text is
+      // still on screen: keep the subtitle until the next button press or touch, or the next message.
+      var done = current.shown >= current.text.replace(/\s+$/, '').length;
+      if (done && performance.now() - (window.krInputAt || 0) > HOLD_AFTER_INPUT_MS) heldAt = performance.now();
+      else closeCurrent();
     }
     pill.classList.toggle('kr-live', !!current);
     if (settings.debug) pill.textContent = reader.stats.korean + '/' + reader.stats.printers;
   }
 
+  var heldAt = 0, HOLD_AFTER_INPUT_MS = 700;
+  function closeCurrent() {
+    heldAt = 0;
+    if (!current) return;
+    archive(current);
+    current = null;
+    box.classList.add('kr-hidden');   // the game's own box has closed too
+    if (hideTimer) clearTimeout(hideTimer);
+    hideTimer = setTimeout(function () { setPanelVisible(false); hideTimer = null; }, HIDE_AFTER_MS);
+  }
   function archive(msg) {
     var t = plain(msg.text).trim();
     if (t && history[history.length - 1] !== t) { history.push(t); if (history.length > 100) history.shift(); countText(t); }

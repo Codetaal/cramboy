@@ -434,6 +434,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
 
   function runFrame(draw) {
     var keys = touchKeys | keyboardKeys;
+    if (keys || touchDown) window.krInputAt = performance.now();   // the subtitle overlay uses this (held messages)
     Module._runFrame(draw ? 1 : 0, keys, touchDown, touchX, touchY);
     pumpAudio();
     if (window.krOnFrame) krOnFrame();
