@@ -25,7 +25,7 @@
   // mode: 'box' = Pokémon-style box over the game's own text, 'bar' = bar at the top, 'off' = only via 가
   // study: false hides everything Korean-related (subtitles, translate button, word sheets) and stops reading.
   var settings = { mode: 'box', frame: 'classic', study: true, debug: /krdebug/.test(location.search) };
-  var FRAMES = ['classic', 'gold', 'ball', 'ocean', 'forest', 'night', 'retro', 'sakura'];
+  var FRAMES = ['classic', 'ball', 'ocean', 'night', 'sakura'];
   var frame = 0, views = null, hideTimer = null, current = null;
 
   // ---------- DOM ----------
@@ -1009,7 +1009,7 @@
     return h;
   }
   // Study settings, behind the gear.
-  var FRAME_NAMES = { classic: 'Classic', gold: 'Gold', ball: 'Poké Ball', ocean: 'Ocean', forest: 'Forest', night: 'Night', retro: 'Retro', sakura: 'Sakura' };
+  var FRAME_NAMES = { classic: 'Classic', ball: 'Poké Ball', ocean: 'Ocean', night: 'Night', sakura: 'Sakura' };
   function settingsHTML() {
     var SW = function (on) { return '<span class="relative h-[31px] w-[51px] shrink-0 rounded-full transition-colors ' + (on ? 'bg-zinc-900 dark:bg-zinc-300' : 'bg-zinc-200 dark:bg-zinc-700') + '"><span class="absolute left-0.5 top-0.5 size-[27px] rounded-full bg-white shadow transition-transform' + (on ? ' translate-x-5' : '') + '"></span></span>'; };
     var seg = function (attr, opts, cur) {
