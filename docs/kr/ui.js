@@ -732,8 +732,7 @@
   //    125 days...). There is no finish line: a word becomes Known on its own only once the next wait
   //    would be half a year or more.
   //  - "Again" starts the word over (next "Got it": 1 day) and lowers its ease, so a word you keep
-  //    forgetting comes back more often from then on. It is shown once more at the end of the session,
-  //    and stays due, so it is still there if you stop the session first.
+  //    forgetting comes back more often from then on. It is shown once more at the end of the session.
   //  - New words (never reviewed): at most NEW_PER_DAY a day, so a long game doesn't bury you in reviews.
   var DAY = 864e5, EASE = 2.5, MIN_EASE = 1.3, KNOWN_DAYS = 180, NEW_PER_DAY = 15;
   // Older saved words used a fixed ladder (step 0..5): carry their progress over.
@@ -792,10 +791,7 @@
       var next = saved.slice().sort(function (a, b) { return dueAt(a) - dueAt(b); })[0];
       var capped = !newLeft() && saved.some(function (y) { return isNew(y) && dueAt(y) <= Date.now(); });
       var msg = !saved.length ? 'No saved words yet. Tap a word in the subtitles and choose Learning; it comes back here to review.'
-        : capped ? (function () {
-            var waiting = saved.filter(function (y) { return isNew(y) && dueAt(y) <= Date.now(); }).length;
-            return 'You’ve started ' + NEW_PER_DAY + ' new words today, the daily limit. ' + waiting + ' more new ' + (waiting === 1 ? 'word waits' : 'words wait') + ' for tomorrow, so your reviews stay manageable.';
-          })()
+        : capped ? 'That’s ' + NEW_PER_DAY + ' new words for today. More tomorrow, so your reviews stay manageable.'
         : 'Next review ' + whenText(dueAt(next)) + '.';
       return h + '<div class="my-auto flex flex-col items-center text-center">' + HI('check', 'size-12 text-emerald-500') +
         '<p class="mt-2 text-xl font-bold">' + (review.done ? 'All done for now' : 'Nothing to review') + '</p>' +
@@ -864,7 +860,7 @@
     if (!x.reps && how !== 'known') { newLeft(); newToday.n++; if (store) store.setItem('review-day', newToday).catch(function () {}); }
     var iv = nextIv(x);
     x.reps++;
-    if (how === 'again') { x.ease = Math.max(MIN_EASE, x.ease - 0.2); x.iv = 0; x.due = n; review.queue.push(x.t); }   // still due if you stop now
+    if (how === 'again') { x.ease = Math.max(MIN_EASE, x.ease - 0.2); x.iv = 0; x.due = n + 10 * 60000; review.queue.push(x.t); }
     else if (how === 'good' && iv < KNOWN_DAYS) { x.iv = iv; x.due = n + iv * DAY; }
     else {
       // Next wait would be half a year or more, or "I know this word": Known, out of the saved list (Learning and Known exclude each other).
