@@ -1,8 +1,8 @@
 /* CramBoy: the start screen, menu and word sheets are styled with Tailwind (tw.css).
    This file keeps the player and the behaviour rules Tailwind can't express. */
 :root {
-  --bg: #0e1018; --fg: #f4f1ea; --muted: #8b90a0; --accent: #ffd666;
-  --btn: rgba(255, 255, 255, 0.10); --btn-on: rgba(255, 214, 102, 0.45);
+  --bg: #0e1018; --fg: #f4f1ea; --muted: #8b90a0; --accent: #a78bfa;
+  --btn: rgba(255, 255, 255, 0.10); --btn-on: rgba(167, 139, 250, 0.45);
 }
 [hidden] { display: none !important; }   /* Tailwind display classes must not beat the hidden attribute */
 html, body {
@@ -44,7 +44,7 @@ body.playing { position: fixed; inset: 0; overflow: hidden; touch-action: none; 
 }
 .btn.on {
   background: var(--btn-on); color: #fff;
-  transform: scale(0.9); box-shadow: 0 0 0 3px rgba(255, 214, 102, 0.18);
+  transform: scale(0.9); box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.18);
   transition-duration: 50ms;
 }
 @media (hover: hover) {
@@ -68,11 +68,11 @@ body.playing { position: fixed; inset: 0; overflow: hidden; touch-action: none; 
 #dpad.l .dpad-h { background: linear-gradient(90deg, var(--btn-on) 0 34%, var(--btn) 34%); }
 #dpad.r .dpad-h { background: linear-gradient(90deg, var(--btn) 66%, var(--btn-on) 66%); }
 #controls.floating .btn, #controls.floating #dpad > div { background: rgba(255, 255, 255, 0.28); border-color: rgba(255, 255, 255, 0.35); color: #fff; }
-#controls.floating .btn.on { background: rgba(255, 214, 102, 0.75); }
+#controls.floating .btn.on { background: rgba(167, 139, 250, 0.75); }
 #player .btn.pill .hi { width: 18px; height: 18px; }
 /* Toggled buttons: menu while open, fast forward while on */
-#player .btn.active { background: #ffd666; color: #16181f; box-shadow: 0 0 0 3px rgba(255, 214, 102, 0.3); }
-#controls.floating .btn.active { background: #ffd666; }
+#player .btn.active { background: #7c3aed; color: #fff; box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.3); }
+#controls.floating .btn.active { background: #7c3aed; }
 
 /* Touch mode (portrait): the controls and the translate button are hidden so the whole touch screen is
    free (subtitle text can still be tapped); a small handle at the bottom brings them back. */

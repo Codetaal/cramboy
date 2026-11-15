@@ -945,7 +945,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     $('m-resume').setAttribute('aria-checked', String(!!settings.resume));
     $('m-fps').setAttribute('aria-checked', String(!!settings.fps));
     var study = !window.KRSettings || KRSettings.getStudy();
-    // The Study row: what needs attention (words to review, % known); amber when words are due.
+    // The Study row: what needs attention (words to review, % known); purple when words are due.
     var due = study && window.KRSettings && KRSettings.dueCount ? KRSettings.dueCount() : 0;
     var kp = study && window.KRSettings && KRSettings.knownPct ? KRSettings.knownPct() : null;
     var parts = [];
@@ -953,8 +953,8 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     if (kp !== null) parts.push(kp + '% known');
     if (study && !parts.length) parts.push(window.KRSettings ? KRSettings.savedCount() + ' saved words' : '');
     $('m-study-sum').textContent = !study ? 'Off · tap to turn on' : parts.join(' · ');
-    ['!text-amber-700', 'dark:!text-amber-400', 'font-semibold'].forEach(function (c) { $('m-study-sum').classList.toggle(c, !!due); });
-    ['!bg-amber-100', '!text-amber-700', 'dark:!bg-amber-400/15', 'dark:!text-amber-400'].forEach(function (c) { $('m-study-icon').classList.toggle(c, !!due); });
+    ['!text-violet-700', 'dark:!text-violet-400', 'font-semibold'].forEach(function (c) { $('m-study-sum').classList.toggle(c, !!due); });
+    ['!bg-violet-100', '!text-violet-700', 'dark:!bg-violet-600/15', 'dark:!text-violet-400'].forEach(function (c) { $('m-study-icon').classList.toggle(c, !!due); });
     var st = window.KRReaderStats ? KRReaderStats() : null;
     $('m-info').innerHTML = 'Version ' + APP_VERSION + ' · ' + (gameID ? gameID.trim() : '') +
       (lastLoadError ? '<br>Last load problem (retried): ' + lastLoadError.replace(/</g, '&lt;') : '') +
@@ -1100,7 +1100,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   // ---------- status message ----------
   // ---------- toast: the one notification style for the whole app ----------
   // toast(text, { icon: 'ok' | 'star' | 'trash' | 'warn' | 'info', ms, action: 'Undo', onAction })
-  var TOAST_ICON = { ok: 'text-emerald-400', star: 'text-amber-400', trash: 'text-zinc-400', warn: 'text-red-400', info: 'text-sky-400', clock: 'text-amber-400' };
+  var TOAST_ICON = { ok: 'text-emerald-400', star: 'text-violet-400', trash: 'text-zinc-400', warn: 'text-red-400', info: 'text-sky-400', clock: 'text-violet-400' };
   var toastTimer = null;
   function toast(text, o) {
     o = o || {};

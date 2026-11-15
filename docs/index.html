@@ -37,18 +37,18 @@
       <div id="status" class="mt-1 text-[15px] text-zinc-500 dark:text-zinc-400 empty:hidden"></div>
       <h2 id="recent-h" class="mt-5 px-1 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400" hidden>Recent</h2>
       <div id="recent" class="mt-2 divide-y divide-zinc-100 dark:divide-white/5 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-zinc-900/5 dark:bg-zinc-900 dark:ring-white/10" hidden></div>
-      <button id="btn-open" class="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl bg-amber-400 px-4 py-3.5 font-semibold text-amber-950 shadow-sm ring-1 ring-inset ring-amber-500/20 transition active:scale-[0.98] active:bg-amber-300 disabled:opacity-50" disabled>
+      <button id="btn-open" class="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl bg-violet-600 px-4 py-3.5 font-semibold text-white shadow-sm ring-1 ring-inset ring-violet-500/20 transition active:scale-[0.98] active:bg-violet-500 disabled:opacity-50" disabled>
         <span data-hi="plus" data-hi-class="size-5"></span>Add a game</button>
       <input id="file-rom" type="file" multiple hidden>
       <p id="recent-f" class="mt-3 px-1 text-sm text-zinc-500 dark:text-zinc-400">Swipe left on a game to remove it. Its save stays on this device.</p>
-      <div id="ios-hint" class="mt-4 rounded-2xl bg-amber-50 p-4 text-sm leading-relaxed text-amber-900 ring-1 ring-amber-200 dark:bg-amber-400/10 dark:text-amber-100 dark:ring-amber-400/20" hidden>
+      <div id="ios-hint" class="mt-4 rounded-2xl bg-violet-50 p-4 text-sm leading-relaxed text-violet-900 ring-1 ring-violet-200 dark:bg-violet-600/10 dark:text-violet-100 dark:ring-violet-400/20" hidden>
         In Safari, tap <b>Share → Add to Home Screen</b> and open it from there. Saves are only kept reliably in the Home Screen app.</div>
       <div id="maker" class="mt-10 flex items-start gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-zinc-900/5 dark:bg-zinc-900 dark:ring-white/10">
         <img src="icons/cramlab-logo-512.png" class="size-11 shrink-0 rounded-xl" alt="" width="44" height="44">
         <div class="text-sm leading-relaxed">
           <div class="font-semibold text-zinc-900 dark:text-white">Made by CramLab</div>
           <p class="mt-1.5 text-zinc-500 dark:text-zinc-400">If you like using this app, consider
-            <a class="font-semibold text-amber-600 underline decoration-amber-600/30 underline-offset-2 dark:text-amber-400 dark:decoration-amber-400/30" href="https://buymeacoffee.com/cramlab" target="_blank" rel="noopener">donating</a> this Dutchie some cheese to keep the updates rolling.</p>
+            <a class="font-semibold text-violet-600 underline decoration-violet-600/30 underline-offset-2 dark:text-violet-400 dark:decoration-violet-400/30" href="https://buymeacoffee.com/cramlab" target="_blank" rel="noopener">donating</a> this Dutchie some cheese to keep the updates rolling.</p>
         </div>
       </div>
       <p class="mt-8 text-center text-xs leading-relaxed text-zinc-400 dark:text-zinc-500">
@@ -60,7 +60,7 @@
     <div id="page-all" class="sub-page fixed inset-0 z-10 overflow-y-auto bg-zinc-50 dark:bg-zinc-950" hidden>
       <div class="mx-auto max-w-xl px-4 pb-[calc(2rem+env(safe-area-inset-bottom))] pt-[env(safe-area-inset-top)]">
         <div class="flex h-11 items-center">
-          <button id="nav-back" class="-ml-2 flex items-center gap-0.5 rounded-lg px-1 py-1 text-[17px] text-amber-600 active:opacity-60 dark:text-amber-400">
+          <button id="nav-back" class="-ml-2 flex items-center gap-0.5 rounded-lg px-1 py-1 text-[17px] text-violet-600 active:opacity-60 dark:text-violet-400">
             <span data-hi="chevron-left" data-hi-class="size-6"></span>Games</button>
         </div>
         <h1 class="mt-1 text-[34px] font-bold tracking-tight">All Games</h1>
@@ -73,7 +73,7 @@
         <div id="loader-icon" class="mx-auto grid size-16 place-items-center rounded-2xl bg-zinc-100 text-sm font-semibold text-zinc-400 ring-1 ring-inset ring-zinc-900/5 dark:bg-zinc-800 dark:text-zinc-500 dark:ring-white/10">DS</div>
         <p id="loader-title" class="mt-4 truncate font-semibold"></p>
         <p id="loader-pct" class="mt-0.5 text-sm tabular-nums text-zinc-500 dark:text-zinc-400">Loading…</p>
-        <div class="mt-4 h-1.5 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800"><div id="loader-bar" class="h-full w-0 rounded-full bg-amber-400 transition-[width] duration-150"></div></div>
+        <div class="mt-4 h-1.5 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800"><div id="loader-bar" class="h-full w-0 rounded-full bg-violet-600 transition-[width] duration-150"></div></div>
       </div>
     </div>
   </div>
@@ -108,7 +108,7 @@
       <div class="flex items-center gap-2">
         <div id="menu-title" class="min-w-0 flex-1 truncate text-lg font-bold">Menu</div>
         <button class="grid size-10 place-items-center rounded-full bg-white text-zinc-700 shadow-sm ring-1 ring-zinc-900/5 active:scale-95 dark:bg-zinc-800 dark:text-zinc-200 dark:ring-white/10" data-m="sound" aria-label="Sound"></button>
-        <button class="flex items-center gap-1.5 rounded-full bg-amber-400 px-4 py-2.5 font-semibold text-amber-950 shadow-sm active:scale-95 active:bg-amber-300" data-m="resume">
+        <button class="flex items-center gap-1.5 rounded-full bg-violet-600 px-4 py-2.5 font-semibold text-white shadow-sm active:scale-95 active:bg-violet-500" data-m="resume">
           <span data-hi="play" data-hi-class="size-4"></span>Resume</button>
       </div>
       <!-- Study: one row; everything else lives on the Study screen (also opened by the translate button). -->
@@ -159,8 +159,8 @@
         <div id="resume-icon" class="mx-auto grid size-16 place-items-center rounded-2xl bg-zinc-100 text-sm font-semibold text-zinc-400 ring-1 ring-inset ring-zinc-900/5 dark:bg-zinc-800 dark:text-zinc-500 dark:ring-white/10">DS</div>
         <p id="resume-title" class="mt-3 truncate font-semibold"></p>
         <p id="resume-when" class="mt-0.5 text-sm text-zinc-500 dark:text-zinc-400"></p>
-        <p id="resume-warn" class="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-left text-xs leading-snug text-amber-900 ring-1 ring-amber-200 dark:bg-amber-400/10 dark:text-amber-200 dark:ring-amber-400/20" hidden>You saved in the game after this snapshot. Resuming goes back to before that save; if you then save again, the newer save is replaced.</p>
-        <button id="resume-go" class="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-amber-400 px-4 py-3 font-semibold text-amber-950 shadow-sm active:scale-[0.98] active:bg-amber-300"><span data-hi="play" data-hi-class="size-5"></span>Resume where you left off</button>
+        <p id="resume-warn" class="mt-3 rounded-xl bg-violet-50 px-3 py-2 text-left text-xs leading-snug text-violet-900 ring-1 ring-violet-200 dark:bg-violet-600/10 dark:text-violet-200 dark:ring-violet-400/20" hidden>You saved in the game after this snapshot. Resuming goes back to before that save; if you then save again, the newer save is replaced.</p>
+        <button id="resume-go" class="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 py-3 font-semibold text-white shadow-sm active:scale-[0.98] active:bg-violet-500"><span data-hi="play" data-hi-class="size-5"></span>Resume where you left off</button>
         <button id="resume-kept" class="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-2.5 font-semibold text-zinc-800 shadow-sm ring-1 ring-zinc-900/10 active:scale-[0.98] dark:bg-zinc-800 dark:text-zinc-100 dark:ring-white/10" hidden><span data-hi="clock" data-hi-class="size-5 text-zinc-400"></span><span id="resume-kept-text" class="min-w-0 truncate">Earlier snapshot</span></button>
         <button id="resume-skip" class="mt-2 w-full rounded-xl py-2.5 font-semibold text-zinc-600 active:bg-zinc-100 dark:text-zinc-300 dark:active:bg-zinc-800">Start normally</button>
       </div>
@@ -169,7 +169,7 @@
     <!-- One toast for every notification in the app (see toast() in emu.js) -->
     <div id="toast" role="status" aria-live="polite" class="pointer-events-none fixed left-1/2 top-[calc(10px+env(safe-area-inset-top))] z-50 flex max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-3 items-center gap-2.5 whitespace-nowrap rounded-2xl bg-zinc-900/95 py-2.5 pl-3.5 pr-4 text-[15px] font-medium text-white opacity-0 shadow-xl ring-1 ring-white/10 transition duration-200 data-[show]:translate-y-0 data-[show]:opacity-100">
       <span id="toast-icon" class="flex empty:hidden"></span><span id="toast-text" class="truncate"></span>
-      <button id="toast-action" class="pointer-events-auto -my-1 -mr-1.5 ml-1 rounded-lg px-2 py-1 font-semibold text-amber-400 active:bg-white/10" hidden></button>
+      <button id="toast-action" class="pointer-events-auto -my-1 -mr-1.5 ml-1 rounded-lg px-2 py-1 font-semibold text-violet-400 active:bg-white/10" hidden></button>
     </div>
   <script src="kv.js"></script>
   <script src="icons.js"></script>
