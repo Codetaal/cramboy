@@ -14,6 +14,10 @@
   var MESSAGE_BUFFER = 256, INSTANT_SCANS = 2;
   // Strings created within this many scans of each other belong to the same message (its copies).
   var SIBLING_SCANS = 3;
+  // Cursor pointers stored this close to the string are the message's own helper data, not the printer.
+  var NEAR_BYTES = 0x400;
+  // This many pointers to the same spot are leftovers, not the printer's cursor.
+  var CROWD = 3;
   // Gen 4 shows the place name in a banner when you enter a town or route ("연두마을"); the game
   // keeps it in its own 22-character buffer (checked on a HeartGold memory snapshot).
   var PLACE_BUFFER = 22;
@@ -37,6 +41,8 @@
     this.known = new Map();             // addr -> {text, firstSeen}
     this.scanNo = 0;
     this.current = null;                // {addr, text, codesKey, chars, cursor}
+    this.ptrVals = new Map();           // string addr -> Map(pointer word -> cursor) at the last scan
+    this.liveWord = new Map();          // string addr -> the pointer word seen moving (the printer)
     this.stats = { strings: 0, korean: 0, printers: 0 };
   }
 
@@ -50,7 +56,7 @@
         if (x >= UNI_KANA_MIN && x <= UNI_KANA_MAX) this.g4Kana[i] = 1;
       }
     }
-    this.known = new Map(); this.current = null;
+    this.known = new Map(); this.current = null; this.ptrVals = new Map(); this.liveWord = new Map();
   };
 
   // Decode a run of 16-bit codes into display text.
@@ -142,9 +148,13 @@
     this.stats.strings = total;
     this.stats.korean = list.length;
 
-    // 2) Find pointers that land inside a Korean string's characters:
-    //    the text printer's "current character" cursor.
-    var printers = 0;
+    // 2) Find pointers that land inside a Korean string's characters: the text printer's "current
+    //    character" cursor. Long dialogues have misleading pointers too (seen in HeartGold):
+    //    - a crowd of leftovers that all point at the end of the message,
+    //    - helper pointers stored right next to the message (a few characters ahead of the cursor).
+    //    The printer cursor is a single pointer stored elsewhere that moves while typing. Once seen
+    //    moving, that same pointer is followed (also while it waits, or sits at the end among the crowd).
+    var printers = 0, cands = new Map();   // string index -> [[word, cursor], ...]
     if (list.length) {
       for (i = 0; i < RAM_WORDS; i++) {
         var v = u32[i];
@@ -157,11 +167,33 @@
         // rel 0 = pointer to the start of the text, used all over the place; the
         // printer cursor has moved past the first character.
         if (rel <= 0 || rel > st.size * 2 || (rel & 1)) continue;
-        // Ignore the word right before the string (heap headers) and the string's own body.
-        if (i * 4 >= st.addr - 16 && i * 4 < st.dataByte + st.size * 2) continue;
-        var cur = rel >> 1;
-        if (cur > st.cursor) { if (st.cursor < 0) printers++; st.cursor = cur; }
+        // Ignore pointers stored near the string: heap headers, the string's own body and the
+        // message's helper data around it.
+        if (i * 4 >= st.addr - NEAR_BYTES && i * 4 < st.dataByte + st.size * 2 + NEAR_BYTES) continue;
+        var c0 = cands.get(o - 1); if (!c0) cands.set(o - 1, c0 = []);
+        c0.push([i, rel >> 1]);
       }
+      var self = this, vals = new Map();
+      cands.forEach(function (arr, idx) {
+        var st = list[idx], last = self.ptrVals.get(st.addr), live = self.liveWord.get(st.addr), cur = -1, word = -1;
+        var now = new Map(); arr.forEach(function (a) { now.set(a[0], a[1]); });
+        vals.set(st.addr, now);
+        // A pointer that moved since the last scan is the printer typing: follow the furthest one.
+        if (last) arr.forEach(function (a) { if (last.has(a[0]) && last.get(a[0]) !== a[1] && a[1] > cur) { cur = a[1]; word = a[0]; } });
+        if (word >= 0) self.liveWord.set(st.addr, word);
+        // Nothing moved: keep following the pointer that moved before (e.g. waiting for a button press).
+        else if (live !== undefined && now.has(live)) cur = now.get(live);
+        else {
+          // Not seen moving yet: the furthest pointer that isn't part of a crowd.
+          var count = {}; arr.forEach(function (a) { count[a[1]] = (count[a[1]] || 0) + 1; });
+          var single = arr.filter(function (a) { return count[a[1]] < CROWD; });
+          (single.length ? single : arr).forEach(function (a) { if (a[1] > cur) cur = a[1]; });
+        }
+        st.cursor = cur; printers++;
+      });
+      // Forget strings that are gone.
+      this.ptrVals = vals;
+      this.liveWord.forEach(function (w, addr) { if (!vals.has(addr)) self.liveWord.delete(addr); });
     }
     this.stats.printers = printers;
 

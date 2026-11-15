@@ -209,6 +209,26 @@ console.log('ALL READER TESTS PASSED');
   console.log('TEMPLATE COPY TEST PASSED');
 }
 
+// ---- A long dialogue with leftover pointers (HeartGold): follow the printer, not the crowd ----
+{
+  u32.fill(0);
+  const rl = new Reader(T); rl.scan(u32, u16);
+  const text = encode('그래 맞다!\n이웃의 공박사님이\f너를 찾고 계셨어\f너한테\n부탁할 것이 있대');
+  const ld = putString(0x200000, text, 1024);
+  const end = 0x02000000 + ld + text.length * 2;
+  for (let k = 0; k < 30; k++) u32[(0x240000 >> 2) + k * 0x9d] = end;          // a crowd at the end
+  const near = ld + text.length * 2 + 0x10;                                    // helper pointers right after the message
+  u32[near >> 2] = 0x02000000 + ld + 21 * 2; u32[(near >> 2) + 26] = 0x02000000 + ld + 30 * 2;
+  u32[(0x260000 >> 2)] = 0x02000000 + ld + 12 * 2;                             // a line-position pointer ahead of the cursor
+  let rr;
+  [6, 8, 10, 17, 17].forEach(c => { u32[0x300000 >> 2] = 0x02000000 + ld + c * 2; rr = rl.scan(u32, u16); });
+  assert(rr.active, 'the dialogue is shown');
+  assert.strictEqual(rr.active.text.slice(0, rr.active.shown).replace(/\u200B/g, '').trim(), '그래 맞다!\n이웃의 공박사님이', 'follows the printer, page by page (not the whole message at once)');
+  u32[0x300000 >> 2] = end; rr = rl.scan(u32, u16);
+  assert.strictEqual(rr.active.shown, rr.active.text.length, 'at the end the whole message is printed');
+  console.log('LONG DIALOGUE TEST PASSED');
+}
+
 // ---- Place-name banner (HeartGold shows "연두마을" in a 22-character buffer) ----
 {
   u32.fill(0);
