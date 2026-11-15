@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.15.6
+- Fix: tapping Know on the Progress tab (or changing a setting) jumped back to the top; the page now stays where it is.
+
 ## 0.15.5
 - Switches and the opacity slider use the brand purple again.
 
