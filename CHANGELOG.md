@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.15.1
+- Fix: a question answered with a choice (like the professor's boy / girl question in HeartGold) lost its subtitle; it now stays until you answer.
+
 ## 0.15.0
 - Back to the original text system: subtitles show only character dialogue (no signs, no place names, no menu labels).
 - Study → Now shows dialogue only; Progress counts words from dialogue only.
