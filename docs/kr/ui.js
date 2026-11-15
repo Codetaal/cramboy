@@ -1009,7 +1009,7 @@
   // Study settings, behind the gear.
   var FRAME_NAMES = { classic: 'Classic', ball: 'Poké Ball', ocean: 'Ocean', night: 'Night', sakura: 'Sakura' };
   function settingsHTML() {
-    var SW = function (on) { return '<span class="relative h-[31px] w-[51px] shrink-0 rounded-full transition-colors ' + (on ? 'bg-zinc-900 dark:bg-zinc-300' : 'bg-zinc-200 dark:bg-zinc-700') + '"><span class="absolute left-0.5 top-0.5 size-[27px] rounded-full bg-white shadow transition-transform' + (on ? ' translate-x-5' : '') + '"></span></span>'; };
+    var SW = function (on) { return '<span class="relative h-[31px] w-[51px] shrink-0 rounded-full transition-colors ' + (on ? 'bg-violet-600 dark:bg-violet-500' : 'bg-zinc-200 dark:bg-zinc-700') + '"><span class="absolute left-0.5 top-0.5 size-[27px] rounded-full bg-white shadow transition-transform' + (on ? ' translate-x-5' : '') + '"></span></span>'; };
     var seg = function (attr, opts, cur) {
       return '<div class="flex rounded-lg bg-zinc-100 p-0.5 text-[13px] dark:bg-zinc-800">' + opts.map(function (o) {
         return '<button class="rounded-md px-2.5 py-1.5 text-zinc-500 aria-pressed:bg-white aria-pressed:font-semibold aria-pressed:text-zinc-900 aria-pressed:shadow-sm dark:text-zinc-400 dark:aria-pressed:bg-zinc-600 dark:aria-pressed:text-white" ' + attr + '="' + o[0] + '" aria-pressed="' + (String(o[0]) === String(cur)) + '">' + o[1] + '</button>';
