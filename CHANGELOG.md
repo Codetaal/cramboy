@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.11.0
+- Add a game: pick several games at once. They're all added to your list ("Added today" until you first play them); files that aren't DS games are skipped. Picking one game still starts it right away.
+
 ## 0.10.2
 - Main buttons are yellow again (Play, Review, Show meaning, Got it). Switches, sliders, speaker icons and links stay grey, so the main action on each screen stands out.
 
