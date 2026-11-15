@@ -2,6 +2,12 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.12.0
+- New: Show FPS (Menu → Advanced, off by default): a small counter at the top-left while playing; 60 is full speed.
+- The translate button follows the Controls opacity slider, always 40 points more visible than the other controls (at least 90% while active).
+- Back to game is yellow again.
+- Donation text: only "donating" is the link.
+
 ## 0.11.1
 - Fix: a faint blurry smudge at the top of the screen on iPhone (the hidden notification's blur).
 - New donation text on the Made by CramLab card.
