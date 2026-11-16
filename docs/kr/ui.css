@@ -130,7 +130,16 @@
 }
 #kr-box { overflow: visible; }
 /* Room below the second line so its dotted underline isn't clipped */
-#kr-box .kr-box-text { overflow: hidden; padding-bottom: calc(4px * var(--k, 1.46)); }
+#kr-box .kr-box-text {
+  /* Two lines tall, like the game's box; scroll up for earlier text. */
+  height: calc(32px * var(--k, 1.46)); box-sizing: content-box;
+  overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+  padding-bottom: calc(4px * var(--k, 1.46));
+}
+#kr-box .kr-box-text::-webkit-scrollbar { display: none; }
+/* Earlier messages and pages: dimmed, wrapping (so they never make the box shrink its text). */
+#kr-box .kr-old { opacity: 0.5; white-space: normal; padding-bottom: calc(3px * var(--k, 1.46)); }
+#kr-box .kr-prev { opacity: 0.7; }
 #kr-box.kr-dragging { box-shadow: inset 0 0 0 calc(var(--f-iw) * var(--k, 1.46)) var(--f-inner), 0 6px 20px rgba(0, 0, 0, 0.35); }
 /* Menu swatches: a tiny version of each frame. */
 .kr-frame-swatch {

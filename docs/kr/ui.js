@@ -485,9 +485,17 @@
       setPanelVisible(page.length > 0);
       panel.scrollTop = panel.scrollHeight;
     } else {
-      // The game's box holds two lines; when it scrolls, the last two are visible.
-      var lines = page.split('\n');
-      boxText.innerHTML = wordsHTML(lines.slice(-2).join('\n'));
+      // The game's box holds two lines; the last two are visible. Scroll up for what came before: earlier
+      // pages of this message and the last few messages (dimmed). New text scrolls back to the bottom,
+      // unless you're reading back (scrolled up) during the same message.
+      var atBottom = boxText.scrollTop + boxText.clientHeight >= boxText.scrollHeight - 4;
+      var same = boxText.dataset.msg === current.key;
+      var before = plain(current.text.slice(0, current.shown)).replace(/\n+$/, '').split('\n\n').slice(0, -1).map(function (pg) { return pg.replace(/^\n+/, ''); }).filter(Boolean);
+      var old = history.slice(-3).map(function (t) { return '<div class="kr-old" data-s="' + esc(t.replace(/\n+/g, ' ')) + '">' + wordsHTML(t.replace(/\n+/g, ' ')) + '</div>'; }).join('');
+      var full = plain(current.text).replace(/\n+/g, ' ');
+      boxText.innerHTML = old + '<div data-s="' + esc(full) + '">' + (before.length ? '<div class="kr-prev">' + wordsHTML(before.join('\n')) + '</div>' : '') + wordsHTML(page) + '</div>';
+      boxText.dataset.msg = current.key;
+      if (!same || atBottom) boxText.scrollTop = boxText.scrollHeight;
       boxArrow.style.visibility = pageFinished() ? 'visible' : 'hidden';
       box.classList.toggle('kr-hidden', page.length === 0);
       if (boxGeo[screens().key]) fitBox();
@@ -497,7 +505,7 @@
   function onWordTap(e) {
     var t = e.target.closest ? e.target.closest('.kr-w') : null;
     if (!t) return;
-    var sentence = current ? plain(current.text).replace(/\n+/g, ' ') : t.closest('[data-s]') ? t.closest('[data-s]').getAttribute('data-s') : '';
+    var sentence = t.closest('[data-s]') ? t.closest('[data-s]').getAttribute('data-s') : current ? plain(current.text).replace(/\n+/g, ' ') : '';
     var raw = t.getAttribute('data-w');
     if (t.hasAttribute('data-g')) return openPop(raw, sentence, t, true);
     if (lang === 'ja') {
@@ -1312,17 +1320,17 @@
     var nowText = current ? plain(current.text.slice(0, current.shown)) : (history.length ? history[history.length - 1] : '');
     var full = current ? plain(current.text) : nowText, h = '';
     if (!nowText.trim()) h += '<p class="mt-4 ' + C.muted + '">No dialogue on screen right now. Talk to someone in the game.</p>';
-    else h += '<div class="kr-now mt-4 ' + C.card + '" data-s="' + esc(full.replace(/\n+/g, ' ')) + '"><div class="flex items-start gap-1"><div class="flex-1 text-xl leading-relaxed">' +
+    else h += '<div class="kr-now mt-4 ' + C.card + '" data-s="' + esc(full.replace(/\n+/g, ' ')) + '"><div class="flex items-start gap-1"><div class="kr-selectable flex-1 text-xl leading-relaxed">' +
         wordsHTML(nowText.replace(/\n\n+/g, '\n')) + '</div>' +
         '<button class="' + SPEAK_BTN + ' -my-1 -mr-2" data-act="say-now" aria-label="Hear it">' + HI('speaker-wave', 'size-5') + '</button></div>' +
-        '<p class="mt-1 text-sm ' + C.muted + '">Tap a word to look it up</p></div>';
+        '<p class="mt-1 text-sm ' + C.muted + '">Tap a word to look it up · press and hold to select and copy</p></div>';
     // Earlier: finished dialogue, newest first (the current line is shown above).
     var lines = history.slice().reverse();
     if (!current && lines.length) lines.shift();
     var block = function (arr) {
       return '<div class="mt-1.5 ' + C.list + '">' + arr.map(function (t) {
         var s1 = t.replace(/\n+/g, ' ');
-        return '<div class="px-4 py-2.5 leading-relaxed" data-s="' + esc(s1) + '">' + wordsHTML(s1) + '</div>';
+        return '<div class="kr-selectable px-4 py-2.5 leading-relaxed" data-s="' + esc(s1) + '">' + wordsHTML(s1) + '</div>';
       }).join('') + '</div>';
     };
     if (lines.length) h += SEC('Earlier') + block(lines.slice(0, 60));
