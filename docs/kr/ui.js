@@ -483,6 +483,7 @@
       // At most two lines, like the game's own box: the last two lines typed so far.
       textBox.innerHTML = wordsHTML(page.split('\n').slice(-2).join('\n'));
       setPanelVisible(page.length > 0);
+      grabPage();
       panel.scrollTop = panel.scrollHeight;
     } else {
       // The game's box holds two lines; the last two are visible. Scroll up for what came before: earlier
@@ -497,6 +498,7 @@
       boxText.dataset.msg = current.key;
       if (!same || atBottom) boxText.scrollTop = boxText.scrollHeight;
       boxArrow.style.visibility = pageFinished() ? 'visible' : 'hidden';
+      grabPage();
       box.classList.toggle('kr-hidden', page.length === 0);
       if (boxGeo[screens().key]) fitBox();
     }
@@ -505,8 +507,11 @@
   function onWordTap(e) {
     var t = e.target.closest ? e.target.closest('.kr-w') : null;
     if (!t) return;
-    var sentence = t.closest('[data-s]') ? t.closest('[data-s]').getAttribute('data-s') : current ? plain(current.text).replace(/\n+/g, ' ') : '';
-    var raw = t.getAttribute('data-w');
+    var holder = t.closest('[data-s]'), raw = t.getAttribute('data-w');
+    var full = holder ? holder.getAttribute('data-s') : current ? plain(current.text).replace(/\n+/g, ' ') : '';
+    // Only the sentence the word is in (a message can be several sentences over several pages).
+    var prev = t.closest('.kr-prev');
+    var sentence = pickSentence(full, raw, prev ? prev.textContent : current && !t.closest('.kr-old') ? currentPage() : '');
     if (t.hasAttribute('data-g')) return openPop(raw, sentence, t, true);
     if (lang === 'ja') {
       // Japanese: look up from the tapped word to the end of the phrase, so a longer word or an
@@ -514,6 +519,21 @@
       for (var n = t.nextSibling; n && n.nodeType === 1 && n.classList.contains('kr-w') && !n.hasAttribute('data-g'); n = n.nextSibling) raw += n.getAttribute('data-w');
     }
     openPop(raw, sentence, t, false);
+  }
+
+  // The sentence of a message that holds this word: split at . ! ? (and 。！？), preferring the one on the
+  // page that was on screen (hint). Long or unpunctuated text falls back to that page.
+  function pickSentence(full, word, hint) {
+    full = String(full || '').replace(/\s+/g, ' ').trim();
+    if (!full || !word) return full;
+    var w = String(word).replace(/\s+/g, ' ').replace(/[!?.…,]+$/, ''), sq = function (x) { return x.replace(/\s+/g, ''); };
+    var parts = (full.match(/[^.!?。！？…]+[.!?。！？…]*["”’」』)]*/g) || [full]).map(function (x) { return x.trim(); }).filter(Boolean);
+    var cands = parts.filter(function (x) { return x.indexOf(w) >= 0 || sq(x).indexOf(sq(w)) >= 0; });
+    var h = hint ? sq(hint.replace(/\n+/g, ' ')) : '';
+    var onPage = h ? cands.filter(function (x) { var q = sq(x); return h.indexOf(q.slice(0, Math.min(6, q.length))) >= 0 || q.indexOf(h.slice(0, Math.min(6, h.length))) >= 0; }) : [];
+    var pick = onPage[0] || cands[cands.length - 1] || '';
+    if (!pick || pick.length > 90) pick = hint ? hint.replace(/\s+/g, ' ').trim() : pick || full;
+    return pick;
   }
 
   // ---------- word popover ----------
@@ -938,7 +958,7 @@
       var t = Date.now();
       saved.push({ w: word, base: base, reading: hits && hits[0] ? hits[0].reading || '' : '', gloss: hits && hits[0] ? hits[0].gloss : '', s: sentence || '', t: t, lang: wlang,
         place: place, game: game.name, due: t, iv: 0, ease: EASE, reps: 0 });
-      snapshot(t);
+      snapshot(t, sentence);
       persist(); updatePill();
       toast('Saved: ' + base, 'star');
     } else if (to === 'known') { k[word] = 1; k[base] = 1; toast('Known: ' + base, 'ok'); }
@@ -954,7 +974,7 @@
       var t = Date.now();
       saved.push({ kind: 'g', g: id, w: chunk || '', base: x.label, reading: '', gloss: x.en, ex: x.ex, s: sentence || '', t: t, lang: wlang,
         place: place, game: game.name, due: t, iv: 0, ease: EASE, reps: 0 });
-      if (chunk) snapshot(t);
+      if (chunk) snapshot(t, sentence);
       toast('Saved: ' + x.label, 'star');
     } else if (to === 'known') { k['g:' + id] = 1; toast('Known: ' + x.label, 'ok'); }
     else toast('Marked as new: ' + x.label, 'info');
@@ -1111,10 +1131,31 @@
     return d <= 0 ? 'later today' : inDays(d);
   }
   // A picture of the top screen (where the game's text box is) when the word is saved, as a small JPEG.
-  function snapshot(t) {
+  // The game screen of each finished page (last 30), so a word saved later, from Now or Earlier, still gets
+  // the moment its sentence was on screen.
+  var pageShots = [];
+  function grabPage() {
+    if (!current || !pageFinished() || !settings.study) return;
+    var pg = currentPage(), key = current.key + '|' + pg;
+    if (!pg || pageShots.length && pageShots[pageShots.length - 1].key === key) return;
     try {
       var c = window.screenCanvas && screenCanvas[0];
-      if (c && store && window.emuIsGameLoaded) store.setItem('shot:' + t, c.toDataURL('image/jpeg', 0.75)).catch(function () {});
+      if (!c || !window.emuIsGameLoaded) return;
+      pageShots.push({ key: key, text: pg.replace(/\s+/g, ''), url: c.toDataURL('image/jpeg', 0.75) });
+      if (pageShots.length > 30) pageShots.shift();
+    } catch (e) {}
+  }
+  function snapshot(t, sentence) {
+    try {
+      var c = window.screenCanvas && screenCanvas[0], url = null, q = String(sentence || '').replace(/\s+/g, '');
+      if (q) for (var i = pageShots.length - 1; i >= 0 && !url; i--) {
+        var tx = pageShots[i].text;
+        if (tx.indexOf(q.slice(0, Math.min(6, q.length))) >= 0 || q.indexOf(tx.slice(0, Math.min(6, tx.length))) >= 0) url = pageShots[i].url;
+      }
+      // The page on screen now, if it shows the sentence (or nothing better is known).
+      if (current && q && currentPage().replace(/\s+/g, '').indexOf(q.slice(0, Math.min(6, q.length))) >= 0) url = null;
+      if (!url && c && window.emuIsGameLoaded) url = c.toDataURL('image/jpeg', 0.75);
+      if (url && store) store.setItem('shot:' + t, url).catch(function () {});
     } catch (e) {}
   }
   function dropShot(t) { if (store && store.removeItem) store.removeItem('shot:' + t).catch(function () {}); }
@@ -1144,7 +1185,7 @@
         '<p class="mt-1 px-6 ' + C.muted + '">' + msg + '</p></div>' +
         '<div class="pb-[calc(1.5rem+env(safe-area-inset-bottom))]"><button class="' + C.primary + '" data-act="done">' + HI('play', 'size-5') + 'Back to game</button></div>';
     }
-    var s1 = x.s || '', w = x.w || x.base;
+    var w = x.w || x.base, s1 = pickSentence(x.s || '', w, '');
     var sentence = s1 && s1.indexOf(w) >= 0 ? esc(s1).split(esc(w)).join('<mark class="' + C.mark + '">' + esc(w) + '</mark>') : '';
     h += '<img data-shot="' + x.t + '" alt="" class="kr-shot mx-auto mt-4 hidden ' + (review.open ? 'kr-shot-back h-32' : 'h-44') + ' w-auto rounded-xl ring-1 ring-zinc-900/10 dark:ring-white/10">' +
       (sentence ? '<div class="mt-5 flex items-start gap-1"><p class="kr-selectable flex-1 text-xl leading-relaxed">' + sentence + '</p>' +
@@ -1287,8 +1328,10 @@
       }
       if (b.classList.contains('kr-w')) {
         var line = b.closest('[data-s]');
-        if (b.hasAttribute('data-g')) return openGrammar(b.getAttribute('data-w'), line ? line.getAttribute('data-s') : '');
-        openWord(b.getAttribute('data-w'), line ? line.getAttribute('data-s') : '', null);
+        var pgEl = b.closest('[data-page]');
+        var ls = line ? pickSentence(line.getAttribute('data-s'), b.getAttribute('data-w'), pgEl ? pgEl.getAttribute('data-page') : '') : '';
+        if (b.hasAttribute('data-g')) return openGrammar(b.getAttribute('data-w'), ls);
+        openWord(b.getAttribute('data-w'), ls, null);
         return;
       }
       if (b.dataset.tab) return openMenu(b.dataset.tab);
@@ -1321,7 +1364,8 @@
     var full = current ? plain(current.text) : nowText, h = '';
     if (!nowText.trim()) h += '<p class="mt-4 ' + C.muted + '">No dialogue on screen right now. Talk to someone in the game.</p>';
     else h += '<div class="kr-now mt-4 ' + C.card + '" data-s="' + esc(full.replace(/\n+/g, ' ')) + '"><div class="flex items-start gap-1"><div class="kr-selectable flex-1 text-xl leading-relaxed">' +
-        wordsHTML(nowText.replace(/\n\n+/g, '\n')) + '</div>' +
+        // each page in its own block, so a word tapped there gets that page's sentence
+        nowText.split(/\n\n+/).filter(function (x) { return x.trim(); }).map(function (pg) { return '<div data-page="' + esc(pg.replace(/\n+/g, ' ')) + '">' + wordsHTML(pg) + '</div>'; }).join('') + '</div>' +
         '<button class="' + SPEAK_BTN + ' -my-1 -mr-2" data-act="say-now" aria-label="Hear it">' + HI('speaker-wave', 'size-5') + '</button></div>' +
         '<p class="mt-1 text-sm ' + C.muted + '">Tap a word to look it up · press and hold to select and copy</p></div>';
     // Earlier: finished dialogue, newest first (the current line is shown above).
