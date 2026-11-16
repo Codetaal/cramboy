@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.18.1
+- Fix: the word popover's Learning, Known and More buttons didn't respond to touch on phones.
+
 ## 0.18.0
 - Word popover: tapping a word in the subtitles opens a small bubble above the box with the dictionary form, word type (noun + particle, verb, adjective, adverb, Pokémon, move…), a one-line meaning, Learning / Known and More for the full sheet. Grammar chunks get a compact breakdown. The game pauses while it is open.
 
