@@ -237,8 +237,8 @@
   }
   var SPEAK_BTN = 'grid size-10 shrink-0 place-items-center rounded-full text-zinc-500 active:bg-zinc-200 dark:text-zinc-400 dark:active:bg-zinc-800';
 
-  function savedEntry(word) { var c = KRLookup.clean(word); for (var i = saved.length - 1; i >= 0; i--) if (saved[i].w === c || saved[i].base === c) return saved[i]; return null; }
-  function isSaved(word) { var c = KRLookup.clean(word); return saved.some(function (x) { return x.w === c || x.base === c; }); }
+  function savedEntry(word) { var c = KRLookup.clean(word); for (var i = saved.length - 1; i >= 0; i--) if (saved[i].kind !== 'g' && (saved[i].w === c || saved[i].base === c)) return saved[i]; return null; }
+  function isSaved(word) { var c = KRLookup.clean(word); return saved.some(function (x) { return x.kind !== 'g' && (x.w === c || x.base === c); }); }
 
   function loadDict(l) {
     l = l || lang;
@@ -254,7 +254,7 @@
   window.KRSetLang = function (l) {
     l = l === 'ja' ? 'ja' : 'ko';
     if (l !== lang) { lang = l; reader.setLang(l); current = null; history = []; renderPanel(); }
-    if (l === 'ja') loadDict('ja').catch(function () {});   // needed to split Japanese into words
+    loadDict(l).catch(function () {});   // Japanese: needed to split text into words; Korean: to find grammar chunks
   };
 
   // ---------- emulator hooks ----------
@@ -421,13 +421,31 @@
         }).join('');
       }).join('<br>');
     }
-    return esc(text).split('\n').map(function (line) {
-      return line.split(/( +)/).map(function (tok) {
-        if (!tok.trim()) return tok;
-        if (!/[가-힣]/.test(tok)) return tok;
-        return '<span class="' + wordClass(tok) + '" data-w="' + tok + '">' + tok + '</span>';
+    // Korean: grammar patterns spanning several words ("알 수 있단다") are one chunk; the rest word by word.
+    var plainWords = function (part) {
+      return part.split(/( +)/).map(function (tok) {
+        if (!tok.trim() || !/[가-힣]/.test(tok)) return esc(tok);
+        return '<span class="' + wordClass(tok) + '" data-w="' + esc(tok) + '">' + esc(tok) + '</span>';
       }).join('');
+    };
+    return text.split('\n').map(function (line) {
+      var out = '', pos = 0;
+      grammarIn(line).forEach(function (c) {
+        out += plainWords(line.slice(pos, c.start)) + '<span class="' + chunkClass(c) + '" data-w="' + esc(c.text) + '" data-g="' + esc(c.patterns.map(function (x) { return x.id; }).join(' ')) + '">' + esc(c.text) + '</span>';
+        pos = c.end;
+      });
+      return out + plainWords(line.slice(pos));
     }).join('<br>');
+  }
+  // Grammar chunks in a line (Korean, once the dictionary is loaded: it checks the verb is a real verb).
+  function grammarIn(line) { return lang === 'ko' && dicts.ko && window.KRGrammar ? KRGrammar.find(dicts.ko, line) : []; }
+  function patternState(id, l) {
+    l = l || lang;
+    return known[l]['g:' + id] ? 'known' : saved.some(function (x) { return x.kind === 'g' && x.g === id && (x.lang || 'ko') === l; }) ? 'learning' : 'new';
+  }
+  function chunkClass(c) {
+    var st = c.patterns.map(function (x) { return patternState(x.id); });
+    return 'kr-w kr-g' + (st.indexOf('learning') >= 0 ? ' kr-saved' : st.every(function (x) { return x === 'known'; }) ? ' kr-known' : '');
   }
 
   function currentPage() {
@@ -469,6 +487,7 @@
     if (!t) return;
     var sentence = current ? plain(current.text).replace(/\n+/g, ' ') : t.closest('[data-s]') ? t.closest('[data-s]').getAttribute('data-s') : '';
     var raw = t.getAttribute('data-w');
+    if (t.hasAttribute('data-g')) return openGrammar(raw, sentence, t);
     if (lang === 'ja') {
       // Japanese: look up from the tapped word to the end of the phrase, so a longer word or an
       // inflected verb that spans several pieces is still found (いって|きます -> 行く).
@@ -512,7 +531,11 @@
     ['ko', 'ja'].forEach(function (l) {
       var a = seen[l], b = v[l];
       for (var k in a.w) { var e = b.w[k] || (b.w[k] = [0, 0, '']); e[0] += a.w[k][0]; e[1] += a.w[k][1]; if (a.w[k][2]) e[2] = a.w[k][2]; }
-      for (var g in a.g) { var G = b.g[g] || (b.g[g] = { name: a.g[g].name, n: 0, w: {} }); G.n += a.g[g].n; for (var k2 in a.g[g].w) G.w[k2] = (G.w[k2] || 0) + a.g[g].w[k2]; }
+      for (var g in a.g) {
+        var G = b.g[g] || (b.g[g] = { name: a.g[g].name, n: 0, w: {} }); G.n += a.g[g].n; for (var k2 in a.g[g].w) G.w[k2] = (G.w[k2] || 0) + a.g[g].w[k2];
+        if (a.g[g].p) { G.p = G.p || {}; for (var k4 in a.g[g].p) G.p[k4] = (G.p[k4] || 0) + a.g[g].p[k4]; }
+      }
+      if (a.p) { b.p = b.p || {}; for (var k3 in a.p) { var ep = b.p[k3] || (b.p[k3] = [0, 0, '', '']); ep[0] += a.p[k3][0]; ep[1] += a.p[k3][1]; if (a.p[k3][2]) { ep[2] = a.p[k3][2]; ep[3] = a.p[k3][3]; } } }
       seen[l] = b;
     });
   }
@@ -529,11 +552,32 @@
     var S = seen[lang], gid = game.id || 'unknown', G = S.g[gid] || (S.g[gid] = { name: game.name, n: 0, w: {} });
     if (game.name) G.name = game.name;
     var line = text.replace(/\n+/g, ' ');
-    lineWords(text).forEach(function (tok) {
-      var k = wordKey(tok); if (!k) return;
+    var count = function (k) {
       var e = S.w[k] || (S.w[k] = [0, 0, '']);
       e[0]++; e[2] = line.length <= 120 ? line : e[2];
       G.w[k] = (G.w[k] || 0) + 1; G.n++;
+    };
+    var rest = text;
+    if (lang === 'ko') {
+      // Grammar: count each pattern (Progress shows them) and the verb it is built on; drop the chunk's words.
+      S.p = S.p || {}; G.p = G.p || {};
+      rest = text.split('\n').map(function (ln) {
+        var cs = grammarIn(ln), r = '', pos = 0;
+        cs.forEach(function (c) {
+          c.patterns.forEach(function (x) {
+            var e = S.p[x.id] || (S.p[x.id] = [0, 0, '', '']);
+            e[0]++; if (line.length <= 120) { e[2] = c.text; e[3] = line; }
+            G.p[x.id] = (G.p[x.id] || 0) + 1;
+          });
+          c.verbs.forEach(count);
+          r += ln.slice(pos, c.start) + ' '; pos = c.end;
+        });
+        return r + ln.slice(pos);
+      }).join('\n');
+    }
+    lineWords(rest).forEach(function (tok) {
+      var k = wordKey(tok); if (!k || (lang === 'ko' && KRGrammar.FILLER[KRLookup.clean(tok)])) return;
+      count(k);
     });
     saveSeen();
   }
@@ -543,7 +587,7 @@
     e[1]++; saveSeen();
   }
   // How a word stands: 'known', 'learning' (saved) or 'new'.
-  function wordState(k, l) { return known[l][k] ? 'known' : saved.some(function (x) { return (x.lang || 'ko') === l && (x.base === k || x.w === k); }) ? 'learning' : 'new'; }
+  function wordState(k, l) { return known[l][k] ? 'known' : saved.some(function (x) { return x.kind !== 'g' && (x.lang || 'ko') === l && (x.base === k || x.w === k); }) ? 'learning' : 'new'; }
   // For this game: share of the words read that are known / learning / new (counting every time a word was read).
   function gameProgress() {
     var G = seen[lang].g[game.id || 'unknown'];
@@ -573,7 +617,8 @@
         '<span class="flex items-center gap-1"><i class="size-2 rounded-full bg-zinc-300 dark:bg-zinc-600"></i>New ' + fp + '%</span></div>' +
       '<p class="mt-3 text-sm ' + C.muted + '">' + p.n.toLocaleString() + ' words read · ' + p.uniq.toLocaleString() + ' different · ' + p.knownUniq.toLocaleString() + ' known</p></div>';
     // Probably known: read often, never looked up.
-    var likely = Object.keys(S.w).filter(function (k) { var e = S.w[k]; return e[0] >= 15 && !e[1] && wordState(k, lang) === 'new'; })
+    var filler = function (k) { return lang === 'ko' && KRGrammar.FILLER[k]; };
+    var likely = Object.keys(S.w).filter(function (k) { var e = S.w[k]; return e[0] >= 15 && !e[1] && wordState(k, lang) === 'new' && !filler(k); })
       .sort(function (a, b) { return S.w[b][0] - S.w[a][0]; }).slice(0, 8);
     if (likely.length) {
       h += '<div class="mt-5 flex items-end px-1"><p class="flex-1 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Probably known</p>' +
@@ -582,12 +627,23 @@
         likely.map(function (k) { return progRow(k, S.w[k][0] + '× read', '<button class="' + C.btn + ' !px-3 !py-1.5 text-sm" data-know="' + esc(k) + '">' + HI('check', 'size-4') + 'Know</button>'); }).join('') + '</div>';
     }
     // Worth learning: words you keep looking up first, then the most frequent new words in this game.
-    var worth = Object.keys(G ? G.w : {}).filter(function (k) { return wordState(k, lang) === 'new' && likely.indexOf(k) < 0; })
+    var worth = Object.keys(G ? G.w : {}).filter(function (k) { return wordState(k, lang) === 'new' && likely.indexOf(k) < 0 && !filler(k); })
       .sort(function (a, b) { var la = (S.w[a] || [0, 0])[1] >= 2, lb = (S.w[b] || [0, 0])[1] >= 2; return la !== lb ? (lb ? 1 : -1) : G.w[b] - G.w[a]; }).slice(0, 10);
     if (worth.length) {
       h += '<p class="mt-5 px-1 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Worth learning</p>' +
         '<p class="mt-0.5 px-1 text-sm ' + C.muted + '">Words you keep looking up, and the most common new words in this game. Tap one to learn it.</p><div class="mt-1.5 ' + C.list + '">' +
         worth.map(function (k) { var e = S.w[k] || [0, 0]; return progRow(k, G.w[k] + '× read' + (e[1] >= 2 ? ' · looked up ' + e[1] + '×' : ''), HI('chevron-right', 'size-5 text-zinc-300 dark:text-zinc-600'), true); }).join('') + '</div>';
+    }
+    // Grammar: the patterns met in this game, most common first.
+    var gp = G && G.p ? Object.keys(G.p).filter(function (id) { return KRGrammar.byId(id); }).sort(function (a, b) { return G.p[b] - G.p[a]; }).slice(0, 10) : [];
+    if (lang === 'ko' && gp.length) {
+      var STATE = { known: '<span class="text-sm font-semibold text-emerald-600 dark:text-emerald-400">Known</span>', learning: '<span class="text-sm font-semibold text-violet-600 dark:text-violet-300">Learning</span>', 'new': HI('chevron-right', 'size-5 text-zinc-300 dark:text-zinc-600') };
+      h += SEC('Grammar in this game') + '<p class="mt-0.5 px-1 text-sm ' + C.muted + '">Patterns like “-(으)ㄹ 수 있다” (can). Tap one to see it in a sentence and learn it.</p><div class="mt-1.5 ' + C.list + '">' +
+        gp.map(function (id) {
+          var x = KRGrammar.byId(id);
+          return '<div class="flex cursor-pointer items-center gap-3 px-4 py-2.5 active:bg-zinc-100 dark:active:bg-zinc-800" data-gp="' + id + '"><div class="min-w-0 flex-1"><p class="font-bold">' + esc(x.label) + '</p>' +
+            '<p class="text-sm ' + C.muted + '">' + esc(x.en) + ' · ' + G.p[id] + '×</p></div>' + STATE[patternState(id)] + '</div>';
+        }).join('') + '</div>';
     }
     return h;
   }
@@ -679,7 +735,7 @@
         var k = known[wlang];
         // Learning and Known exclude each other: a word you know leaves your saved list, and back.
         if (to !== 'learning' && isSaved(word)) {
-          saved = saved.filter(function (x) { var hit = x.w === word || x.base === word || x.w === base || x.base === base; if (hit) dropShot(x.t); return !hit; });
+          saved = saved.filter(function (x) { var hit = x.kind !== 'g' && (x.w === word || x.base === word || x.w === base || x.base === base); if (hit) dropShot(x.t); return !hit; });
           persist(); updatePill();
         }
         if (to !== 'known') { delete k[word]; delete k[base]; }
@@ -694,6 +750,86 @@
         else toast('Marked as new: ' + base, 'info');
         persistKnown();
         showWord(word, raw, sentence, hits);
+      };
+    });
+  }
+
+  // ---------- grammar sheet ----------
+  // A chunk like "알 수 있단다": the verb (알다), the pattern (-(으)ㄹ 수 있다 = can) and the ending (-단다),
+  // each explained. Patterns can be learned like words (Learning / Known) and come back in Review.
+  // chunk: the chunk's text; onlyId: open on this pattern (from Progress) even if the text is empty.
+  function openGrammar(chunk, sentence, span, l, onlyId) {
+    wlang = l || lang; wordBack = menuTab || 'now';
+    if (span) span.classList.add('kr-sel');
+    openSheet('<p class="' + C.muted + '">Looking up…</p>');
+    loadDict('ko').then(function (d) { showGrammar(chunk, sentence, d, onlyId); }).catch(function () { showGrammar(chunk, sentence, null, onlyId); });
+  }
+  function showGrammar(chunk, sentence, d, onlyId) {
+    var c = chunk ? KRGrammar.find(d, chunk)[0] : null;
+    var pats = c ? c.patterns : [], verbs = c ? c.verbs : [], glosses = c ? c.glosses : [];
+    if (onlyId && !pats.some(function (x) { return x.id === onlyId; })) pats = [KRGrammar.byId(onlyId)].filter(Boolean);
+    var title = chunk || (pats[0] ? pats[0].label : '');
+    pats.forEach(function (x) { var e = (seen[wlang].p || {})[x.id]; if (e) { e[1]++; saveSeen(); } });
+    var h = '<button class="-ml-1.5 -mt-1 mb-1 flex items-center gap-0.5 py-1 pr-2 font-medium text-zinc-600 active:opacity-60 dark:text-zinc-300" data-act="back">' +
+      HI('chevron-left', 'size-5') + TAB_LABEL[wordBack] + '</button>' +
+      '<div class="flex items-center gap-1"><div class="kr-selectable min-w-0 break-keep text-[30px] font-bold">' + esc(title) + '</div>' +
+      '<button class="' + SPEAK_BTN + '" data-act="say-chunk" aria-label="Hear it">' + HI('speaker-wave', 'size-6') + '</button></div>' +
+      '<p class="mt-0.5 ' + C.muted + '">Grammar pattern' + (verbs.length ? ' built on a verb' : '') + '. Learn the pattern, not the separate pieces.</p>';
+    h += '<div class="mt-3 ' + C.list + '">';
+    verbs.forEach(function (v, i) {
+      h += '<div class="flex cursor-pointer items-center gap-3 px-4 py-3 active:bg-zinc-100 dark:active:bg-zinc-800" data-verb="' + esc(v) + '"><div class="min-w-0 flex-1">' +
+        '<p class="text-xs font-semibold uppercase tracking-wider text-zinc-400">Verb</p><p class="text-lg font-bold">' + esc(v) + '</p>' +
+        '<p class="text-zinc-600 dark:text-zinc-300">' + esc(glosses[i] || '') + '</p></div>' + HI('chevron-right', 'size-5 text-zinc-300 dark:text-zinc-600') + '</div>';
+    });
+    pats.forEach(function (x) {
+      var st = patternState(x.id, wlang);
+      var seg = function (to, label, icon, on) {
+        return '<button class="flex items-center justify-center gap-1 rounded-lg py-1.5 text-sm font-semibold ' + (st === to ? on : 'text-zinc-500 dark:text-zinc-400') +
+          '" data-gstatus="' + to + '" data-gid="' + x.id + '" aria-pressed="' + (st === to) + '">' + (icon ? HI(icon, 'size-4') : '') + label + '</button>';
+      };
+      h += '<div class="px-4 py-3"><p class="text-xs font-semibold uppercase tracking-wider text-violet-600 dark:text-violet-300">Pattern</p>' +
+        '<p class="text-lg font-bold">' + esc(x.label) + '</p><p class="text-zinc-700 dark:text-zinc-200">' + esc(x.en) + '</p>' +
+        (x.ex ? '<p class="mt-1 text-sm ' + C.muted + '">' + esc(x.ex) + '</p>' : '') +
+        '<div class="mt-2 grid grid-cols-3 gap-1 rounded-xl bg-zinc-200/70 p-1 dark:bg-zinc-800" role="group" aria-label="How well you know this pattern">' +
+        seg('new', 'New', '', 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-white') +
+        seg('learning', 'Learning', 'star', 'bg-violet-600 text-white shadow-sm') +
+        seg('known', 'Known', 'check', 'bg-emerald-500 text-white shadow-sm') + '</div></div>';
+    });
+    if (c && c.ending) {
+      h += '<div class="px-4 py-3"><p class="text-xs font-semibold uppercase tracking-wider text-zinc-400">Ending</p>' +
+        '<p class="text-lg font-bold">' + esc(c.ending.form) + '</p><p class="text-zinc-600 dark:text-zinc-300">' + esc(c.ending.en) + '</p></div>';
+    }
+    h += '</div>';
+    if (sentence) {
+      var marked = chunk ? esc(sentence).split(esc(chunk)).join('<mark class="' + C.mark + '">' + esc(chunk) + '</mark>') : esc(sentence);
+      h += '<div class="mt-3 flex items-start gap-1 ' + C.card + '"><p class="kr-selectable flex-1 leading-relaxed text-zinc-800 dark:text-zinc-200">' + marked + '</p>' +
+        '<button class="' + SPEAK_BTN + ' -my-1.5 -mr-2" data-act="say-sentence" aria-label="Hear the sentence">' + HI('speaker-wave', 'size-5') + '</button></div>';
+      h += '<div class="mt-3"><a class="' + C.btn + '" target="_blank" rel="noopener" href="https://translate.google.com/?sl=' + wlang + '&tl=en&op=translate&text=' + encodeURIComponent(sentence) + '">Google Translate ' + HI('arrow-top-right-on-square', 'size-4 text-zinc-400') + '</a></div>';
+    }
+    card.onclick = null;
+    openSheet(h, true);
+    card.querySelector('[data-act=close]').onclick = closeSheet;
+    card.querySelector('[data-act=back]').onclick = function () { openMenu(wordBack); };
+    card.querySelector('[data-act=say-chunk]').onclick = function () { speak(chunk || title, wlang); };
+    if (sentence) card.querySelector('[data-act=say-sentence]').onclick = function () { speak(sentence, wlang); };
+    Array.prototype.forEach.call(card.querySelectorAll('[data-verb]'), function (r) { r.onclick = function () { openWord(r.dataset.verb, sentence, null, wlang); }; });
+    Array.prototype.forEach.call(card.querySelectorAll('[data-gstatus]'), function (btn) {
+      btn.onclick = function () {
+        var id = btn.dataset.gid, to = btn.dataset.gstatus, x = KRGrammar.byId(id), k = known[wlang];
+        if (to === patternState(id, wlang)) return;
+        saved = saved.filter(function (y) { var hit = y.kind === 'g' && y.g === id; if (hit) dropShot(y.t); return !hit; });
+        delete k['g:' + id];
+        if (to === 'learning') {
+          var t = Date.now();
+          saved.push({ kind: 'g', g: id, w: chunk || '', base: x.label, reading: '', gloss: x.en, ex: x.ex, s: sentence || '', t: t, lang: wlang,
+            place: place, game: game.name, due: t, iv: 0, ease: EASE, reps: 0 });
+          if (chunk) snapshot(t);
+          toast('Saved: ' + x.label, 'star');
+        } else if (to === 'known') { k['g:' + id] = 1; toast('Known: ' + x.label, 'ok'); }
+        else toast('Marked as new: ' + x.label, 'info');
+        persist(); persistKnown(); updatePill();
+        if (current) renderPanel();
+        showGrammar(chunk, sentence, d, onlyId);
       };
     });
   }
@@ -728,7 +864,7 @@
       // Tapping a word opens its word sheet (meaning, Learning / Known, hear it); the back button returns here.
       h += '<div class="flex cursor-pointer items-start gap-2 px-4 py-3 active:bg-zinc-100 dark:active:bg-zinc-800" data-open="' + x.t + '"><div class="min-w-0 flex-1"><p class="font-bold">' + esc(x.base || x.w) +
         (x.reading ? ' <span class="font-normal ' + C.muted + '">' + esc(x.reading) + '</span>' : '') +
-        (x.base && x.base !== x.w ? ' <span class="font-normal ' + C.muted + '">' + esc(x.w) + '</span>' : '') + '</p>' +
+        (x.kind === 'g' ? '<span class="' + C.badge + '">Grammar</span>' : x.base && x.base !== x.w ? ' <span class="font-normal ' + C.muted + '">' + esc(x.w) + '</span>' : '') + '</p>' +
         '<p class="text-zinc-600 dark:text-zinc-300">' + esc(x.gloss || '—') + '</p>' +
         (x.s ? '<p class="mt-0.5 truncate ' + C.muted + '">' + esc(x.s) + '</p>' : '') + whereHTML(x.place, x.game, 'mt-1') + '</div>' +
         '<button class="-mr-2 grid size-9 shrink-0 place-items-center rounded-full text-zinc-400 active:bg-zinc-100 dark:active:bg-zinc-800" data-del="' + x.t + '" aria-label="Remove">' + HI('x-mark', 'size-5') + '</button></div>';
@@ -820,7 +956,7 @@
       whereHTML(x.place, x.game, 'mt-1');
     var foot;
     if (!review.open) {
-      foot = '<p class="mb-3 text-center ' + C.muted + '">What does ' + (sentence ? 'the marked word' : 'this word') + ' mean?</p>' +
+      foot = '<p class="mb-3 text-center ' + C.muted + '">What does ' + (x.kind === 'g' ? 'the marked grammar' : sentence ? 'the marked word' : 'this word') + ' mean?</p>' +
         '<button class="' + C.primary + '" data-act="rv-show">Show meaning</button>';
     } else {
       var gotDays = nextIv(x), becomesKnown = gotDays >= KNOWN_DAYS;
@@ -828,12 +964,13 @@
         (x.reading ? '<span class="ml-2 text-base font-normal text-zinc-500 dark:text-zinc-400">' + esc(x.reading) + '</span>' : '') + '</p>' +
         '<button class="' + SPEAK_BTN + ' -mr-2" data-act="rv-say-w" aria-label="Hear the word">' + HI('speaker-wave', 'size-6') + '</button></div>' +
         '<p class="mt-0.5 text-lg text-zinc-700 dark:text-zinc-200">' + esc(x.gloss || '—') + '</p>' +
-        '<button class="mt-1 text-sm font-medium text-zinc-500 underline decoration-zinc-300 underline-offset-2 active:opacity-60 dark:text-zinc-400 dark:decoration-zinc-600" data-act="rv-more">More about this word</button></div>';
+        (x.kind === 'g' && x.ex ? '<p class="mt-1 text-sm ' + C.muted + '">' + esc(x.ex) + '</p>' : '') +
+        '<button class="mt-1 text-sm font-medium text-zinc-500 underline decoration-zinc-300 underline-offset-2 active:opacity-60 dark:text-zinc-400 dark:decoration-zinc-600" data-act="rv-more">More about this ' + (x.kind === 'g' ? 'pattern' : 'word') + '</button></div>';
       foot = '<div class="grid grid-cols-2 gap-2">' +
         '<button class="' + C.btn + ' flex-col !gap-0 !py-2.5" data-act="rv-again">Again<span class="text-xs font-normal text-zinc-500 dark:text-zinc-400">soon</span></button>' +
         '<button class="' + C.primary + ' flex-col !gap-0 !py-2.5" data-act="rv-good">Got it' +
           '<span class="text-xs font-normal text-white/70">' + (becomesKnown ? 'becomes Known' : inDays(gotDays)) + '</span></button></div>' +
-        '<button class="mt-2 flex w-full items-center justify-center gap-1 py-2 text-sm font-medium text-zinc-500 active:opacity-60 dark:text-zinc-400" data-act="rv-known">' + HI('check', 'size-4') + 'I know this word</button>';
+        '<button class="mt-2 flex w-full items-center justify-center gap-1 py-2 text-sm font-medium text-zinc-500 active:opacity-60 dark:text-zinc-400" data-act="rv-known">' + HI('check', 'size-4') + 'I know this ' + (x.kind === 'g' ? 'pattern' : 'word') + '</button>';
     }
     // The answer area sits at the bottom of the screen.
     return h + '<div class="mt-auto pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-4">' + foot + '</div>';
@@ -854,7 +991,8 @@
       if (act === 'rv-good') return reviewAnswer('good');
       if (act === 'rv-known') return reviewAnswer('known');
       if (act === 'rv-say-s' && rx) return speak(rx.s, rx.lang);
-      if (act === 'rv-say-w' && rx) return speak(rx.base || rx.w, rx.lang);
+      if (act === 'rv-say-w' && rx) return speak(rx.kind === 'g' ? rx.w : rx.base || rx.w, rx.lang);
+      if (act === 'rv-more' && rx && rx.kind === 'g') return openGrammar(rx.w, rx.s || '', null, rx.lang, rx.g);
       if (act === 'rv-more' && rx) return openWord(rx.w, rx.s || '', null, rx.lang);
     };
   }
@@ -878,7 +1016,8 @@
     else {
       // Next wait would be half a year or more, or "I know this word": Known, out of the saved list (Learning and Known exclude each other).
       var k = known[x.lang || lang] || known[lang];
-      k[x.w] = 1; if (x.base) k[x.base] = 1; persistKnown();
+      if (x.kind === 'g') k['g:' + x.g] = 1; else { k[x.w] = 1; if (x.base) k[x.base] = 1; }
+      persistKnown();
       saved = saved.filter(function (y) { return y !== x; }); dropShot(x.t);
       toast('Known: ' + (x.base || x.w), 'ok');
       if (current) renderPanel();
@@ -918,15 +1057,17 @@
     var search = card.querySelector('#kr-search');
     if (search) search.oninput = function () { savedQuery = search.value; card.querySelector('#kr-saved-list').innerHTML = savedListHTML(savedQuery); };
     card.onclick = function (e) {
-      var b = e.target.closest('[data-tab],[data-act],[data-del],[data-open],[data-know],[data-pw],[data-mode],[data-frame-pick],[data-npd],.kr-w');
+      var b = e.target.closest('[data-tab],[data-act],[data-del],[data-open],[data-know],[data-pw],[data-gp],[data-mode],[data-frame-pick],[data-npd],.kr-w');
       if (!b) return;
       if (b.dataset.open) {
         var x = saved.filter(function (y) { return String(y.t) === b.dataset.open; })[0];
-        if (x) openWord(x.w, x.s || '', null, x.lang);
+        if (x && x.kind === 'g') openGrammar(x.w, x.s || '', null, x.lang, x.g);
+        else if (x) openWord(x.w, x.s || '', null, x.lang);
         return;
       }
       if (b.classList.contains('kr-w')) {
         var line = b.closest('[data-s]');
+        if (b.hasAttribute('data-g')) return openGrammar(b.getAttribute('data-w'), line ? line.getAttribute('data-s') : '');
         openWord(b.getAttribute('data-w'), line ? line.getAttribute('data-s') : '', null);
         return;
       }
@@ -939,6 +1080,7 @@
         return;
       }
       if (b.dataset.know) { markKnown([b.dataset.know]); return stay('progress'); }
+      if (b.dataset.gp) { var sp = (seen[lang].p || {})[b.dataset.gp] || []; return openGrammar(sp[2] || '', sp[3] || '', null, lang, b.dataset.gp); }
       if (b.dataset.pw) { var e2 = seen[lang].w[b.dataset.pw]; return openWord(b.dataset.pw, e2 ? e2[2] : '', null, lang); }
       if (b.dataset.mode) { setMode(b.dataset.mode); return stay('settings'); }
       if (b.dataset.framePick) { setFrame(b.dataset.framePick); return stay('settings'); }

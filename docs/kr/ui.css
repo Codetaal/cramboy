@@ -149,6 +149,8 @@
 
 /* Words you know: no dotted underline (still tappable). */
 .kr-w.kr-known, #kr-sheet .kr-w.kr-known, #kr-box .kr-w.kr-known { border-bottom-color: transparent; }
+/* A grammar chunk ("알 수 있단다"): one tap target, underlined as a whole with a solid line. */
+.kr-w.kr-g, #kr-box .kr-w.kr-g { border-bottom-style: solid; }
 
 /* Review: the game snapshot keeps its sharp pixels when scaled. */
 .kr-shot { image-rendering: pixelated; aspect-ratio: 4 / 3; }
