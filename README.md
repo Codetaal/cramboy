@@ -22,6 +22,13 @@ no game-specific addresses and shows only the text typed so far.
 - `docs/kr/lookup.js` strips particles and verb endings (피카츄가 → 피카츄, 나타났다 → 나타나다)
 - `docs/kr/dict.json` kengdic + official Korean/English Pokémon, move, item, ability and place names
 - `docs/kr/ui.js` subtitle bar, word card, saved words, recent text
+- `docs/kr/grammar.js` / `ja-grammar.js` grammar patterns shown as one chunk (알 수 있다, 〜てみる)
+- `docs/kr/ko-pos.json` word types, `ko-forms.json` irregular verb forms, `ko-common.json` common words
+  ("rare word" is everything else): built once with the ko-dic morphological analyzer
+  ([lindera](https://github.com/lindera/lindera), MIT; ko-dic, Apache-2.0) by `tools/tag_ko_pos.js`,
+  `tools/build_ko_forms.js` and `tools/build_ko_common.js`. The common-word list uses word counts from
+  [FrequencyWords](https://github.com/hermitdave/FrequencyWords) (Hermit Dave, OpenSubtitles, CC BY-SA 4.0;
+  `tools/data/ko_50k.txt` and `docs/kr/ko-common.json` are under the same licence).
 
 ## Emulator
 `emulator/build.sh` compiles [desmume-wasm](https://github.com/44670/desmume-wasm)
@@ -32,7 +39,7 @@ for symbols the upstream tree leaves undefined, and save-state functions (`state
 upstream bugs that crashed loading a save state; `build.sh` applies it. `docs/emu.js` is a new frontend.
 
 ## Tests
-`node tests/reader.test.js`, `node tests/lookup.test.js` and `node tests/ja-lookup.test.js`.
+`node tests/<name>.test.js` for each file in `tests/`.
 
 Styles use Tailwind CSS: after changing classes in `docs/index.html`, `docs/emu.js` or
 `docs/kr/ui.js`, run `npm install` once and then `npm run build:css` to regenerate `docs/tw.css`.

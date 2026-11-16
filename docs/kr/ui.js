@@ -540,7 +540,7 @@
   // Tapping a word in the subtitles opens a small bubble right above it: dictionary form, word type, a
   // one-line meaning, Learning / Known, and More for the full sheet. The game pauses while it is open.
   var pop = null, popPaused = false;
-  var PARTICLE_EN = { '은': 'topic', '는': 'topic', '이': 'subject', '가': 'subject', '을': 'object', '를': 'object', '의': 'of', '에': 'at, to', '에서': 'at, from',
+  var PARTICLE_EN = { '은': 'topic', '는': 'topic', '이': 'subject', '가': 'subject', '을': 'object', '를': 'object', '의': 'of', '에': 'at, to', '에서': 'at, from', '에는': 'at, to (topic)', '에도': 'at, to (also)', '에만': 'only at', '에서는': 'at, from (topic)', '으로는': 'with (topic)',
     '으로': 'with, toward', '로': 'with, toward', '와': 'and, with', '과': 'and, with', '도': 'also', '만': 'only', '까지': 'until', '부터': 'from', '에게': 'to (someone)',
     '한테': 'to (someone)', '처럼': 'like', '보다': 'than', '이랑': 'and, with', '랑': 'and, with', '이나': 'or', '나': 'or', '께서': 'subject (respectful)', '아': '(calling)', '야': '(calling)', '이야': 'is' };
   var TAGS = { 'Pokémon': 'Pokémon', 'move': 'move', 'item': 'item', 'place': 'place', 'ability': 'ability', 'type': 'type', 'nature': 'nature' };
@@ -553,11 +553,28 @@
     fetch(BASE + 'ko-pos.json').then(function (r) { return r.json(); }).then(function (j) {
       var m = {}; for (var t in j) j[t].split('|').forEach(function (w) { m[w] = t; }); koPos = m;
     }).catch(function () { koPos = null; });
+    // Common words in everyday spoken Korean (tools/build_ko_common.js); the rest is "rare".
+    fetch(BASE + 'ko-common.json').then(function (r) { return r.json(); }).then(function (j) {
+      koCommon = {}; j.split('|').forEach(function (w) { koCommon[w] = 1; });
+    }).catch(function () {});
     // Irregular verb forms (들으면 -> 듣다): once they're in, words are looked up again.
     fetch(BASE + 'ko-forms.json').then(function (r) { return r.json(); }).then(function (j) {
       KRLookup.setForms(j); baseOf.clear(); if (current) renderPanel();
     }).catch(function () {});
   }
+  // A rare word: uncommon in the language overall (Korean: outside the most common words of everyday
+  // speech; Japanese: no commonness mark in the dictionary) and not something this game keeps using
+  // (read 3 times or more here). Pokémon, moves, items and places are never rare: they're the game's words.
+  var koCommon = null;
+  function isRare(hit, l) {
+    l = l || lang;
+    if (!hit || /\((Pokémon|move|item|place|ability|type|nature)\)/.test(hit.gloss || '')) return false;
+    var G = seen[l].g[game.id || 'unknown'];
+    if (G && (G.w[hit.word] || 0) >= 3) return false;
+    if (l === 'ja') return hit.rank >= 199;
+    return !!koCommon && !koCommon[hit.word] && !(koPos && koPos[hit.word] === 'x');
+  }
+  var RARE_CHIP = '<span class="ml-1.5 inline-block rounded-full bg-amber-100 px-1.5 py-px align-[1px] text-[10px] font-semibold uppercase tracking-wider text-amber-700 dark:bg-amber-400/15 dark:text-amber-300">Rare word</span>';
   // "썼다 = 쓰 + 었다": how a Korean verb form is built (null for other words).
   function breakdownText(word, hit, l) {
     if ((l || wlang) !== 'ko' || !hit) return '';
@@ -627,11 +644,11 @@
     return '<div class="mt-2.5 flex items-center gap-1.5">' + b('learning', 'Learning', 'star', 'bg-violet-600 text-white') + b('known', 'Known', 'check', 'bg-emerald-500 text-white') +
       '<button class="ml-auto flex items-center gap-0.5 py-1.5 pl-2 text-[13px] font-semibold text-violet-600 dark:text-violet-300" data-pop="more">More' + HI('chevron-right', 'size-4') + '</button></div>';
   }
-  function popHead(title, from, type, built) {
+  function popHead(title, from, type, built, rare) {
     return '<div class="flex items-start gap-2"><div class="min-w-0 flex-1"><p class="flex flex-wrap items-baseline gap-x-1.5"><span class="kr-selectable text-[22px] font-bold leading-tight">' + esc(title) + '</span>' +
       (from ? '<span class="text-[13px] text-zinc-500 dark:text-zinc-400">from ' + esc(from) + '</span>' : '') +
       (built ? '<span class="text-[13px] text-zinc-500 dark:text-zinc-400">' + esc(built) + '</span>' : '') + '</p>' +
-      (type ? '<p class="text-xs font-semibold uppercase tracking-wider text-violet-600 dark:text-violet-300">' + esc(type) + '</p>' : '') + '</div>' +
+      (type || rare ? '<p class="text-xs font-semibold uppercase tracking-wider text-violet-600 dark:text-violet-300">' + esc(type || '') + (rare ? RARE_CHIP.replace('ml-1.5', type ? 'ml-1.5' : '') : '') + '</p>' : '') + '</div>' +
       '<button class="-mr-1 -mt-0.5 grid size-8 shrink-0 place-items-center rounded-full text-zinc-500 active:bg-zinc-100 dark:text-zinc-400 dark:active:bg-zinc-700" data-pop="say" aria-label="Hear it">' + HI('speaker-wave', 'size-5') + '</button></div>';
   }
   function fillPopWord(word, raw, sentence, span, hits) {
@@ -639,7 +656,7 @@
     var draw = function () {
       var meaning = hit ? verbFirst(hit).split('; ').slice(0, 2).join('; ') : 'Not in the offline dictionary. Tap More for other dictionaries.';
       var bd = breakdownText(word, hit, lang);
-      pop.innerHTML = popHead(base, bd ? '' : base !== word ? word : '', wordType(hit, lang), bd) +
+      pop.innerHTML = popHead(base, bd ? '' : base !== word ? word : '', wordType(hit, lang), bd, isRare(hit, lang)) +
         (hit && hit.reading ? '<p class="text-sm text-zinc-500 dark:text-zinc-400">' + esc(hit.reading) + '</p>' : '') +
         '<p class="mt-0.5 truncate text-[15px] text-zinc-700 dark:text-zinc-200">' + esc(meaning) + '</p>' + popButtons(wordStatus(word, base));
       placePop(span);
@@ -900,7 +917,8 @@
       HI('chevron-left', 'size-5') + TAB_LABEL[wordBack] + '</button>' +
       '<div class="flex items-center gap-1"><div class="kr-selectable min-w-0 break-keep text-[30px] font-bold">' + esc(word) + '</div>' +
       '<button class="' + SPEAK_BTN + '" data-act="say-word" aria-label="Hear the word">' + HI('speaker-wave', 'size-6') + '</button></div>' +
-      (wordType(hits && hits[0], wlang) ? '<p class="-mt-0.5 text-xs font-semibold uppercase tracking-wider text-violet-600 dark:text-violet-300">' + esc(wordType(hits[0], wlang)) + '</p>' : '') +
+      (wordType(hits && hits[0], wlang) || isRare(hits && hits[0], wlang) ? '<p class="-mt-0.5 text-xs font-semibold uppercase tracking-wider text-violet-600 dark:text-violet-300">' + esc(wordType(hits && hits[0], wlang) || '') + (isRare(hits && hits[0], wlang) ? RARE_CHIP : '') + '</p>' : '') +
+      (isRare(hits && hits[0], wlang) ? '<p class="mt-1 text-sm text-zinc-500 dark:text-zinc-400">Uncommon in everyday ' + (wlang === 'ja' ? 'Japanese' : 'Korean') + ' and rare in this game: probably not worth a flashcard.</p>' : '') +
       (breakdownText(word, hits && hits[0]) ? '<p class="mt-0.5 text-sm text-zinc-500 dark:text-zinc-400">' + esc(breakdownText(word, hits[0])) + '</p>' : '') +
       '<div class="mt-2 grid grid-cols-3 gap-1 rounded-xl bg-zinc-200/70 p-1 dark:bg-zinc-800" role="group" aria-label="How well you know this word">' +
       segBtn('new', 'New', '', 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-white') +
