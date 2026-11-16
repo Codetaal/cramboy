@@ -25,6 +25,15 @@
     return w.replace(/[​·.,!?…~"'“”‘’()\[\]{}:;\-—\s0-9]/g, '');
   }
 
+  // Irregular and contracted verb forms the rules below can't undo (들으면 -> 듣다, 몰라 -> 모르다, 써 -> 쓰다),
+  // checked with a morphological analyzer when the dictionary is built (tools/build_ko_forms.js).
+  // Set by the app: { form: verb }.
+  var FORMS = null;
+  function setForms(byVerb) {
+    FORMS = {};
+    for (var v in byVerb) byVerb[v].split('|').forEach(function (f) { FORMS[f] = v; });
+  }
+
   // Candidate dictionary forms for a word as it appears in text.
   function candidates(word) {
     var w = clean(word), out = [], seen = {};
@@ -45,6 +54,15 @@
         }
       });
     });
+    // Known irregular forms go first, right after the word itself.
+    if (FORMS) {
+      var front = [];
+      stems.forEach(function (s) { var f = FORMS[s]; if (f && !seen['#' + f]) { seen['#' + f] = 1; front.push({ form: f, how: 'verb' }); } });
+      if (front.length) {
+        out = [out[0]].concat(front, out.slice(1).filter(function (c) { return !front.some(function (x) { return x.form === c.form; }); }));
+        front.forEach(function (x) { seen[x.form] = 1; });
+      }
+    }
     // Syllable-level verb forms: 갑니다 -> 가다, 갔다 -> 가다, 봤어 -> 보다, 했다 -> 하다
     stems.forEach(function (s) {
       for (var cut = 1; cut <= Math.min(3, s.length); cut++) {
@@ -84,7 +102,42 @@
     return hits;
   }
 
-  var api = { candidates: candidates, lookup: lookup, clean: clean };
+  // How a verb form is built: breakdown('썼다', '쓰다') -> ['쓰', '었다']; ('들으면', '듣다') -> ['듣', '으면'].
+  // Undoes the contractions and irregular changes; returns null when it can't tell.
+  var BRIGHT = { 0: 1, 8: 1, 9: 1 };
+  function breakdown(surface, base) {
+    surface = clean(surface);
+    if (!/다$/.test(base) || !surface) return null;
+    var stem = base.slice(0, -1);
+    if (surface === stem) return null;
+    if (surface.indexOf(stem) === 0) return [stem, surface.slice(stem.length)];
+    var p = 0; while (p < stem.length && p < surface.length && stem.charAt(p) === surface.charAt(p)) p++;
+    var a = stem.charAt(p), u = surface.charAt(p), rest = surface.slice(p + 1), stemRest = stem.slice(p + 1);
+    if (!a || !u || !isSyl(a) || !isSyl(u)) return null;
+    var A = parts(a), U = parts(u);
+    var swap = function (r, map) { var f = r.charAt(0); return map[f] ? map[f] + r.slice(1) : null; };
+    var AO = { '와': '아', '워': '어', '왔': '았', '웠': '었', '우': '으', '라': '아', '러': '어', '랐': '았', '렀': '었' };
+    // 르: 모르 -> 몰라 / 몰랐
+    if (stemRest === '르' && U.jong === JONG_L && U.cho === A.cho) { var r1 = swap(rest, AO); return r1 ? [stem, r1] : null; }
+    if (stemRest) return null;
+    if (U.cho === A.cho) {
+      // contracted -아/어 (써, 봐, 돼) and past (썼, 갔, 했)
+      if (U.jong === 0 && U.jung !== A.jung && !A.jong) return [stem, (a === '하' ? '여' : BRIGHT[A.jung] ? '아' : '어') + rest];
+      if (U.jong === JONG_SS && !A.jong) return [stem, (a === '하' ? '였' : BRIGHT[A.jung] ? '았' : '었') + rest];
+      if (A.jong === 17 && U.jong === 0 && U.jung === A.jung) { var r2 = swap(rest, AO); return r2 ? [stem, r2] : null; }   // ㅂ: 추워 -> 춥 + 어
+      if (A.jong === 7 && U.jong === JONG_L) return [stem, rest];                                               // ㄷ: 들으면 -> 듣 + 으면
+      if (A.jong === 19 && U.jong === 0 && U.jung === A.jung) return [stem, rest];                              // ㅅ: 나아 -> 낫 + 아
+      if (A.jong === JONG_L && U.jong === 0 && U.jung === A.jung) return [stem, rest];                          // ㄹ dropped: 만드세요 -> 만들 + 세요
+      if (A.jong === 27) {                                                                                       // ㅎ: 그래 / 그럴 / 그런
+        if (U.jong === 0) return [stem, (BRIGHT[A.jung] ? '아' : '어') + rest];
+        if (U.jong === JONG_L) return [stem, '을' + rest];
+        if (U.jong === JONG_N) return [stem, '은' + rest];
+      }
+    }
+    return null;
+  }
+
+  var api = { candidates: candidates, lookup: lookup, clean: clean, setForms: setForms, breakdown: breakdown };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.KRLookup = api;
 })(this);
