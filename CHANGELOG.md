@@ -2,6 +2,11 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.17.0
+- Japanese grammar patterns: phrases like "つかって みれば" (〜てみる) or "つかまえる ことが できる" (〜ことができる) are one tappable chunk, explained like the Korean ones, and can be learned and reviewed.
+- Kana that can be two verbs (まって: 舞う or 待つ) shows both in the grammar sheet.
+- Grammar chunks have the same dotted underline as words.
+
 ## 0.16.0
 - Korean grammar patterns: phrases like "알 수 있단다" or "써보면" are one tappable chunk in the subtitles instead of separate words.
 - Tapping a chunk explains the verb (알다 = to know), the pattern (-(으)ㄹ 수 있다 = can) and the ending (-단다), with the sentence.
