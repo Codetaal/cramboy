@@ -112,7 +112,7 @@
           var e = dict.e[id];
           if (used[id] || !posOk(c.pos, e[2])) return;
           used[id] = 1;
-          hits.push({ word: e[0], reading: e[1] !== e[0] ? e[1] : '', gloss: e[3], how: c.how, rank: e[4] || 0 });
+          hits.push({ word: e[0], reading: e[1] !== e[0] ? e[1] : '', gloss: e[3], how: c.how, rank: e[4] || 0, pos: e[2] });
         });
       });
       if (hits.length) {

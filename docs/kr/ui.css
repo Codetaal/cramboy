@@ -157,3 +157,8 @@
 @media (max-height: 700px) { .kr-shot.kr-shot-back { display: none !important; } }
 /* Full-screen pages in the sheet (Review). */
 #kr-sheet.kr-full .kr-card { height: 100%; max-height: 100%; border-radius: 0; }
+
+/* Word popover arrow: a rotated square in the bubble's colour, pointing at the tapped word. */
+.kr-pop-arrow { position: absolute; width: 14px; height: 14px; margin-left: -7px; transform: rotate(45deg); background: inherit; }
+.kr-pop-arrow.kr-down { bottom: -7px; box-shadow: 3px 3px 4px rgba(0, 0, 0, 0.06); border-radius: 0 0 3px 0; }
+.kr-pop-arrow.kr-up { top: -7px; border-radius: 3px 0 0 0; }

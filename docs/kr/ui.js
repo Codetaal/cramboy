@@ -496,13 +496,145 @@
     if (!t) return;
     var sentence = current ? plain(current.text).replace(/\n+/g, ' ') : t.closest('[data-s]') ? t.closest('[data-s]').getAttribute('data-s') : '';
     var raw = t.getAttribute('data-w');
-    if (t.hasAttribute('data-g')) return openGrammar(raw, sentence, t);
+    if (t.hasAttribute('data-g')) return openPop(raw, sentence, t, true);
     if (lang === 'ja') {
       // Japanese: look up from the tapped word to the end of the phrase, so a longer word or an
       // inflected verb that spans several pieces is still found (いって|きます -> 行く).
       for (var n = t.nextSibling; n && n.nodeType === 1 && n.classList.contains('kr-w') && !n.hasAttribute('data-g'); n = n.nextSibling) raw += n.getAttribute('data-w');
     }
-    openWord(raw, sentence, t);
+    openPop(raw, sentence, t, false);
+  }
+
+  // ---------- word popover ----------
+  // Tapping a word in the subtitles opens a small bubble right above it: dictionary form, word type, a
+  // one-line meaning, Learning / Known, and More for the full sheet. The game pauses while it is open.
+  var pop = null, popPaused = false;
+  var PARTICLE_EN = { '은': 'topic', '는': 'topic', '이': 'subject', '가': 'subject', '을': 'object', '를': 'object', '의': 'of', '에': 'at, to', '에서': 'at, from',
+    '으로': 'with, toward', '로': 'with, toward', '와': 'and, with', '과': 'and, with', '도': 'also', '만': 'only', '까지': 'until', '부터': 'from', '에게': 'to (someone)',
+    '한테': 'to (someone)', '처럼': 'like', '보다': 'than', '이랑': 'and, with', '랑': 'and, with', '이나': 'or', '나': 'or', '께서': 'subject (respectful)', '아': '(calling)', '야': '(calling)', '이야': 'is' };
+  var TAGS = { 'Pokémon': 'Pokémon', 'move': 'move', 'item': 'item', 'place': 'place', 'ability': 'ability', 'type': 'type', 'nature': 'nature' };
+  // Word type, as well as the dictionary can tell (it has no parts of speech for Korean, so it's a guess).
+  function wordType(hit, l) {
+    if (!hit) return '';
+    var g = String(hit.gloss || ''), tag = /\((Pokémon|move|item|place|ability|type|nature)\)/.exec(g);
+    if (tag) return TAGS[tag[1]];
+    if (l === 'ja') {
+      var how = hit.how ? ' · ' + hit.how : '';
+      if (hit.pos === 'i') return 'i-adjective' + how;
+      if (hit.pos === 's' && /^to /i.test(g)) return 'verb (する)' + how;
+      if (hit.pos && /^[15k]/.test(hit.pos)) return 'verb' + how;
+      return /ly(;|,|$)/.test(g.split(';')[0]) ? 'adverb' : '';
+    }
+    var senses = g.split(';').map(function (x) { return x.trim(); });
+    if (/다$/.test(hit.word) && senses.some(function (x) { return /^to /i.test(x); })) return senses.some(function (x) { return /^to be /i.test(x); }) && !senses.some(function (x) { return /^to (?!be )/i.test(x); }) ? 'adjective' : 'verb';
+    var pm = /^particle (.+)$/.exec(hit.how || '');
+    if (pm) return 'noun + ' + pm[1] + (PARTICLE_EN[pm[1]] ? ' (' + PARTICLE_EN[pm[1]] + ')' : '');
+    if (/ly$/i.test(senses[0]) || /^(in|at|by|on|for|without|anyway|always|very|again|still|already|just|really|maybe)\b/i.test(senses[0])) return 'adverb';
+    return 'noun';
+  }
+  function closePop(keepPaused) {
+    if (!pop) return;
+    pop.remove(); pop = null;
+    document.removeEventListener('pointerdown', popOutside, true);
+    Array.prototype.forEach.call(document.querySelectorAll('.kr-sel'), function (n) { n.classList.remove('kr-sel'); });
+    if (popPaused && !keepPaused) { popPaused = false; resume(); }
+    // Moving to another word keeps the game paused, unless no new bubble opens (the tap became a drag).
+    if (keepPaused) setTimeout(function () { if (!pop && popPaused) { popPaused = false; resume(); } }, 500);
+  }
+  function popOutside(e) {
+    if (pop && pop.contains(e.target)) return;
+    var w = e.target.closest && e.target.closest('#kr-box .kr-w, #kr-panel .kr-w');
+    closePop(!!w);   // tapping another word moves the bubble there (its click opens the new one)
+  }
+  function openPop(raw, sentence, span, isChunk) {
+    closePop(true);
+    if (!popPaused && sheet.hidden) { pause(); popPaused = true; }
+    wlang = lang; wordBack = 'now';
+    span.classList.add('kr-sel');
+    pop = el('div', { id: 'kr-pop', className: 'fixed z-[60] w-[272px] rounded-2xl bg-white p-3 pl-3.5 text-zinc-900 shadow-xl ring-1 ring-black/5 dark:bg-zinc-800 dark:text-zinc-100 dark:ring-white/10' });
+    pop.innerHTML = '<p class="' + C.muted + '">Looking up…</p>';
+    document.body.appendChild(pop);
+    placePop(span);
+    document.addEventListener('pointerdown', popOutside, true);
+    loadDict(lang).then(function (d) {
+      if (!pop) return;
+      if (isChunk) return fillPopGrammar(raw, sentence, span, d);
+      var r = lang === 'ja' ? KRLookupJa.lookup(d, raw, 3) : null, hits = r ? r.hits : KRLookup.lookup(d, raw, 3);
+      var word = r ? r.matched : KRLookup.clean(raw);
+      noteLookup(hits && hits[0] ? hits[0].word : word, lang);
+      fillPopWord(word, raw, sentence, span, hits);
+    }).catch(function () { if (pop) pop.innerHTML = '<p class="' + C.muted + '">Dictionary not available offline yet.</p>'; });
+  }
+  function popButtons(st) {
+    var b = function (to, label, icon, on) {
+      return '<button class="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[13px] font-semibold ' + (st === to ? on : 'bg-zinc-100 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200') +
+        '" data-pop="' + to + '" aria-pressed="' + (st === to) + '">' + HI(icon, 'size-4') + label + '</button>';
+    };
+    return '<div class="mt-2.5 flex items-center gap-1.5">' + b('learning', 'Learning', 'star', 'bg-violet-600 text-white') + b('known', 'Known', 'check', 'bg-emerald-500 text-white') +
+      '<button class="ml-auto flex items-center gap-0.5 py-1.5 pl-2 text-[13px] font-semibold text-violet-600 dark:text-violet-300" data-pop="more">More' + HI('chevron-right', 'size-4') + '</button></div>';
+  }
+  function popHead(title, from, type) {
+    return '<div class="flex items-start gap-2"><div class="min-w-0 flex-1"><p class="flex flex-wrap items-baseline gap-x-1.5"><span class="kr-selectable text-[22px] font-bold leading-tight">' + esc(title) + '</span>' +
+      (from ? '<span class="text-[13px] text-zinc-500 dark:text-zinc-400">from ' + esc(from) + '</span>' : '') + '</p>' +
+      (type ? '<p class="text-xs font-semibold uppercase tracking-wider text-violet-600 dark:text-violet-300">' + esc(type) + '</p>' : '') + '</div>' +
+      '<button class="-mr-1 -mt-0.5 grid size-8 shrink-0 place-items-center rounded-full text-zinc-500 active:bg-zinc-100 dark:text-zinc-400 dark:active:bg-zinc-700" data-pop="say" aria-label="Hear it">' + HI('speaker-wave', 'size-5') + '</button></div>';
+  }
+  function fillPopWord(word, raw, sentence, span, hits) {
+    var hit = hits && hits[0], base = hit ? hit.word : word;
+    var draw = function () {
+      var meaning = hit ? String(hit.gloss).split(';').map(function (x) { return x.trim(); }).filter(Boolean).slice(0, 2).join('; ') : 'Not in the offline dictionary. Tap More for other dictionaries.';
+      pop.innerHTML = popHead(base + (hit && hit.reading ? '' : ''), base !== word ? word : '', wordType(hit, lang)) +
+        (hit && hit.reading ? '<p class="text-sm text-zinc-500 dark:text-zinc-400">' + esc(hit.reading) + '</p>' : '') +
+        '<p class="mt-0.5 truncate text-[15px] text-zinc-700 dark:text-zinc-200">' + esc(meaning) + '</p>' + popButtons(wordStatus(word, base));
+      placePop(span);
+    };
+    draw();
+    pop.onclick = function (e) {
+      var b = e.target.closest('[data-pop]'); if (!b) return;
+      var a = b.dataset.pop;
+      if (a === 'say') return speak(base, lang);
+      if (a === 'more') { closePop(); return showWordSheet(word, raw, sentence, hits); }
+      setWordStatus(word, base, hits, sentence, wordStatus(word, base) === a ? 'new' : a);
+      span = boxSpan(raw) || span; span.classList.add('kr-sel');
+      draw();
+    };
+  }
+  function fillPopGrammar(chunk, sentence, span, d) {
+    var c = GR(lang) ? GR(lang).find(d, chunk)[0] : null;
+    if (!c) { closePop(); return openGrammar(chunk, sentence, span); }
+    var x = c.patterns[0];
+    var draw = function () {
+      var parts = c.verbs.slice(0, 1).map(function (v, i) { return '<b>' + esc(v) + '</b> ' + esc((c.glosses[i] || '').split(';')[0]); })
+        .concat(c.patterns.map(function (p) { return '<b class="text-violet-700 dark:text-violet-300">' + esc(p.label) + '</b> ' + esc(p.en.split(',')[0]); }));
+      pop.innerHTML = popHead(chunk, '', 'grammar') +
+        '<p class="mt-0.5 text-[15px] leading-snug text-zinc-700 dark:text-zinc-200">' + parts.join(' <span class="text-zinc-400">+</span> ') + '</p>' + popButtons(patternState(x.id, lang));
+      placePop(span);
+    };
+    draw();
+    pop.onclick = function (e) {
+      var b = e.target.closest('[data-pop]'); if (!b) return;
+      var a = b.dataset.pop;
+      if (a === 'say') return speak(chunk, lang);
+      if (a === 'more') { closePop(); return openGrammar(chunk, sentence, null); }
+      setPatternStatus(x, chunk, sentence, patternState(x.id, lang) === a ? 'new' : a);
+      span = boxSpan(chunk) || span; span.classList.add('kr-sel');
+      draw();
+    };
+  }
+  // After a re-render of the subtitles, the tapped word's new element.
+  function boxSpan(w) { return Array.prototype.filter.call(document.querySelectorAll('#kr-box .kr-w, #kr-panel .kr-w'), function (n) { return n.getAttribute('data-w') === w; })[0] || null; }
+  // Above the word, pointing at it; below when there's no room above. Kept inside the screen.
+  function placePop(span) {
+    if (!pop) return;
+    var r = span.getBoundingClientRect(), W = pop.offsetWidth, H = pop.offsetHeight, v = vw();
+    // Vertically against the subtitle box, so the bubble never covers the other line of text.
+    var holder = span.closest('#kr-box, #kr-panel'), hr = holder ? holder.getBoundingClientRect() : r;
+    var left = Math.max(8, Math.min(v.w - W - 8, r.left + r.width / 2 - W / 2));
+    var above = hr.top - H - 10 >= 8, top = above ? hr.top - H - 10 : hr.bottom + 10;
+    pop.style.left = left + 'px'; pop.style.top = top + 'px';
+    var arrow = pop.querySelector('.kr-pop-arrow') || pop.appendChild(el('i', { className: 'kr-pop-arrow' }));
+    arrow.className = 'kr-pop-arrow ' + (above ? 'kr-down' : 'kr-up');
+    arrow.style.left = Math.max(16, Math.min(W - 16, r.left + r.width / 2 - left)) + 'px';
   }
 
   // ---------- pause / resume ----------
@@ -691,6 +823,7 @@
       .catch(function () { showWord(word, raw, sentence, null); });
   }
 
+  function showWordSheet(word, raw, sentence, hits) { wordBack = menuTab || 'now'; showWord(word, raw, sentence, hits); }
   function showWord(word, raw, sentence, hits) {
     var savedNow = isSaved(word), OUT = HI('arrow-top-right-on-square', 'size-4 text-zinc-400');
     var base = hits && hits[0] ? hits[0].word : word, knownNow = !savedNow && !!(known[wlang][word] || known[wlang][base]);
@@ -739,28 +872,48 @@
     if (sentence) card.querySelector('[data-act=say-sentence]').onclick = function () { speak(sentence, wlang); };
     Array.prototype.forEach.call(card.querySelectorAll('[data-status]'), function (btn) {
       btn.onclick = function () {
-        var to = btn.dataset.status;
-        if (to === status) return;
-        var k = known[wlang];
-        // Learning and Known exclude each other: a word you know leaves your saved list, and back.
-        if (to !== 'learning' && isSaved(word)) {
-          saved = saved.filter(function (x) { var hit = x.kind !== 'g' && (x.w === word || x.base === word || x.w === base || x.base === base); if (hit) dropShot(x.t); return !hit; });
-          persist(); updatePill();
-        }
-        if (to !== 'known') { delete k[word]; delete k[base]; }
-        if (to === 'learning') {
-          var t = Date.now();
-          saved.push({ w: word, base: base, reading: hits && hits[0] ? hits[0].reading || '' : '', gloss: hits && hits[0] ? hits[0].gloss : '', s: sentence || '', t: t, lang: wlang,
-            place: place, game: game.name, due: t, iv: 0, ease: EASE, reps: 0 });
-          snapshot(t);
-          persist(); updatePill();
-          toast('Saved: ' + base, 'star');
-        } else if (to === 'known') { k[word] = 1; k[base] = 1; toast('Known: ' + base, 'ok'); }
-        else toast('Marked as new: ' + base, 'info');
-        persistKnown();
+        if (btn.dataset.status === status) return;
+        setWordStatus(word, base, hits, sentence, btn.dataset.status);
         showWord(word, raw, sentence, hits);
       };
     });
+  }
+  // New / Learning / Known for a word (in wlang). Learning and Known exclude each other: a word you know
+  // leaves your saved list, and back.
+  function wordStatus(word, base) { return isSaved(word) ? 'learning' : (known[wlang][word] || known[wlang][base]) ? 'known' : 'new'; }
+  function setWordStatus(word, base, hits, sentence, to) {
+    var k = known[wlang];
+    if (to !== 'learning' && isSaved(word)) {
+      saved = saved.filter(function (x) { var hit = x.kind !== 'g' && (x.w === word || x.base === word || x.w === base || x.base === base); if (hit) dropShot(x.t); return !hit; });
+      persist(); updatePill();
+    }
+    if (to !== 'known') { delete k[word]; delete k[base]; }
+    if (to === 'learning') {
+      var t = Date.now();
+      saved.push({ w: word, base: base, reading: hits && hits[0] ? hits[0].reading || '' : '', gloss: hits && hits[0] ? hits[0].gloss : '', s: sentence || '', t: t, lang: wlang,
+        place: place, game: game.name, due: t, iv: 0, ease: EASE, reps: 0 });
+      snapshot(t);
+      persist(); updatePill();
+      toast('Saved: ' + base, 'star');
+    } else if (to === 'known') { k[word] = 1; k[base] = 1; toast('Known: ' + base, 'ok'); }
+    else toast('Marked as new: ' + base, 'info');
+    persistKnown();
+    if (current) renderPanel();
+  }
+  function setPatternStatus(x, chunk, sentence, to) {
+    var id = x.id, k = known[wlang];
+    saved = saved.filter(function (y) { var hit = y.kind === 'g' && y.g === id; if (hit) dropShot(y.t); return !hit; });
+    delete k['g:' + id];
+    if (to === 'learning') {
+      var t = Date.now();
+      saved.push({ kind: 'g', g: id, w: chunk || '', base: x.label, reading: '', gloss: x.en, ex: x.ex, s: sentence || '', t: t, lang: wlang,
+        place: place, game: game.name, due: t, iv: 0, ease: EASE, reps: 0 });
+      if (chunk) snapshot(t);
+      toast('Saved: ' + x.label, 'star');
+    } else if (to === 'known') { k['g:' + id] = 1; toast('Known: ' + x.label, 'ok'); }
+    else toast('Marked as new: ' + x.label, 'info');
+    persist(); persistKnown(); updatePill();
+    if (current) renderPanel();
   }
 
   // ---------- grammar sheet ----------
@@ -824,20 +977,9 @@
     Array.prototype.forEach.call(card.querySelectorAll('[data-verb]'), function (r) { r.onclick = function () { openWord(r.dataset.verb, sentence, null, wlang); }; });
     Array.prototype.forEach.call(card.querySelectorAll('[data-gstatus]'), function (btn) {
       btn.onclick = function () {
-        var id = btn.dataset.gid, to = btn.dataset.gstatus, x = GR(wlang).byId(id), k = known[wlang];
+        var id = btn.dataset.gid, to = btn.dataset.gstatus;
         if (to === patternState(id, wlang)) return;
-        saved = saved.filter(function (y) { var hit = y.kind === 'g' && y.g === id; if (hit) dropShot(y.t); return !hit; });
-        delete k['g:' + id];
-        if (to === 'learning') {
-          var t = Date.now();
-          saved.push({ kind: 'g', g: id, w: chunk || '', base: x.label, reading: '', gloss: x.en, ex: x.ex, s: sentence || '', t: t, lang: wlang,
-            place: place, game: game.name, due: t, iv: 0, ease: EASE, reps: 0 });
-          if (chunk) snapshot(t);
-          toast('Saved: ' + x.label, 'star');
-        } else if (to === 'known') { k['g:' + id] = 1; toast('Known: ' + x.label, 'ok'); }
-        else toast('Marked as new: ' + x.label, 'info');
-        persist(); persistKnown(); updatePill();
-        if (current) renderPanel();
+        setPatternStatus(GR(wlang).byId(id), chunk, sentence, to);
         showGrammar(chunk, sentence, d, onlyId);
       };
     });
