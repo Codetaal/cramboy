@@ -66,12 +66,7 @@
     document.body.appendChild(sheet);
     // The emulator's window-level touch handler swallows every touch while the game runs.
     // Stop our touches from reaching it so taps and scrolling work here.
-    [panel, box, pill, sheet].forEach(function (n) {
-      ['touchstart', 'touchmove', 'touchend', 'touchcancel'].forEach(function (t) {
-        n.addEventListener(t, function (e) { e.stopPropagation(); }, { passive: true });
-      });
-      n.addEventListener('mousedown', function (e) { e.stopPropagation(); });
-    });
+    [panel, box, pill, sheet].forEach(shield);
     textBox.addEventListener('click', onWordTap);
     boxText.addEventListener('click', onWordTap);
     dragBox(boxGrip, 'move'); dragBox(boxSize, 'size');
@@ -93,6 +88,14 @@
     krLayout();
   }
 
+  // The emulator's window-level touch handler swallows every touch while the game runs (no clicks follow
+  // on phones). Elements of ours that take taps keep their touches to themselves.
+  function shield(n) {
+    ['touchstart', 'touchmove', 'touchend', 'touchcancel'].forEach(function (t) {
+      n.addEventListener(t, function (e) { e.stopPropagation(); }, { passive: true });
+    });
+    n.addEventListener('mousedown', function (e) { e.stopPropagation(); });
+  }
   function el(tag, props) { var n = document.createElement(tag); for (var k in props) n[k] = props[k]; return n; }
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function plain(s) { return s.replace(/​/g, '').replace(/·+/g, '…'); }
@@ -553,6 +556,7 @@
     span.classList.add('kr-sel');
     pop = el('div', { id: 'kr-pop', className: 'fixed z-[60] w-[272px] rounded-2xl bg-white p-3 pl-3.5 text-zinc-900 shadow-xl ring-1 ring-black/5 dark:bg-zinc-800 dark:text-zinc-100 dark:ring-white/10' });
     pop.innerHTML = '<p class="' + C.muted + '">Looking up…</p>';
+    shield(pop);
     document.body.appendChild(pop);
     placePop(span);
     document.addEventListener('pointerdown', popOutside, true);
