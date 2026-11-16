@@ -248,7 +248,7 @@
     if (dicts[l]) return Promise.resolve(dicts[l]);
     if (!dictLoading[l]) {
       dictLoading[l] = fetch(BASE + LANG[l].file).then(function (r) { return r.json(); })
-        .then(function (d) { dicts[l] = d; baseOf.clear(); if (current) renderPanel(); return d; })   // re-split words / mark known words once the dictionary is there
+        .then(function (d) { dicts[l] = d; baseOf.clear(); if (current) renderPanel(); if (l === 'ko') loadKoPos(); return d; })   // re-split words / mark known words once the dictionary is there
         .catch(function (e) { dictLoading[l] = null; throw e; });
     }
     return dictLoading[l];
@@ -516,7 +516,17 @@
     '으로': 'with, toward', '로': 'with, toward', '와': 'and, with', '과': 'and, with', '도': 'also', '만': 'only', '까지': 'until', '부터': 'from', '에게': 'to (someone)',
     '한테': 'to (someone)', '처럼': 'like', '보다': 'than', '이랑': 'and, with', '랑': 'and, with', '이나': 'or', '나': 'or', '께서': 'subject (respectful)', '아': '(calling)', '야': '(calling)', '이야': 'is' };
   var TAGS = { 'Pokémon': 'Pokémon', 'move': 'move', 'item': 'item', 'place': 'place', 'ability': 'ability', 'type': 'type', 'nature': 'nature' };
-  // Word type, as well as the dictionary can tell (it has no parts of speech for Korean, so it's a guess).
+  // Korean word types, tagged once with the ko-dic morphological analyzer (tools/tag_ko_pos.js). Nouns are
+  // left out of the file: a dictionary word that isn't in it is a noun.
+  var koPos = null, KO_POS = { x: 'expression', v: 'verb', a: 'adjective', d: 'adverb', p: 'pronoun', u: 'number', m: 'determiner', i: 'interjection' };
+  function loadKoPos() {
+    if (koPos) return;
+    koPos = {};
+    fetch(BASE + 'ko-pos.json').then(function (r) { return r.json(); }).then(function (j) {
+      var m = {}; for (var t in j) j[t].split('|').forEach(function (w) { m[w] = t; }); koPos = m;
+    }).catch(function () { koPos = null; });
+  }
+  // Word type: Japanese from the dictionary's own tags, Korean from the analyzer's tags (a guess while they load).
   function wordType(hit, l) {
     if (!hit) return '';
     var g = String(hit.gloss || ''), tag = /\((Pokémon|move|item|place|ability|type|nature)\)/.exec(g);
@@ -529,6 +539,8 @@
       return /ly(;|,|$)/.test(g.split(';')[0]) ? 'adverb' : '';
     }
     var senses = g.split(';').map(function (x) { return x.trim(); });
+    var pm0 = /^particle (.+)$/.exec(hit.how || ''), withP = function (t) { return pm0 ? t + ' + ' + pm0[1] + (PARTICLE_EN[pm0[1]] ? ' (' + PARTICLE_EN[pm0[1]] + ')' : '') : t; };
+    if (koPos && Object.keys(koPos).length) return withP(KO_POS[koPos[hit.word]] || (/다$/.test(hit.word) ? 'verb' : 'noun'));
     if (/다$/.test(hit.word) && senses.some(function (x) { return /^to /i.test(x); })) return senses.some(function (x) { return /^to be /i.test(x); }) && !senses.some(function (x) { return /^to (?!be )/i.test(x); }) ? 'adjective' : 'verb';
     var pm = /^particle (.+)$/.exec(hit.how || '');
     if (pm) return 'noun + ' + pm[1] + (PARTICLE_EN[pm[1]] ? ' (' + PARTICLE_EN[pm[1]] + ')' : '');
@@ -586,7 +598,11 @@
   function fillPopWord(word, raw, sentence, span, hits) {
     var hit = hits && hits[0], base = hit ? hit.word : word;
     var draw = function () {
-      var meaning = hit ? String(hit.gloss).split(';').map(function (x) { return x.trim(); }).filter(Boolean).slice(0, 2).join('; ') : 'Not in the offline dictionary. Tap More for other dictionaries.';
+      var senses = hit ? String(hit.gloss).split(';').map(function (x) { return x.trim(); }).filter(Boolean) : [];
+      // A verb or adjective: its "to …" senses first (the dictionary lists 보다 as "than; …; To see").
+      var toS = senses.filter(function (x) { return /^to /i.test(x); }).sort(function (a, b) { return a.length - b.length; });
+      if (hit && /다$/.test(hit.word) && toS.length) senses = toS.concat(senses.filter(function (x) { return toS.indexOf(x) < 0; }));
+      var meaning = hit ? senses.slice(0, 2).join('; ') : 'Not in the offline dictionary. Tap More for other dictionaries.';
       pop.innerHTML = popHead(base + (hit && hit.reading ? '' : ''), base !== word ? word : '', wordType(hit, lang)) +
         (hit && hit.reading ? '<p class="text-sm text-zinc-500 dark:text-zinc-400">' + esc(hit.reading) + '</p>' : '') +
         '<p class="mt-0.5 truncate text-[15px] text-zinc-700 dark:text-zinc-200">' + esc(meaning) + '</p>' + popButtons(wordStatus(word, base));

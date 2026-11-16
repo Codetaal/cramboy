@@ -7,6 +7,7 @@
     "watch:css": "tailwindcss -c tailwind.config.js -i docs/tw.in.css -o docs/tw.css --watch"
   },
   "devDependencies": {
+    "lindera-wasm-ko-dic-nodejs": "^2.3.4",
     "tailwindcss": "3.4.14"
   }
 }
