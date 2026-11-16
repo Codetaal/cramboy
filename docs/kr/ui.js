@@ -598,11 +598,7 @@
   function fillPopWord(word, raw, sentence, span, hits) {
     var hit = hits && hits[0], base = hit ? hit.word : word;
     var draw = function () {
-      var senses = hit ? String(hit.gloss).split(';').map(function (x) { return x.trim(); }).filter(Boolean) : [];
-      // A verb or adjective: its "to …" senses first (the dictionary lists 보다 as "than; …; To see").
-      var toS = senses.filter(function (x) { return /^to /i.test(x); }).sort(function (a, b) { return a.length - b.length; });
-      if (hit && /다$/.test(hit.word) && toS.length) senses = toS.concat(senses.filter(function (x) { return toS.indexOf(x) < 0; }));
-      var meaning = hit ? senses.slice(0, 2).join('; ') : 'Not in the offline dictionary. Tap More for other dictionaries.';
+      var meaning = hit ? verbFirst(hit).split('; ').slice(0, 2).join('; ') : 'Not in the offline dictionary. Tap More for other dictionaries.';
       pop.innerHTML = popHead(base + (hit && hit.reading ? '' : ''), base !== word ? word : '', wordType(hit, lang)) +
         (hit && hit.reading ? '<p class="text-sm text-zinc-500 dark:text-zinc-400">' + esc(hit.reading) + '</p>' : '') +
         '<p class="mt-0.5 truncate text-[15px] text-zinc-700 dark:text-zinc-200">' + esc(meaning) + '</p>' + popButtons(wordStatus(word, base));
@@ -843,6 +839,13 @@
       .catch(function () { showWord(word, raw, sentence, null); });
   }
 
+  // A verb's or adjective's "to …" senses first (the dictionary lists 보다 as "than; …; To see").
+  function verbFirst(hit) {
+    var senses = String(hit.gloss || '').split(';').map(function (x) { return x.trim(); }).filter(Boolean);
+    var toS = senses.filter(function (x) { return /^to /i.test(x); }).sort(function (a, b) { return a.length - b.length; });
+    if (/다$/.test(hit.word) && toS.length) senses = toS.concat(senses.filter(function (x) { return toS.indexOf(x) < 0; }));
+    return senses.join('; ');
+  }
   function showWordSheet(word, raw, sentence, hits) { wordBack = menuTab || 'now'; showWord(word, raw, sentence, hits); }
   function showWord(word, raw, sentence, hits) {
     var savedNow = isSaved(word), OUT = HI('arrow-top-right-on-square', 'size-4 text-zinc-400');
@@ -857,6 +860,7 @@
       HI('chevron-left', 'size-5') + TAB_LABEL[wordBack] + '</button>' +
       '<div class="flex items-center gap-1"><div class="kr-selectable min-w-0 break-keep text-[30px] font-bold">' + esc(word) + '</div>' +
       '<button class="' + SPEAK_BTN + '" data-act="say-word" aria-label="Hear the word">' + HI('speaker-wave', 'size-6') + '</button></div>' +
+      (wordType(hits && hits[0], wlang) ? '<p class="-mt-0.5 text-xs font-semibold uppercase tracking-wider text-violet-600 dark:text-violet-300">' + esc(wordType(hits[0], wlang)) + '</p>' : '') +
       '<div class="mt-2 grid grid-cols-3 gap-1 rounded-xl bg-zinc-200/70 p-1 dark:bg-zinc-800" role="group" aria-label="How well you know this word">' +
       segBtn('new', 'New', '', 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-white') +
       segBtn('learning', 'Learning', 'star', 'bg-violet-600 text-white shadow-sm') +
@@ -868,8 +872,9 @@
       hits.forEach(function (x) {
         h += '<div class="px-4 py-3"><p class="text-lg font-bold"><span class="kr-selectable">' + esc(x.word) + '</span>' +
           (x.reading ? '<span class="kr-selectable ml-2 text-base font-normal text-zinc-500 dark:text-zinc-400">' + esc(x.reading) + '</span>' : '') +
-          (x.how ? '<span class="' + C.badge + '">' + esc(x.how) + '</span>' : '') + '</p>' +
-          '<p class="mt-0.5 text-zinc-600 dark:text-zinc-300">' + esc(x.gloss) + '</p></div>';
+          // Korean: the type line above says it already ("verb", "noun + 를"); only flag a closest-match guess.
+          (x.how && (wlang === 'ja' || x.how === 'prefix') ? '<span class="' + C.badge + '">' + esc(x.how === 'prefix' ? 'closest match' : x.how) + '</span>' : '') + '</p>' +
+          '<p class="mt-0.5 text-zinc-600 dark:text-zinc-300">' + esc(verbFirst(x)) + '</p></div>';
       });
       h += '</div>';
     }
