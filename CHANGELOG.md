@@ -2,6 +2,10 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.18.2
+- Korean word types come from a real morphological analyzer (ko-dic, run once when the dictionary is built), so adverbs, adjectives, pronouns and expressions are labelled correctly instead of guessed.
+- The word type also shows in the full word sheet (More); verbs show their "to …" meanings first (보다: "to see", not "than").
+
 ## 0.18.1
 - Fix: the word popover's Learning, Known and More buttons didn't respond to touch on phones.
 
