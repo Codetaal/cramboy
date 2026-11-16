@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.17.1
+- Grammar flashcards: the back shows how the marked words are built (verb + pattern + ending, e.g. 써보면 = 쓰다 + -아/어 보다 + -면), with the pattern you're learning highlighted.
+
 ## 0.17.0
 - Japanese grammar patterns: phrases like "つかって みれば" (〜てみる) or "つかまえる ことが できる" (〜ことができる) are one tappable chunk, explained like the Korean ones, and can be learned and reviewed.
 - Kana that can be two verbs (まって: 舞う or 待つ) shows both in the grammar sheet.
