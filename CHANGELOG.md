@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.18.0
+- Word popover: tapping a word in the subtitles opens a small bubble above the box with the dictionary form, word type (noun + particle, verb, adjective, adverb, Pokémon, move…), a one-line meaning, Learning / Known and More for the full sheet. Grammar chunks get a compact breakdown. The game pauses while it is open.
+
 ## 0.17.1
 - Grammar flashcards: the back shows how the marked words are built (verb + pattern + ending, e.g. 써보면 = 쓰다 + -아/어 보다 + -면), with the pattern you're learning highlighted.
 
