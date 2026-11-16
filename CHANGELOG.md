@@ -2,6 +2,11 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.19.0
+- The subtitle box scrolls: swipe down inside it to read earlier lines of the message and the last few messages (dimmed). Words there can be tapped too.
+- Text on the Now tab can be selected and copied (press and hold).
+- Flashcards keep only the sentence the word was in instead of the whole message, with the screenshot of the page it was on, also when the word is saved later from the Study screen. Older cards are trimmed when shown.
+
 ## 0.18.3
 - Korean irregular verbs are recognised (들으면 -> 듣다, 몰라 -> 모르다, 추워서 -> 춥다, 썼다 -> 쓰다), using a table of forms checked with a morphological analyzer when the dictionary is built. Known-word underlines, word counts and saved words benefit too.
 - The word bubble and sheet show how a verb form is built: 썼다 = 쓰 + 었다.
