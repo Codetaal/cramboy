@@ -2,6 +2,10 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.18.3
+- Korean irregular verbs are recognised (들으면 -> 듣다, 몰라 -> 모르다, 추워서 -> 춥다, 썼다 -> 쓰다), using a table of forms checked with a morphological analyzer when the dictionary is built. Known-word underlines, word counts and saved words benefit too.
+- The word bubble and sheet show how a verb form is built: 썼다 = 쓰 + 었다.
+
 ## 0.18.2
 - Korean word types come from a real morphological analyzer (ko-dic, run once when the dictionary is built), so adverbs, adjectives, pronouns and expressions are labelled correctly instead of guessed.
 - The word type also shows in the full word sheet (More); verbs show their "to …" meanings first (보다: "to see", not "than").
