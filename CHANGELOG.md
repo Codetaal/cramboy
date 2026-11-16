@@ -2,6 +2,10 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.19.1
+- Rare word label: the word bubble and sheet mark words that are uncommon in everyday Korean or Japanese and rare in the game you're playing, so you can skip them as flashcards. Pokémon terms and words the game keeps using are never rare.
+- Korean particles 에는, 에도 and 에만 are recognised.
+
 ## 0.19.0
 - The subtitle box scrolls: swipe down inside it to read earlier lines of the message and the last few messages (dimmed). Words there can be tapped too.
 - Text on the Now tab can be selected and copied (press and hold).
