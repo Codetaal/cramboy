@@ -965,16 +965,17 @@
       whereHTML(x.place, x.game, 'mt-1');
     var foot;
     if (!review.open) {
-      foot = '<p class="mb-3 text-center ' + C.muted + '">What does ' + (x.kind === 'g' ? 'the marked grammar' : sentence ? 'the marked word' : 'this word') + ' mean?</p>' +
+      foot = '<p class="mb-3 text-center ' + C.muted + '">' + (x.kind === 'g' ? 'What does “' + esc(x.w || x.base) + '” mean? Think of the verb and the grammar.' : 'What does ' + (sentence ? 'the marked word' : 'this word') + ' mean?') + '</p>' +
         '<button class="' + C.primary + '" data-act="rv-show">Show meaning</button>';
     } else {
       var gotDays = nextIv(x), becomesKnown = gotDays >= KNOWN_DAYS;
-      h += '<div class="mt-5 ' + C.card + '"><div class="flex items-center gap-1"><p class="kr-selectable min-w-0 flex-1 text-3xl font-bold">' + esc(x.base || x.w) +
+      if (x.kind === 'g') h += grammarBackHTML(x);
+      else h += '<div class="mt-5 ' + C.card + '"><div class="flex items-center gap-1"><p class="kr-selectable min-w-0 flex-1 text-3xl font-bold">' + esc(x.base || x.w) +
         (x.reading ? '<span class="ml-2 text-base font-normal text-zinc-500 dark:text-zinc-400">' + esc(x.reading) + '</span>' : '') + '</p>' +
         '<button class="' + SPEAK_BTN + ' -mr-2" data-act="rv-say-w" aria-label="Hear the word">' + HI('speaker-wave', 'size-6') + '</button></div>' +
         '<p class="mt-0.5 text-lg text-zinc-700 dark:text-zinc-200">' + esc(x.gloss || '—') + '</p>' +
         (x.kind === 'g' && x.ex ? '<p class="mt-1 text-sm ' + C.muted + '">' + esc(x.ex) + '</p>' : '') +
-        '<button class="mt-1 text-sm font-medium text-zinc-500 underline decoration-zinc-300 underline-offset-2 active:opacity-60 dark:text-zinc-400 dark:decoration-zinc-600" data-act="rv-more">More about this ' + (x.kind === 'g' ? 'pattern' : 'word') + '</button></div>';
+        '<button class="mt-1 text-sm font-medium text-zinc-500 underline decoration-zinc-300 underline-offset-2 active:opacity-60 dark:text-zinc-400 dark:decoration-zinc-600" data-act="rv-more">More about this word</button></div>';
       foot = '<div class="grid grid-cols-2 gap-2">' +
         '<button class="' + C.btn + ' flex-col !gap-0 !py-2.5" data-act="rv-again">Again<span class="text-xs font-normal text-zinc-500 dark:text-zinc-400">soon</span></button>' +
         '<button class="' + C.primary + ' flex-col !gap-0 !py-2.5" data-act="rv-good">Got it' +
@@ -984,8 +985,30 @@
     // The answer area sits at the bottom of the screen.
     return h + '<div class="mt-auto pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-4">' + foot + '</div>';
   }
+  // Back of a grammar card: how the marked words are built (verb + pattern + ending), the pattern you are
+  // learning highlighted. 써보면 = 쓰다 (to use) + -아/어 보다 (try doing) + -면 (if).
+  function grammarBackHTML(x) {
+    var l = x.lang || 'ko', g = GR(l), d = dicts[l];
+    var c = x.w && g && d ? g.find(d, x.w)[0] : null;
+    var part = function (label, word, mean, main) {
+      return '<div class="flex items-baseline gap-3 py-1.5' + (main ? ' -mx-2 rounded-lg bg-violet-100 px-2 dark:bg-violet-500/20' : '') + '">' +
+        '<span class="w-14 shrink-0 text-[11px] font-semibold uppercase tracking-wider ' + (main ? 'text-violet-700 dark:text-violet-300' : 'text-zinc-400') + '">' + label + '</span>' +
+        '<span class="min-w-0"><span class="font-bold' + (main ? ' text-violet-900 dark:text-white' : '') + '">' + esc(word) + '</span> <span class="text-zinc-600 dark:text-zinc-300">' + esc(mean) + '</span></span></div>';
+    };
+    var h = '<div class="mt-5 ' + C.card + '"><div class="flex items-center gap-1"><p class="kr-selectable min-w-0 flex-1 text-3xl font-bold">' + esc(x.w || x.base) + '</p>' +
+      '<button class="' + SPEAK_BTN + ' -mr-2" data-act="rv-say-w" aria-label="Hear it">' + HI('speaker-wave', 'size-6') + '</button></div><div class="mt-2">';
+    if (c) {
+      c.verbs.forEach(function (v, i) { h += part(i ? 'or' : 'verb', v, c.glosses[i] || ''); });
+      c.patterns.forEach(function (p) { h += part('pattern', p.label, p.en, p.id === x.g); });
+      if (c.ending) h += part('ending', c.ending.form, c.ending.en);
+    } else h += part('pattern', x.base, x.gloss, true);
+    return h + '</div>' + (x.ex ? '<p class="mt-2 text-sm ' + C.muted + '">Another example: ' + esc(x.ex) + '</p>' : '') +
+      '<button class="mt-1 text-sm font-medium text-zinc-500 underline decoration-zinc-300 underline-offset-2 active:opacity-60 dark:text-zinc-400 dark:decoration-zinc-600" data-act="rv-more">More about this pattern</button></div>';
+  }
   function openReview() {
     menuTab = 'review';
+    var rx0 = review && reviewWord();
+    if (rx0 && rx0.kind === 'g' && !dicts[rx0.lang || 'ko']) { loadDict(rx0.lang || 'ko').then(function () { if (card.querySelector('[data-act=rv-show], [data-act=rv-good]')) openReview(); }).catch(function () {}); }
     openSheet(reviewHTML(), false, true);
     // The extra bottom padding openSheet adds isn't needed here.
     if (card.lastChild && !card.lastChild.childNodes.length) card.removeChild(card.lastChild);
