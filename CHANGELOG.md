@@ -2,6 +2,12 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.16.0
+- Korean grammar patterns: phrases like "알 수 있단다" or "써보면" are one tappable chunk in the subtitles instead of separate words.
+- Tapping a chunk explains the verb (알다 = to know), the pattern (-(으)ㄹ 수 있다 = can) and the ending (-단다), with the sentence.
+- Patterns can be learned like words: they show in Words with a Grammar badge, come back in Review, and Progress lists the grammar met in each game.
+- Pattern pieces like 수, 것 and 거 no longer count as words to learn.
+
 ## 0.15.7
 - Review cards and the word sheet: the target word in the sentence has a clearer highlight (bold purple), also in dark mode.
 
