@@ -56,6 +56,27 @@ r.scan(u32, u16);
 u32[PRINTER] = 0x02400000 + data2 + 6 * 2;
 res = r.scan(u32, u16);
 assert.strictEqual(res.active.text.slice(0, res.active.shown), '야생 피카츄');
+// Gen 4 text printers (cursor word followed by a Window pointer): a top-screen printer waiting on a page
+// counts straight away (resuming mid-dialogue); a touch-screen one (the A button's "조사한다") never does.
+{
+  const r2 = new Reader(T);
+  const zero = () => { u32.fill(0); };
+  zero();
+  const win = (addr, bg) => { u32[addr >> 2] = 0x02010000; u32[(addr >> 2) + 1] = bg | (2 << 8) | (19 << 16) | (27 << 24); u32[(addr >> 2) + 2] = 4; return 0x02000000 + addr; };
+  const d1 = putString(0x240000, encode('TV가 있다...'.replace('TV', '티비')));
+  const top = win(0x250000, 3);
+  u32[0x260000 >> 2] = 0x02000000 + d1 + 3 * 2; u32[(0x260000 >> 2) + 1] = top;
+  let r1 = r2.scan(u32, u16); r1 = r2.scan(u32, u16);
+  assert(r1.active && r1.active.shown === 3, 'top-screen printer waiting on a page is dialogue');
+  zero();
+  const r3 = new Reader(T);
+  const d2 = putString(0x240000, encode('조사한다'));
+  const sub = win(0x250000, 5);
+  u32[0x260000 >> 2] = 0x02000000 + d2 + 1 * 2; u32[(0x260000 >> 2) + 1] = sub;
+  r3.scan(u32, u16); const r4 = r3.scan(u32, u16);
+  assert.strictEqual(r4.active, null, 'touch-screen label printer is not dialogue');
+  zero();
+}
 // Timing for one scan
 const t0 = process.hrtime.bigint(); for (let k = 0; k < 20; k++) r.scan(u32, u16); 
 console.log('scan ms:', Number(process.hrtime.bigint() - t0) / 20 / 1e6);

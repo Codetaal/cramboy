@@ -218,8 +218,8 @@
     return result;
   };
 
-  // Is the word at u32[i] the cursor of a Gen 4 TextPrinter? Its next word points to a Window:
-  // {bgConfig*, u8 bgId, tilemapLeft, tilemapTop, width, height, ...} on the 32x24-tile screen.
+  // Is the word at u32[i] the cursor of a Gen 4 TextPrinter on the top screen? Its next word points to a
+  // Window: {bgConfig*, u8 bgId, tilemapLeft, tilemapTop, width, height, ...} on the 32x24-tile screen.
   // A freed heap block (NNS "RF" header 0x20 bytes before the printer) is a leftover, not a printer.
   function isG4Printer(u32, i) {
     var w = u32[i + 1];
@@ -228,7 +228,9 @@
     if (wi + 2 >= RAM_WORDS || (u32[wi] & 0xFF000000) !== 0x02000000) return false;
     var b = u32[wi + 1], bg = b & 0xFF, left = (b >>> 8) & 0xFF, top = (b >>> 16) & 0xFF, width = b >>> 24;
     var height = u32[wi + 2] & 0xFF;
-    if (bg > 7 || !width || !height || left + width > 32 || top + height > 24) return false;
+    // bg 0-3 is the top screen, 4-7 the touch screen. Dialogue is on the top screen; the touch screen's
+    // printed labels ("조사한다" on the A button) are not dialogue.
+    if (bg > 3 || !width || !height || left + width > 32 || top + height > 24) return false;
     if (i >= 8 && (u32[i - 8] & 0xFFFF) === 0x4652) return false;
     return true;
   }
