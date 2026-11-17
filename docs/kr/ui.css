@@ -179,3 +179,9 @@
   border-bottom: calc(4.5px * var(--k, 1.46)) solid var(--f-text); opacity: 0; transition: opacity 0.2s;
 }
 #kr-box.kr-more-up .kr-box-up { opacity: 0.55; }
+/* While you're scrolled back, earlier text fades out at the top edge (as in 0.19.2). At the bottom, where
+   the two current lines are, nothing is faded. */
+#kr-box.kr-back .kr-box-text {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 calc(10px * var(--k, 1.46)));
+          mask-image: linear-gradient(to bottom, transparent 0, #000 calc(10px * var(--k, 1.46)));
+}

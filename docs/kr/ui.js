@@ -512,7 +512,10 @@
   // next message, or you scroll back to the bottom).
   var readBack = false, boxTouchAt = 0;
   function toBottom() { if (!readBack) boxText.scrollTop = boxText.scrollHeight; boxHints(); }
-  function boxHints() { box.classList.toggle('kr-more-up', boxText.scrollTop > 2); }
+  function boxHints() {
+    box.classList.toggle('kr-more-up', boxText.scrollTop > 2);
+    box.classList.toggle('kr-back', boxText.scrollTop > 2 && boxText.scrollTop + boxText.clientHeight < boxText.scrollHeight - 4);
+  }
   ['touchstart', 'touchmove', 'wheel', 'mousedown'].forEach(function (t) {
     boxText.addEventListener(t, function () { boxTouchAt = performance.now(); }, { passive: true });
   });
