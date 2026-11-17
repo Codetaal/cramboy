@@ -2,6 +2,10 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.19.2
+- Fix: after restarting the app, the subtitle box stayed on the first line of a long message instead of showing the latest lines.
+- The subtitle box shows when there's earlier text to scroll to: the top line fades out and a small caret appears in the corner.
+
 ## 0.19.1
 - Rare word label: the word bubble and sheet mark words that are uncommon in everyday Korean or Japanese and rare in the game you're playing, so you can skip them as flashcards. Pokémon terms and words the game keeps using are never rare.
 - Korean particles 에는, 에도 and 에만 are recognised.
