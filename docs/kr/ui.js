@@ -537,7 +537,8 @@
     var full = holder ? holder.getAttribute('data-s') : current ? plain(current.text).replace(/\n+/g, ' ') : '';
     // Only the sentence the word is in (a message can be several sentences over several pages).
     var prev = t.closest('.kr-prev');
-    var sentence = pickSentence(full, raw, prev ? prev.textContent : current && !t.closest('.kr-old') ? currentPage() : '');
+    // hint: the two lines the game's box shows (a "page" can scroll on for many lines)
+    var sentence = pickSentence(full, raw, prev ? prev.textContent : current && !t.closest('.kr-old') ? currentPage().split('\n').slice(-2).join(' ') : '');
     if (t.hasAttribute('data-g')) return openPop(raw, sentence, t, true);
     if (lang === 'ja') {
       // Japanese: look up from the tapped word to the end of the phrase, so a longer word or an
@@ -558,7 +559,10 @@
     var h = hint ? sq(hint.replace(/\n+/g, ' ')) : '';
     var onPage = h ? cands.filter(function (x) { var q = sq(x); return h.indexOf(q.slice(0, Math.min(6, q.length))) >= 0 || q.indexOf(h.slice(0, Math.min(6, h.length))) >= 0; }) : [];
     var pick = onPage[0] || cands[cands.length - 1] || '';
-    if (!pick || pick.length > 90) pick = hint ? hint.replace(/\s+/g, ' ').trim() : pick || full;
+    // Game text often runs on without . ! ? over several pages ("드디어 내려왔구나 조금 전까지 친구 …"): when the
+    // "sentence" is much longer than the page that was on screen, the page is the better card.
+    var page = hint ? hint.replace(/\s+/g, ' ').trim() : '';
+    if (!pick || pick.length > 90 || (page && pick.length > page.length * 1.5 && sq(pick).indexOf(sq(page)) >= 0)) pick = page || pick || full;
     return pick;
   }
 
