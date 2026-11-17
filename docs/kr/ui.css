@@ -184,10 +184,3 @@
   border-bottom: calc(4.5px * var(--k, 1.46)) solid var(--f-text); opacity: 0; transition: opacity 0.2s;
 }
 #kr-box.kr-more-up .kr-box-up { opacity: 0.4; }
-.kr-box-latest {
-  position: absolute; right: calc(8px * var(--k, 1.46) + 10px); bottom: calc(18px * var(--k, 1.46));
-  width: 28px; height: 28px; border-radius: 999px; display: none; align-items: center; justify-content: center;
-  background: #7c3aed; color: #fff; box-shadow: 0 2px 8px rgba(76, 29, 149, 0.35); border: 0; padding: 0;
-}
-#kr-box.kr-reading .kr-box-latest { display: flex; }
-#kr-box.kr-reading .kr-box-arrow { visibility: hidden !important; }
