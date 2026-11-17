@@ -179,7 +179,9 @@
         if (rec.cur0 < 0) rec.cur0 = s2.cursor;
         else if (s2.cursor !== rec.cur0) rec.moved = true;
       }
-      if (s2.cursor >= 0 && (rec.moved || s2.cursor >= s2.size - 1)) {
+      // A Gen 4 text printer's own cursor is dialogue too, even if it hasn't moved since we first saw it:
+      // after resuming, the game can be waiting on a page (▼) and only moves on when you press A.
+      if (s2.cursor >= 0 && (rec.moved || s2.cursor >= s2.size - 1 || s2.pcursor > 0)) {
         // Prefer the most recently created string that is being printed. Strings created at the
         // same moment are usually two copies of one message (Gen 5 keeps a raw and a printed copy,
         // and only the printed one's pointer is the live cursor): take the one printed furthest.
