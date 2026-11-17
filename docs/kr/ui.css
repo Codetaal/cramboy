@@ -173,14 +173,9 @@
 .kr-pop-arrow.kr-up { top: -7px; border-radius: 3px 0 0 0; }
 
 /* Scroll hints in the subtitle box */
-#kr-box.kr-more-up .kr-box-text {
-  /* earlier text fades out at the top edge */
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 calc(10px * var(--k, 1.46)));
-          mask-image: linear-gradient(to bottom, transparent 0, #000 calc(10px * var(--k, 1.46)));
-}
 .kr-box-up {
   position: absolute; right: calc(12px * var(--k, 1.46) + 14px); top: calc(6px * var(--k, 1.46));
   border-left: calc(4px * var(--k, 1.46)) solid transparent; border-right: calc(4px * var(--k, 1.46)) solid transparent;
   border-bottom: calc(4.5px * var(--k, 1.46)) solid var(--f-text); opacity: 0; transition: opacity 0.2s;
 }
-#kr-box.kr-more-up .kr-box-up { opacity: 0.4; }
+#kr-box.kr-more-up .kr-box-up { opacity: 0.55; }

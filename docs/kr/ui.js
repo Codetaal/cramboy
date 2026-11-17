@@ -38,7 +38,7 @@
   var boxArrow = el('div', { className: 'kr-box-arrow' });
   var boxGrip = el('div', { className: 'kr-box-grip', ariaLabel: 'Move subtitle box' });
   var boxSize = el('div', { className: 'kr-box-size', ariaLabel: 'Resize subtitle box' });
-  // Scroll hint: a small caret (and a fade at the top) when there's earlier text above.
+  // Scroll hint: a small caret in the top corner when there's earlier text above.
   var boxUp = el('div', { className: 'kr-box-up', ariaHidden: 'true' });
   box.appendChild(boxText); box.appendChild(boxArrow); box.appendChild(boxUp); box.appendChild(boxGrip); box.appendChild(boxSize);
   // User-placed box per orientation, in DS pixels relative to the top screen's top-left.
