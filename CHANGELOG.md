@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.19.7
+- Flashcards: when game text runs on over several lines without a full stop (Mom's first talk), the card keeps the two lines that were on screen instead of the whole run-on text.
+
 ## 0.19.6
 - Fix: the touch screen's A-button label (조사한다) could show up in the subtitles after a message closed.
 
