@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.19.4
+- Subtitle box: earlier text looks like it did in 0.19.2 again (lighter, fading out at the top), but the fade only shows while you're scrolled back, so the two current lines are never faded.
+
 ## 0.19.3
 - Subtitle box: the fade over the top line is gone (it made the line harder to read); the small caret alone shows there's earlier text.
 
