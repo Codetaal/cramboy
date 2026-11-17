@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.19.6
+- Fix: the touch screen's A-button label (조사한다) could show up in the subtitles after a message closed.
+
 ## 0.19.5
 - Fix: after resuming in the middle of a dialogue (HeartGold, SoulSilver, Diamond, Pearl, Platinum), the subtitle stayed empty until A was pressed.
 - Subtitle box: scrolling back shows only the conversation going on now; when a dialogue ends, the next one starts with a clean box. The Study screen keeps the full history.
