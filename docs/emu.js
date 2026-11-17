@@ -34,6 +34,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   if (isIOS && !standalone) $('ios-hint').hidden = false;
   var APP_VERSION = '0.19.7';   // semantic version; keep in sync with sw.js
   $('ver').textContent = 'Version ' + APP_VERSION;
+  window.APP_VERSION = APP_VERSION;   // written into backups
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
     var hadController = !!navigator.serviceWorker.controller;
     var updating = false;   // set by Update now (Advanced menu)
