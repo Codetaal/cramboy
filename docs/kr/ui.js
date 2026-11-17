@@ -403,14 +403,19 @@
     heldAt = 0;
     if (!current) return;
     archive(current);
+    convo = [];   // this conversation is over: the next one starts with a clean box
     current = null;
     box.classList.add('kr-hidden');   // the game's own box has closed too
     if (hideTimer) clearTimeout(hideTimer);
     hideTimer = setTimeout(function () { setPanelVisible(false); hideTimer = null; }, HIDE_AFTER_MS);
   }
+  // convo: the earlier messages of the conversation going on now (cleared when its dialogue box closes),
+  // shown when you scroll back in the subtitle box. The Study screen keeps the full history.
+  var convo = [];
   function archive(msg) {
     var t = plain(msg.text).trim();
     if (t && history[history.length - 1] !== t) { history.push(t); if (history.length > 100) history.shift(); countText(t); }
+    if (t && convo[convo.length - 1] !== t) convo.push(t);
   }
 
   // ---------- subtitle panel ----------
@@ -495,7 +500,7 @@
       var same = boxText.dataset.msg === current.key;
       if (!same) readBack = false;
       var before = plain(current.text.slice(0, current.shown)).replace(/\n+$/, '').split('\n\n').slice(0, -1).map(function (pg) { return pg.replace(/^\n+/, ''); }).filter(Boolean);
-      var old = history.slice(-3).map(function (t) { return '<div class="kr-old" data-s="' + esc(t.replace(/\n+/g, ' ')) + '">' + wordsHTML(t.replace(/\n+/g, ' ')) + '</div>'; }).join('');
+      var old = convo.slice(-3).map(function (t) { return '<div class="kr-old" data-s="' + esc(t.replace(/\n+/g, ' ')) + '">' + wordsHTML(t.replace(/\n+/g, ' ')) + '</div>'; }).join('');
       var full = plain(current.text).replace(/\n+/g, ' ');
       boxText.innerHTML = old + '<div data-s="' + esc(full) + '">' + (before.length ? '<div class="kr-prev">' + wordsHTML(before.join('\n')) + '</div>' : '') + wordsHTML(page) + '</div>';
       boxText.dataset.msg = current.key;
