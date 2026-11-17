@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.19.3
+- Subtitle box: the fade over the top line is gone (it made the line harder to read); the small caret alone shows there's earlier text.
+
 ## 0.19.2
 - Fix: after restarting the app, the subtitle box stayed on the first line of a long message instead of showing the latest lines.
 - The subtitle box shows when there's earlier text to scroll to: the top line fades out and a small caret appears in the corner.
