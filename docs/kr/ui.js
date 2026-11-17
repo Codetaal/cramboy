@@ -497,7 +497,11 @@
       var before = plain(current.text.slice(0, current.shown)).replace(/\n+$/, '').split('\n\n').slice(0, -1).map(function (pg) { return pg.replace(/^\n+/, ''); }).filter(Boolean);
       var old = history.slice(-3).map(function (t) { return '<div class="kr-old" data-s="' + esc(t.replace(/\n+/g, ' ')) + '">' + wordsHTML(t.replace(/\n+/g, ' ')) + '</div>'; }).join('');
       var full = plain(current.text).replace(/\n+/g, ' ');
-      boxText.innerHTML = old + '<div data-s="' + esc(full) + '">' + (before.length ? '<div class="kr-prev">' + wordsHTML(before.join('\n')) + '</div>' : '') + wordsHTML(page) + '</div>';
+      // The last two lines are the ones the game's box shows: full strength. Everything above them, also
+      // earlier lines of this page, is lighter, so you can tell it's text from before.
+      var pl = page.split('\n'), shownNow = pl.slice(-2).join('\n');
+      if (pl.length > 2) before.push(pl.slice(0, -2).join('\n'));
+      boxText.innerHTML = old + '<div data-s="' + esc(full) + '">' + (before.length ? '<div class="kr-prev">' + wordsHTML(before.join('\n')) + '</div>' : '') + wordsHTML(shownNow) + '</div>';
       boxText.dataset.msg = current.key;
       boxArrow.style.visibility = pageFinished() ? 'visible' : 'hidden';
       grabPage();
