@@ -308,6 +308,7 @@
       var cur = parseFloat(box.style.getPropertyValue('--k'));
       box.style.setProperty('--k', cur * boxText.clientWidth / boxText.scrollWidth);
     }
+    toBottom();   // the text size changed: keep the last lines in view
   }
   function dragBox(handle, kind) {
     var start = null;
@@ -489,20 +490,33 @@
       // The game's box holds two lines; the last two are visible. Scroll up for what came before: earlier
       // pages of this message and the last few messages (dimmed). New text scrolls back to the bottom,
       // unless you're reading back (scrolled up) during the same message.
-      var atBottom = boxText.scrollTop + boxText.clientHeight >= boxText.scrollHeight - 4;
       var same = boxText.dataset.msg === current.key;
+      if (!same) readBack = false;
       var before = plain(current.text.slice(0, current.shown)).replace(/\n+$/, '').split('\n\n').slice(0, -1).map(function (pg) { return pg.replace(/^\n+/, ''); }).filter(Boolean);
       var old = history.slice(-3).map(function (t) { return '<div class="kr-old" data-s="' + esc(t.replace(/\n+/g, ' ')) + '">' + wordsHTML(t.replace(/\n+/g, ' ')) + '</div>'; }).join('');
       var full = plain(current.text).replace(/\n+/g, ' ');
       boxText.innerHTML = old + '<div data-s="' + esc(full) + '">' + (before.length ? '<div class="kr-prev">' + wordsHTML(before.join('\n')) + '</div>' : '') + wordsHTML(page) + '</div>';
       boxText.dataset.msg = current.key;
-      if (!same || atBottom) boxText.scrollTop = boxText.scrollHeight;
       boxArrow.style.visibility = pageFinished() ? 'visible' : 'hidden';
       grabPage();
       box.classList.toggle('kr-hidden', page.length === 0);
       if (boxGeo[screens().key]) fitBox();
+      // Only once the box is shown and sized: a hidden box can't be scrolled (after a restart the first
+      // message was drawn hidden and stayed at its first line).
+      toBottom();
     }
   }
+  // Reading back: you scrolled up in the box yourself. Then new text doesn't pull you down (until the
+  // next message, or you scroll back to the bottom).
+  var readBack = false, boxTouchAt = 0;
+  function toBottom() { if (!readBack) boxText.scrollTop = boxText.scrollHeight; }
+  ['touchstart', 'touchmove', 'wheel', 'mousedown'].forEach(function (t) {
+    boxText.addEventListener(t, function () { boxTouchAt = performance.now(); }, { passive: true });
+  });
+  boxText.addEventListener('scroll', function () {
+    if (performance.now() - boxTouchAt > 1500) return;   // our own scrolling, not yours
+    readBack = boxText.scrollTop + boxText.clientHeight < boxText.scrollHeight - 4;
+  }, { passive: true });
 
   function onWordTap(e) {
     var t = e.target.closest ? e.target.closest('.kr-w') : null;
