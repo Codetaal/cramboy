@@ -2,6 +2,10 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.19.5
+- Fix: after resuming in the middle of a dialogue (HeartGold, SoulSilver, Diamond, Pearl, Platinum), the subtitle stayed empty until A was pressed.
+- Subtitle box: scrolling back shows only the conversation going on now; when a dialogue ends, the next one starts with a clean box. The Study screen keeps the full history.
+
 ## 0.19.4
 - Subtitle box: earlier text looks like it did in 0.19.2 again (lighter, fading out at the top), but the fade only shows while you're scrolled back, so the two current lines are never faded.
 
