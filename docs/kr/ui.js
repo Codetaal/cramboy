@@ -38,7 +38,11 @@
   var boxArrow = el('div', { className: 'kr-box-arrow' });
   var boxGrip = el('div', { className: 'kr-box-grip', ariaLabel: 'Move subtitle box' });
   var boxSize = el('div', { className: 'kr-box-size', ariaLabel: 'Resize subtitle box' });
-  box.appendChild(boxText); box.appendChild(boxArrow); box.appendChild(boxGrip); box.appendChild(boxSize);
+  // Scroll hints: a small caret when there's earlier text above, and a "back to the latest line" button
+  // while you're reading back.
+  var boxUp = el('div', { className: 'kr-box-up', ariaHidden: 'true' });
+  var boxLatest = el('button', { className: 'kr-box-latest', ariaLabel: 'Back to the latest line' });
+  box.appendChild(boxText); box.appendChild(boxArrow); box.appendChild(boxUp); box.appendChild(boxLatest); box.appendChild(boxGrip); box.appendChild(boxSize);
   // User-placed box per orientation, in DS pixels relative to the top screen's top-left.
   var boxGeo = {};
   var BOX_DEFAULT = { x: 0, y: 142, w: 256, h: 50 };
@@ -509,7 +513,13 @@
   // Reading back: you scrolled up in the box yourself. Then new text doesn't pull you down (until the
   // next message, or you scroll back to the bottom).
   var readBack = false, boxTouchAt = 0;
-  function toBottom() { if (!readBack) boxText.scrollTop = boxText.scrollHeight; }
+  function toBottom() { if (!readBack) boxText.scrollTop = boxText.scrollHeight; boxHints(); }
+  function boxHints() {
+    box.classList.toggle('kr-more-up', boxText.scrollTop > 2);
+    box.classList.toggle('kr-reading', readBack);
+  }
+  boxLatest.innerHTML = HI('chevron-down', 'size-4');
+  boxLatest.addEventListener('click', function (e) { e.stopPropagation(); readBack = false; boxText.scrollTo({ top: boxText.scrollHeight, behavior: 'smooth' }); setTimeout(boxHints, 350); });
   ['touchstart', 'touchmove', 'wheel', 'mousedown'].forEach(function (t) {
     boxText.addEventListener(t, function () { boxTouchAt = performance.now(); }, { passive: true });
   });
@@ -517,6 +527,7 @@
     if (performance.now() - boxTouchAt > 1500) return;   // our own scrolling, not yours
     readBack = boxText.scrollTop + boxText.clientHeight < boxText.scrollHeight - 4;
   }, { passive: true });
+  boxText.addEventListener('scroll', function () { boxHints(); }, { passive: true });
 
   function onWordTap(e) {
     var t = e.target.closest ? e.target.closest('.kr-w') : null;
