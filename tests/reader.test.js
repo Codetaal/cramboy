@@ -77,6 +77,18 @@ assert.strictEqual(res.active.text.slice(0, res.active.shown), '야생 피카츄
   assert.strictEqual(r4.active, null, 'touch-screen label printer is not dialogue');
   zero();
 }
+// A printer that finished the message points one past the last character (at the end mark): the last
+// character ("!") still counts as shown.
+{
+  u32.fill(0);
+  const r7 = new Reader(T);
+  const codes = encode('빨리 가야지!'), d = putString(0x240000, codes);
+  const win = 0x250000; u32[win >> 2] = 0x02010000; u32[(win >> 2) + 1] = 3 | (2 << 8) | (19 << 16) | (27 << 24); u32[(win >> 2) + 2] = 4;
+  u32[0x260000 >> 2] = 0x02000000 + d + (codes.length + 1) * 2; u32[(0x260000 >> 2) + 1] = 0x02000000 + win;
+  r7.scan(u32, u16); const f = r7.scan(u32, u16);
+  assert(f.active && f.active.shown === f.active.text.length && f.active.text.endsWith('!'), 'finished printer: last character shown');
+  u32.fill(0);
+}
 // Resuming on a message typed to the end: no printer, but the open message box (a top-screen Window with
 // a pointer to the String 0x34 bytes after it) shows it. Once the Window is gone (box closed), nothing.
 {

@@ -143,16 +143,28 @@
         if ((v & 0xFF000000) !== 0x02000000) continue;
         var off = v & 0x3FFFFF;
         var o = owner[off >> 2];
-        if (!o) continue;
+        // A Gen 4 printer that has finished a message points one past its end mark (where nothing else of
+        // ours lives); only then is a pointer just outside a string its cursor.
+        if (!o) {
+          var o2 = owner[(off - 2) >> 2];
+          if (!o2) continue;
+          var st2 = list[o2 - 1];
+          if (off - st2.dataByte !== st2.size * 2 + 2 || !isG4Printer(u32, i)) continue;
+          if (st2.cursor < 0) printers++;
+          st2.cursor = st2.size; st2.pcursor = st2.size;
+          continue;
+        }
         var st = list[o - 1];
         var rel = off - st.dataByte;
         if (rel === -8) { (st.hrefs || (st.hrefs = [])).push(i); continue; }   // points at the String object
         // rel 0 = pointer to the start of the text, used all over the place; the
         // printer cursor has moved past the first character.
-        if (rel <= 0 || rel > st.size * 2 || (rel & 1)) continue;
+        // (rel = size + 1 characters: a finished printer, one past the end mark; see above)
+        if (rel <= 0 || rel > st.size * 2 + 2 || (rel & 1)) continue;
+        if (rel === st.size * 2 + 2 && !isG4Printer(u32, i)) continue;
         // Ignore the word right before the string (heap headers) and the string's own body.
         if (i * 4 >= st.addr - 16 && i * 4 < st.dataByte + st.size * 2) continue;
-        var cur = rel >> 1;
+        var cur = Math.min(rel >> 1, st.size);
         if (cur > st.cursor) { if (st.cursor < 0) printers++; st.cursor = cur; }
         // Gen 4 text printer: its "current character" word is followed by a pointer to the dialogue
         // Window. Other pointers into the text (end-of-text markers, line tables) can run ahead of
