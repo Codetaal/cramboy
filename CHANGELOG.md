@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.19.8
+- Study button: clearly visible purple with a white icon when no text is on screen. The white glass look nearly disappeared on bright game screens.
+
 ## 0.19.7
 - Flashcards: when game text runs on over several lines without a full stop (Mom's first talk), the card keeps the two lines that were on screen instead of the whole run-on text.
 
