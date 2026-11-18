@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.19.10
+- Subtitles skip the town-name banner ("연두마을") and the touch-screen labels ("포켓기어"): only text printed in the dialogue box counts (HeartGold, SoulSilver, Diamond, Pearl, Platinum).
+
 ## 0.19.9
 - Fix: after reopening the app on a message that was already typed to the end, the subtitle stayed empty until A was pressed (HeartGold, SoulSilver).
 - Fix: the last character of a message, often ! or ?, was missing from the subtitle once the game finished typing it.
