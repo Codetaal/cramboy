@@ -26,8 +26,7 @@
   window.KV = {
     get: function (k) { return tx('readonly', function (s) { return s.get(k); }); },
     set: function (k, v) { return tx('readwrite', function (s) { return s.put(v, k); }); },
-    del: function (k) { return tx('readwrite', function (s) { return s.delete(k); }); },
-    keys: function () { return tx('readonly', function (s) { return s.getAllKeys(); }); }
+    del: function (k) { return tx('readwrite', function (s) { return s.delete(k); }); }
   };
   // Ask iOS/Chrome not to evict our data.
   if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(function () {});
