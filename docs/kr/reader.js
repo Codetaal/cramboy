@@ -125,9 +125,10 @@
       total++;
       var mode = this.textMode(u16, dataHalf, size);
       if (!mode) continue;
-      var s = { addr: (i - 1) * 4, dataByte: dataHalf * 2, size: size, cursor: -1, pcursor: -1, mode: mode };
+      var s = { addr: (i - 1) * 4, dataByte: dataHalf * 2, size: size, cursor: -1, pcursor: -1, mode: mode, hrefs: null };
       list.push(s);
-      var w0 = (s.dataByte >> 2), w1 = ((s.dataByte + size * 2) >> 2);
+      // (the header word too: pointers to the String object itself, see the message-box check below)
+      var w0 = (s.dataByte >> 2) - 2, w1 = ((s.dataByte + size * 2) >> 2);
       for (var w = w0; w <= w1; w++) { owner[w] = list.length; this.marked.push(w); }
     }
     this.stats.strings = total;
@@ -145,6 +146,7 @@
         if (!o) continue;
         var st = list[o - 1];
         var rel = off - st.dataByte;
+        if (rel === -8) { (st.hrefs || (st.hrefs = [])).push(i); continue; }   // points at the String object
         // rel 0 = pointer to the start of the text, used all over the place; the
         // printer cursor has moved past the first character.
         if (rel <= 0 || rel > st.size * 2 || (rel & 1)) continue;
@@ -191,6 +193,22 @@
     }
     this.known = seenNow;
 
+    // No printer at work, but a message box on screen (HeartGold / SoulSilver): after resuming, a message
+    // that has been typed to the end waits for A with no printer left. The field message box keeps its
+    // Window and, 0x34 bytes further, a pointer to the String it shows; the Window only exists while the
+    // box is open. That message is shown in full.
+    if (!best) {
+      for (i = 0; i < list.length; i++) {
+        var s3 = list[i];
+        if (s3.mode !== G4 || !s3.hrefs) continue;
+        for (var h = 0; h < s3.hrefs.length; h++) {
+          var wi = s3.hrefs[h] - 13;
+          if (wi >= 0 && isTopWindow(u32, wi)) { best = s3; best.cursor = s3.size; break; }
+        }
+        if (best) break;
+      }
+    }
+
     var result = { fresh: [], active: null, changed: false };
     for (i = 0; i < fresh.length; i++) {
       var d = this.decode(u16, fresh[i].dataByte >> 1, fresh[i].size, fresh[i].mode);
@@ -221,6 +239,12 @@
   // Is the word at u32[i] the cursor of a Gen 4 TextPrinter on the top screen? Its next word points to a
   // Window: {bgConfig*, u8 bgId, tilemapLeft, tilemapTop, width, height, ...} on the 32x24-tile screen.
   // A freed heap block (NNS "RF" header 0x20 bytes before the printer) is a leftover, not a printer.
+  // A Window on the top screen at word wi: bgConfig pointer, bg 0-3, size on the 32x24-tile screen, pixel buffer.
+  function isTopWindow(u32, wi) {
+    if (wi + 3 >= RAM_WORDS || (u32[wi] & 0xFF000003) !== 0x02000000 || (u32[wi + 3] & 0xFF000000) !== 0x02000000) return false;
+    var b = u32[wi + 1], bg = b & 0xFF, left = (b >>> 8) & 0xFF, top = (b >>> 16) & 0xFF, width = b >>> 24, height = u32[wi + 2] & 0xFF;
+    return bg <= 3 && width > 0 && height > 0 && left + width <= 32 && top + height <= 24;
+  }
   function isG4Printer(u32, i) {
     var w = u32[i + 1];
     if ((w & 0xFF000003) !== 0x02000000) return false;
