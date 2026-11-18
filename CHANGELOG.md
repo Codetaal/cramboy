@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.20.0
+- New: a general subtitle reader for DS games that are not Pokémon. It looks for Korean or Japanese text in the game's memory (UTF-16, Shift-JIS or EUC-KR) and follows the line the game is typing. It only runs when a game has no Pokémon text, so Pokémon games work as before. Experimental: to turn it off, set `USE_GENERIC = false` in `docs/kr/reader.js`, or revert this release.
+
 ## 0.19.10
 - Subtitles skip the town-name banner ("연두마을") and the touch-screen labels ("포켓기어"): only text printed in the dialogue box counts (HeartGold, SoulSilver, Diamond, Pearl, Platinum).
 

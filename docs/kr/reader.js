@@ -19,7 +19,9 @@
   var G5_NEWLINE = 0xFFFE, G5_CTRL = 0xF000, G5_SCROLL = 0xBE00, G5_PAGE = 0xBE01;
   var EOS = 0xFFFF;
   var G4 = 1, G5 = 2;
-  var GenericReader = root.KRGenericReader || (typeof require !== 'undefined' ? require('./generic.js') : null);
+  // Off switch for the general reader (non-Pokémon games, added in 0.20.0): set to false to turn it off.
+  var USE_GENERIC = true;
+  var GenericReader = USE_GENERIC ? (root.KRGenericReader || (typeof require !== 'undefined' ? require('./generic.js') : null)) : null;
 
   function Reader(table, lang) {
     this.table = table;                 // string: code -> char ('\0' = unknown)
