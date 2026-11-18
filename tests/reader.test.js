@@ -89,6 +89,29 @@ assert.strictEqual(res.active.text.slice(0, res.active.shown), '야생 피카츄
   assert(f.active && f.active.shown === f.active.text.length && f.active.text.endsWith('!'), 'finished printer: last character shown');
   u32.fill(0);
 }
+// The town-name banner (a printer in a window at the very top of the top screen) is not dialogue, and
+// once dialogue printers have been seen, a touch-screen label with a moving pointer isn't either.
+{
+  u32.fill(0);
+  const r8 = new Reader(T);
+  const mk = (addr, bg, top) => { u32[addr >> 2] = 0x02010000; u32[(addr >> 2) + 1] = bg | (0 << 8) | (top << 16) | (32 << 24); u32[(addr >> 2) + 2] = 5; return 0x02000000 + addr; };
+  const town = putString(0x240000, encode('연두마을'));
+  u32[0x260000 >> 2] = 0x02000000 + town + 2 * 2; u32[(0x260000 >> 2) + 1] = mk(0x250000, 3, 0);
+  r8.scan(u32, u16); u32[0x260000 >> 2] = 0x02000000 + town + 4 * 2; const t1 = r8.scan(u32, u16);
+  assert.strictEqual(t1.active, null, 'town-name banner is not dialogue');
+  u32.fill(0);
+  const r9 = new Reader(T);
+  const msg = putString(0x240000, encode('안녕 친구'));
+  u32[0x260000 >> 2] = 0x02000000 + msg + 3 * 2; u32[(0x260000 >> 2) + 1] = mk(0x250000, 3, 19);
+  r9.scan(u32, u16); const m1 = r9.scan(u32, u16);
+  assert(m1.active, 'dialogue printer seen');
+  u32.fill(0);
+  const label = putString(0x244000, encode('포켓기어'));
+  u32[0x270000 >> 2] = 0x02000000 + label + 1 * 2; r9.scan(u32, u16);
+  u32[0x270000 >> 2] = 0x02000000 + label + 3 * 2; const l1 = r9.scan(u32, u16);
+  assert(!l1.active || l1.active.text !== '포켓기어', 'moving label pointer is not dialogue');
+  u32.fill(0);
+}
 // Resuming on a message typed to the end: no printer, but the open message box (a top-screen Window with
 // a pointer to the String 0x34 bytes after it) shows it. Once the Window is gone (box closed), nothing.
 {

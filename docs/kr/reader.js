@@ -41,7 +41,7 @@
         if (x >= UNI_KANA_MIN && x <= UNI_KANA_MAX) this.g4Kana[i] = 1;
       }
     }
-    this.known = new Map(); this.current = null;
+    this.known = new Map(); this.current = null; this.g4Printer = false;
   };
 
   // Decode a run of 16-bit codes into display text.
@@ -170,8 +170,9 @@
         // Window. Other pointers into the text (end-of-text markers, line tables) can run ahead of
         // what is on screen, so the printer's own cursor wins when there is one.
         if (isG4Printer(u32, i) && cur > st.pcursor) st.pcursor = cur;
+        else if (notDialoguePrinter(u32, i)) st.notDialogue = true;
       }
-      for (i = 0; i < list.length; i++) if (list[i].pcursor > 0) list[i].cursor = list[i].pcursor;
+      for (i = 0; i < list.length; i++) if (list[i].pcursor > 0) { list[i].cursor = list[i].pcursor; this.g4Printer = true; }
     }
     this.stats.printers = printers;
 
@@ -195,7 +196,10 @@
       }
       // A Gen 4 text printer's own cursor is dialogue too, even if it hasn't moved since we first saw it:
       // after resuming, the game can be waiting on a page (▼) and only moves on when you press A.
-      if (s2.cursor >= 0 && (rec.moved || s2.cursor >= s2.size - 1 || s2.pcursor > 0)) {
+      // Once the game has shown it types dialogue with Gen 4 printers, a new Gen 4 message only counts when
+      // such a printer is typing it: menu labels on the touch screen ("포켓기어") also have moving pointers.
+      var unprinted = s2.mode === G4 && s2.pcursor <= 0 && (this.g4Printer || s2.notDialogue) && !(this.current && this.current.key === key);
+      if (s2.cursor >= 0 && !unprinted && (rec.moved || s2.cursor >= s2.size - 1 || s2.pcursor > 0)) {
         // Prefer the most recently created string that is being printed. Strings created at the
         // same moment are usually two copies of one message (Gen 5 keeps a raw and a printed copy,
         // and only the printed one's pointer is the live cursor): take the one printed furthest.
@@ -257,6 +261,24 @@
     var b = u32[wi + 1], bg = b & 0xFF, left = (b >>> 8) & 0xFF, top = (b >>> 16) & 0xFF, width = b >>> 24, height = u32[wi + 2] & 0xFF;
     return bg <= 3 && width > 0 && height > 0 && left + width <= 32 && top + height <= 24;
   }
+  // The Window a Gen 4 printer's cursor at u32[i] prints into, or null: {bg, top}.
+  function printerWindow(u32, i) {
+    var w = u32[i + 1];
+    if ((w & 0xFF000003) !== 0x02000000) return null;
+    var wi = (w & 0x3FFFFF) >> 2;
+    if (wi + 2 >= RAM_WORDS || (u32[wi] & 0xFF000000) !== 0x02000000) return null;
+    var b = u32[wi + 1], bg = b & 0xFF, left = (b >>> 8) & 0xFF, top = (b >>> 16) & 0xFF, width = b >>> 24;
+    var height = u32[wi + 2] & 0xFF;
+    if (bg > 7 || !width || !height || left + width > 32 || top + height > 24) return null;
+    if (i >= 8 && (u32[i - 8] & 0xFFFF) === 0x4652) return null;
+    return { bg: bg, top: top };
+  }
+  // Printed somewhere that is not a dialogue box: the touch screen (labels like "조사한다", "포켓기어") or the
+  // very top of the top screen (the town-name banner, "연두마을"). Such text never becomes a subtitle.
+  function notDialoguePrinter(u32, i) {
+    var w = printerWindow(u32, i);
+    return !!w && (w.bg > 3 || w.top < 10);
+  }
   function isG4Printer(u32, i) {
     var w = u32[i + 1];
     if ((w & 0xFF000003) !== 0x02000000) return false;
@@ -267,6 +289,9 @@
     // bg 0-3 is the top screen, 4-7 the touch screen. Dialogue is on the top screen; the touch screen's
     // printed labels ("조사한다" on the A button) are not dialogue.
     if (bg > 3 || !width || !height || left + width > 32 || top + height > 24) return false;
+    // Dialogue boxes sit in the lower part of the top screen (row 19 in HeartGold); the town-name banner
+    // that pops up when you enter a place is at the very top (row 0) and is not dialogue.
+    if (top < 10) return false;
     if (i >= 8 && (u32[i - 8] & 0xFFFF) === 0x4652) return false;
     return true;
   }
