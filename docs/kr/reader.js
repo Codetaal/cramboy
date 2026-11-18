@@ -19,9 +19,6 @@
   var G5_NEWLINE = 0xFFFE, G5_CTRL = 0xF000, G5_SCROLL = 0xBE00, G5_PAGE = 0xBE01;
   var EOS = 0xFFFF;
   var G4 = 1, G5 = 2;
-  // Off switch for the general reader (non-Pokémon games, added in 0.20.0): set to false to turn it off.
-  var USE_GENERIC = true;
-  var GenericReader = USE_GENERIC ? (root.KRGenericReader || (typeof require !== 'undefined' ? require('./generic.js') : null)) : null;
 
   function Reader(table, lang) {
     this.table = table;                 // string: code -> char ('\0' = unknown)
@@ -136,17 +133,6 @@
     }
     this.stats.strings = total;
     this.stats.korean = list.length;
-
-    // Not a Pokémon game (no Pokémon String objects ever seen): use the general reader instead.
-    if (total > 0) this.pokemon = true;
-    if (this.forceGeneric || (!this.pokemon && this.scanNo > 3 && GenericReader)) {
-      if (!this.generic || this.generic.lang !== this.lang) this.generic = new GenericReader(this.lang);
-      // It reads all of RAM in several encodings: every third scan (~2 a second) is enough and spares phones.
-      if (!this.forceGeneric && this.scanNo % 3) return { fresh: [], active: this.generic.current, changed: false };
-      var gr = this.generic.scan(u32, u16);
-      this.stats = this.generic.stats;
-      return gr;
-    }
 
     // 2) Find pointers that land inside a Korean string's characters:
     //    the text printer's "current character" cursor.

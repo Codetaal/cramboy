@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.20.2
+- Removed the general subtitle reader for non-Pokémon games (0.20.0 and 0.20.1): it didn't work well enough. Subtitles are for Pokémon games again, exactly as in 0.19.10.
+
 ## 0.20.1
 - General subtitle reader: works with Professor Layton and the Curious Village (Korean), which stores its text in big-endian UTF-16 and keeps a typing count instead of a pointer.
 - General subtitle reader: fewer junk subtitles from game data that looks like text, and about half the work per second on phones.
