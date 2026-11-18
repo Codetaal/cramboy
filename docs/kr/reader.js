@@ -224,6 +224,20 @@
         if (best) break;
       }
     }
+    // A sign you walk up against (HeartGold / SoulSilver: "여기는 연두마을") shows its text at once, with no
+    // printer. While it is up the game keeps the sign's text twice (raw and expanded), pointed to from two
+    // words side by side; both are freed when you walk away.
+    if (!best) {
+      var hrefOf = new Map();
+      for (i = 0; i < list.length; i++) if (list[i].mode === G4 && list[i].hrefs) list[i].hrefs.forEach(function (h) { hrefOf.set(h, i); });
+      hrefOf.forEach(function (si, h) {
+        var other = hrefOf.get(h + 1);
+        if (best || other === undefined || other === si) return;
+        var a = list[si], b = list[other];
+        if (a.size !== b.size || codesKey(u16, a.dataByte >> 1, a.size) !== codesKey(u16, b.dataByte >> 1, b.size)) return;
+        best = a; best.cursor = a.size;
+      });
+    }
 
     var result = { fresh: [], active: null, changed: false };
     for (i = 0; i < fresh.length; i++) {

@@ -128,6 +128,24 @@ assert.strictEqual(res.active.text.slice(0, res.active.shown), '야생 피카츄
   assert.strictEqual(b2.active, null, 'no box, no subtitle');
   u32.fill(0);
 }
+// A sign you walk up against: no printer, the text held twice (raw and expanded) by two words side by side.
+// Shown in full while up; gone once both are freed. A single pointer to one copy is not enough.
+{
+  u32.fill(0);
+  const r10 = new Reader(T);
+  const raw = putString(0x240000, encode('여기는 연두마을\n시작을 알리는 바람의 마을'));
+  const exp = putString(0x241000, encode('여기는 연두마을\n시작을 알리는 바람의 마을'));
+  u32[0x2A767C >> 2] = 0x02000000 + raw - 8;
+  const one = r10.scan(u32, u16);
+  assert.strictEqual(one.active, null, 'one pointer: not a sign');
+  u32[0x2A7680 >> 2] = 0x02000000 + exp - 8;
+  const up = r10.scan(u32, u16);
+  assert(up.active && up.active.shown === up.active.text.length && up.active.text.startsWith('여기는 연두마을'), 'sign shown in full');
+  u32.fill(0, 0x240000 >> 2, 0x242000 >> 2);      // walked away: both copies freed
+  const gone = r10.scan(u32, u16);
+  assert(gone.closed && gone.active === null, 'sign closed');
+  u32.fill(0);
+}
 // Timing for one scan
 const t0 = process.hrtime.bigint(); for (let k = 0; k < 20; k++) r.scan(u32, u16); 
 console.log('scan ms:', Number(process.hrtime.bigint() - t0) / 20 / 1e6);
