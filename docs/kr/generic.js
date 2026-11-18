@@ -4,7 +4,7 @@
 // Used by reader.js when a game has no Pokémon text at all.
 (function (root) {
   'use strict';
-  var RAM = 4 << 20, MIN_CHARS = 3, MAX_CHARS = 1500;
+  var RAM = 4 << 20, MIN_CHARS = 3, MAX_CHARS = 1500, FULL_EVERY = 3;
 
   // ---- what counts as text, per encoding ----
   function u16Target(c, lang) {
@@ -66,6 +66,8 @@
     if (tgt < MIN_CHARS || distinct < 3) return false;
     // Korean puts spaces between words: seven syllables in a row with no space is a word list or a table.
     if (lang !== 'ja' && /[\uAC00-\uD7A3]{7}/.test(str)) return false;
+    // The same syllable three times in a row (씨씨씨) is data, not a sentence.
+    if (/([\u3041-\u30FF\u4E00-\u9FFF\uAC00-\uD7A3])\1\1/.test(str)) return false;
     // A table counts upwards (가 괌 깹 끝 …): text goes up and down.
     var up = 0, pairs = 0;
     for (var k = 1; k < str.length; k++) { var x = str.charCodeAt(k - 1), y = str.charCodeAt(k); if (x > 0x3000 && y > 0x3000) { pairs++; if (y > x) up++; } }
@@ -86,24 +88,19 @@
     this.stats = { strings: 0, korean: 0, printers: 0, generic: true };
   }
 
-  // Runs of text: {start (byte), end (byte, exclusive), enc: 'u16' | 'sjis' | 'euc', chars}
+  // Runs of text: {start (byte), end (byte, exclusive), enc: 'u16' | 'u16be' | 'sjis' | 'euc', chars}
+  // UTF-16 comes in both byte orders: most games use little-endian, some (Professor Layton) big-endian.
   GenericReader.prototype.findRuns = function (u8, u16) {
-    var runs = [], lang = this.lang, i, n, t, s;
-    // UTF-16 (2-byte aligned)
-    // (Japanese: a run starts at kana and counts kana only. Every line has some, and the kanji range is so
-    // wide that plain data lands in it all the time.)
-    var seed = lang === 'ja' ? function (c) { return c >= 0x3041 && c <= 0x30FA; } : function (c) { return u16Target(c, lang); };
-    for (i = 0, n = RAM >> 1; i < n; i++) {
-      if (!seed(u16[i])) continue;
-      s = i; while (s > 0 && i - s < MAX_CHARS && u16Text(u16[s - 1], lang)) s--;
-      t = 0; var e = s;
-      while (e < n - MAX_GAP - 1 && e - s < MAX_CHARS && u16Ok(u16, e, lang)) { if (seed(u16[e])) t++; e++; }
-      if (t >= MIN_CHARS) runs.push({ start: s * 2, end: e * 2, enc: 'u16', chars: e - s });
-      i = e;
-    }
+    var runs = [], lang = this.lang, i;
+    if (!this.sw) this.swap(u16);
+    u16Runs(u16, 'u16', lang, runs);
+    u16Runs(this.sw, 'u16be', lang, runs);
     // Shift-JIS (Japanese) or EUC-KR (Korean), byte by byte
     var pair = lang === 'ja' ? sjisPair : eucPair, target = lang === 'ja' ? sjisTarget : eucTarget;
+    var leadLo = lang === 'ja' ? 0x82 : 0xB0, leadHi = lang === 'ja' ? 0xEA : 0xC8;
     for (i = 0; i < RAM - 1; i++) {
+      var b0 = u8[i];
+      if (b0 < leadLo || b0 > leadHi) continue;
       if (!(pair(u8[i], u8[i + 1]) && target(u8[i], u8[i + 1]))) continue;
       var st = i, cnt = 0, tg = 0, j = i;
       while (j < RAM - 1 && cnt < MAX_CHARS) {
@@ -117,13 +114,73 @@
     }
     return runs;
   };
+  // RAM with the bytes of every 16-bit unit swapped, to read big-endian UTF-16.
+  GenericReader.prototype.swap = function (u16) {
+    var sw = this.sw || (this.sw = new Uint16Array(RAM >> 1));
+    var w32 = new Uint32Array(u16.buffer, u16.byteOffset, RAM >> 2), s32 = new Uint32Array(sw.buffer);
+    for (var i = 0; i < RAM >> 2; i++) { var v = w32[i]; s32[i] = ((v & 0x00FF00FF) << 8) | ((v >>> 8) & 0x00FF00FF); }
+  };
+  function u16Runs(u16, enc, lang, runs) {
+    var i, n, t, s;
+    // (Japanese: a run starts at kana and counts kana only. Every line has some, and the kanji range is so
+    // wide that plain data lands in it all the time.)
+    var seed = lang === 'ja' ? function (c) { return c >= 0x3041 && c <= 0x30FA; } : function (c) { return u16Target(c, lang); };
+    var lo = lang === 'ja' ? 0x3041 : 0xAC00, hi = lang === 'ja' ? 0x30FA : 0xD7A3;
+    for (i = 0, n = RAM >> 1; i < n; i++) {
+      var c0 = u16[i];
+      if (c0 < lo || c0 > hi) continue;
+      // (the first target character of a run must be followed by more text: most hits are lone data words)
+      var c1 = u16[i + 1];
+      if (!u16Text(c1, lang) && !u16Gap(c1)) continue;
+      s = i; while (s > 0 && i - s < MAX_CHARS && u16Text(u16[s - 1], lang)) s--;
+      t = 0; var e = s;
+      while (e < n - MAX_GAP - 1 && e - s < MAX_CHARS && u16Ok(u16, e, lang)) { if (seed(u16[e])) t++; e++; }
+      if (t >= MIN_CHARS) runs.push({ start: s * 2, end: e * 2, enc: enc, chars: e - s });
+      i = e;
+    }
+  }
+
+  // Games that keep the text and a separate count of how far it is typed (Professor Layton: an object points
+  // to the text, and next to a pointer to that object sits the count, in bytes). Find counts near pointers
+  // to objects that point to the start of a text; a count that goes up while staying inside the text is
+  // the typing position.
+  GenericReader.prototype.indexCursors = function (u32, runs, starts) {
+    var objs = new Map(), k, i;
+    for (k = 0; k < starts.length; k += 2) {
+      for (var d = 0; d <= 16; d++) { var a = (starts[k] - d) * 4; if (!objs.has(a)) objs.set(a, starts[k + 1]); }
+    }
+    var seen = new Map(), prev = this.counts || new Map();
+    if (objs.size) {
+      for (i = 1; i < (RAM >> 2) - 1; i++) {
+        var v = u32[i];
+        if ((v & 0xFF000000) !== 0x02000000) continue;
+        var ri = objs.get(v & 0x3FFFFF);
+        if (ri === undefined) continue;
+        for (var side = -1; side <= 1; side += 2) {
+          var c = u32[i + side], run = runs[ri];
+          if (c < 2 || c > 0x2000) continue;
+          var key = (i + side) + ':' + run.start, old = prev.get(key);
+          var rec = { start: run.start, val: c, proven: old ? old.proven || (c > old.val && c - old.val < 0x400) : false };
+          seen.set(key, rec);
+          if (!rec.proven) continue;
+          // the count can run past this page into the next run of the same text
+          var at = run.start + (c & ~1), o = this.owner[at >> 2], tr = o ? runs[o - 1] : null;
+          if (!tr || tr.enc !== run.enc || at < tr.start) { tr = run; }
+          at = Math.min(Math.max(at, tr.start + 2), tr.end);
+          if (at > tr.cursor) { tr.cursor = at; tr.byIndex = true; }
+        }
+      }
+    }
+    this.counts = seen;
+  };
 
   GenericReader.prototype.decode = function (u8, u16, run, upto) {
     var end = upto == null ? run.end : Math.min(run.end, upto);
-    if (run.enc === 'u16') {
+    if (run.enc === 'u16' || run.enc === 'u16be') {
       var out = '';
+      if (run.enc === 'u16be') u16 = this.sw;
       for (var i = run.start >> 1; i < end >> 1; i++) { var c = u16[i]; if (c === 0x0A || c === 0xFFFE) out += '\n'; else if (c && !u16Gap(c)) out += String.fromCharCode(c); }
-      return out;
+      return out.replace(/@$/, '');   // a command marker at a page end (Layton: "@p")
     }
     var d = decoder(run.enc === 'sjis' ? 'shift_jis' : 'euc-kr');
     return d ? d.decode(u8.subarray(run.start, end)) : '';
@@ -132,26 +189,34 @@
   GenericReader.prototype.scan = function (u32, u16) {
     this.scanNo++;
     var u8 = new Uint8Array(u32.buffer, u32.byteOffset, RAM), owner = this.owner, i;
-    for (i = 0; i < this.marked.length; i++) owner[this.marked[i]] = 0;
-    this.marked.length = 0;
-
-    var self = this, runs = this.findRuns(u8, u16);
-    for (i = 0; i < runs.length; i++) {
-      runs[i].cursor = -1;
-      for (var w = runs[i].start >> 2; w <= (runs[i].end + 2) >> 2; w++) { owner[w] = i + 1; this.marked.push(w); }
+    this.swap(u16);
+    // Finding all text in RAM is the slow part, and text moves rarely: redo it every FULL_EVERY scans, and
+    // in between only look for the pointers into the text found last time.
+    var self = this, runs = this.runs;
+    if (!runs || this.forceFull || this.scanNo % FULL_EVERY === 1) {
+      for (i = 0; i < this.marked.length; i++) owner[this.marked[i]] = 0;
+      this.marked.length = 0;
+      runs = this.runs = this.findRuns(u8, u16);
+      for (i = 0; i < runs.length; i++)
+        for (var w = runs[i].start >> 2; w <= (runs[i].end + 2) >> 2; w++) { owner[w] = i + 1; this.marked.push(w); }
     }
+    for (i = 0; i < runs.length; i++) { runs[i].cursor = -1; runs[i].byIndex = false; }
     // Pointers into a run's text (past its first character): the line being typed.
+    // Pointers to its first character are noted too, for games that count with an index (below).
+    var starts = [];
     for (i = 0; i < RAM >> 2; i++) {
       var v = u32[i];
       if ((v & 0xFF000000) !== 0x02000000) continue;
       var off = v & 0x3FFFFF, o = owner[off >> 2];
       if (!o) continue;
       var r = runs[o - 1];
-      if (off <= r.start || off > r.end + 2 || (r.enc === 'u16' && ((off - r.start) & 1))) continue;
+      if (off === r.start && (r.enc === 'u16' || r.enc === 'u16be') && starts.length < 4096) { starts.push(i, o - 1); continue; }
+      if (off <= r.start || off > r.end + 2 || ((r.enc === 'u16' || r.enc === 'u16be') && ((off - r.start) & 1))) continue;
       if (i * 4 >= r.start - 16 && i * 4 < r.end) continue;          // its own bytes / header
       var at = Math.min(off, r.end);
       if (at > r.cursor) r.cursor = at;
     }
+    this.indexCursors(u32, runs, starts);
     // Only runs that something points into matter; check those look like real writing.
     runs = runs.filter(function (r) { return r.cursor >= 0 && looksLikeText(r.text = self.decode(u8, u16, r), self.lang); });
     this.stats.strings = this.stats.korean = this.stats.printers = runs.length;
@@ -165,7 +230,9 @@
       seenNow.set(q.start, rec);
       q.key = key; q.firstSeen = rec.firstSeen;
       if (rec.cur0 < 0) rec.cur0 = q.cursor; else if (q.cursor !== rec.cur0) rec.moved = true;
-      if (rec.moved || q.cursor >= q.end - 2) {
+      if (q.byIndex) rec.moved = true;   // an index is only used once it has been seen counting
+      // (a line already complete when first seen must look like a sentence: Korean has spaces)
+      if (rec.moved || (q.cursor >= q.end - 2 && (this.lang === 'ja' ? q.text.length >= 5 : /[\uAC00-\uD7A3][ \n][\uAC00-\uD7A3]/.test(q.text)))) {
         if (!best || q.firstSeen > best.firstSeen || (q.firstSeen === best.firstSeen && q.end - q.start > best.end - best.start)) best = q;
       }
     }

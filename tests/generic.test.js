@@ -2,6 +2,7 @@
 // "printer" pointer that moves through it.
 const assert = require('assert');
 const G = require(__dirname + '/../docs/kr/generic.js');
+G.prototype.forceFull = true;   // look for text on every scan (the app does it every third)
 
 function ram() { const buf = new ArrayBuffer(4 << 20); return { buf, u8: new Uint8Array(buf), u16: new Uint16Array(buf), u32: new Uint32Array(buf) }; }
 function putU16(m, addr, str) { for (let i = 0; i < str.length; i++) m.u16[(addr >> 1) + i] = str.charCodeAt(i); m.u16[(addr >> 1) + str.length] = 0; }
@@ -99,6 +100,26 @@ const shown = r => r.active && r.active.text.slice(0, r.active.shown);
   putU16(m, 0x190000, '이건 진짜 문장');
   ptr(m, 0x200800, 0x190000 + 3);                          // odd address: not a character
   assert.strictEqual(g.scan(m.u32, m.u16).active, null);
+}
+
+// --- big-endian UTF-16 with a typing count instead of a pointer (Professor Layton) ---
+{
+  const m = ram(), g = new G('ko');
+  const page1 = '2개월 전, 대부호인\n아우구스투스 씨가\n사망했단다.@', page2 = '\n그리고 유언장이 공개되었지.';
+  const T = 0x2CAC80, be = s => { const b = []; for (const ch of s) { const c = ch.charCodeAt(0); b.push(c >> 8, c & 0xFF); } return b; };
+  m.u8.set(be(page1).concat([0x70, 0x00, 0x40, 0x63]).concat(be(page2)), T);   // "@p" "@c" commands between pages
+  const O = 0x2CABE0; m.u32[(O + 0x38) >> 2] = 0x02000000 + T;                  // object -> text
+  const B = 0x22081C; m.u32[B >> 2] = 0x02000000 + O;                           // pointer to the object, count before it
+  const count = n => { m.u32[(B - 4) >> 2] = n; };
+  count(2 * 5 + 1); g.scan(m.u32, m.u16);
+  count(2 * 10 + 1); let r = g.scan(m.u32, m.u16);
+  assert.strictEqual(shown(r), '2개월 전, 대부호', 'count, big-endian');
+  count(2 * page1.length + 1); r = g.scan(m.u32, m.u16);
+  assert.strictEqual(r.active.text, page1.slice(0, -1), 'page 1 without the @ marker');
+  assert.strictEqual(shown(r), page1.slice(0, -1));
+  count(2 * page1.length + 4 + 2 * 8 + 1); r = g.scan(m.u32, m.u16);
+  assert.ok(r.newMessage, 'next page');
+  assert.strictEqual(shown(r), '\n그리고 유언장');
 }
 
 // --- reader.js uses it when there are no Pokémon strings ---

@@ -141,8 +141,8 @@
     if (total > 0) this.pokemon = true;
     if (this.forceGeneric || (!this.pokemon && this.scanNo > 3 && GenericReader)) {
       if (!this.generic || this.generic.lang !== this.lang) this.generic = new GenericReader(this.lang);
-      // It reads all of RAM in several encodings: every other scan (~3 a second) is enough and spares phones.
-      if (!this.forceGeneric && this.scanNo & 1) return { fresh: [], active: this.generic.current, changed: false };
+      // It reads all of RAM in several encodings: every third scan (~2 a second) is enough and spares phones.
+      if (!this.forceGeneric && this.scanNo % 3) return { fresh: [], active: this.generic.current, changed: false };
       var gr = this.generic.scan(u32, u16);
       this.stats = this.generic.stats;
       return gr;
