@@ -2,6 +2,10 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.19.9
+- Fix: after reopening the app on a message that was already typed to the end, the subtitle stayed empty until A was pressed (HeartGold, SoulSilver).
+- Fix: the last character of a message, often ! or ?, was missing from the subtitle once the game finished typing it.
+
 ## 0.19.8
 - Study button: clearly visible purple with a white icon when no text is on screen. The white glass look nearly disappeared on bright game screens.
 
