@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.20.3
+- Subtitles for signs you walk up against ("여기는 연두마을"): their text shows as soon as the sign pops up and goes away when you walk off (HeartGold, SoulSilver).
+
 ## 0.20.2
 - Removed the general subtitle reader for non-Pokémon games (0.20.0 and 0.20.1): it didn't work well enough. Subtitles are for Pokémon games again, exactly as in 0.19.10.
 
