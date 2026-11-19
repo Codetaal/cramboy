@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.24.0
+- New: choose the subtitle font in Study settings: Gothic (the one you had), Serif (Nanum Myeongjo) or Pixel (Galmuri). A font is downloaded only when you pick it, then kept for offline use. Both fonts are free (SIL OFL 1.1) and credited in About.
+
 ## 0.23.2
 - Subtitles always show in the box: the Subtitles choice (Off / Bar / In box) is gone. If you had Bar or Off, you get the box; to have no subtitles at all, turn Study mode off.
 
