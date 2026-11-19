@@ -34,6 +34,14 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   if (isIOS && !standalone) $('ios-hint').hidden = false;
   var APP_VERSION = '0.20.3';   // semantic version; keep in sync with sw.js
   $('ver').textContent = 'Version ' + APP_VERSION;
+  $('m-update-ver').textContent = APP_VERSION;
+  // A newer version installed while a game runs: say so on the Update row and with a dot on the menu button.
+  function showUpdateReady() {
+    updateReady = true;
+    $('m-update-title').textContent = 'Update ready';
+    $('m-update-sub').textContent = 'Tap to restart with the new version';
+    $('m-update-ver').hidden = true; $('m-update-badge').hidden = false; $('menu-dot').hidden = false;
+  }
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
     var hadController = !!navigator.serviceWorker.controller;
     var updating = false;   // set by Update now (Advanced menu)
@@ -50,7 +58,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     navigator.serviceWorker.addEventListener('controllerchange', function () {
       if (!hadController || updating) { hadController = true; return; }   // Update now reloads by itself
       if (uiCurrentMode !== 'player') location.reload();
-      else toast('Update ready: Menu → Close game to apply', { icon: 'info', ms: 6000 });
+      else { showUpdateReady(); toast('Update ready: open the menu to apply', { icon: 'info', ms: 6000 }); }
     });
   }
 
@@ -1050,6 +1058,20 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   // file with ?v=... past the phone's and GitHub's caches. (Unregistering first doesn't work: the
   // browser hands the old worker back while the page still uses it.) The current copy keeps working
   // until the new one is ready.
+  // The Update row: apply a version that is ready, otherwise look for one first, so a check that finds
+  // nothing new doesn't close the game.
+  var updateReady = false;
+  function checkUpdate() {
+    if (updateReady || !('serviceWorker' in navigator)) return updateNow();
+    toast('Checking for updates…', { icon: 'info', ms: 15000 });
+    navigator.serviceWorker.getRegistration().then(function (reg) {
+      if (!reg) return updateNow();
+      return reg.update().then(function () {
+        if (reg.installing || reg.waiting || updateReady) return updateNow();
+        toast('You have the newest version (' + APP_VERSION + ')', { icon: 'ok' });
+      });
+    }).catch(function () { toast('Couldn\'t check for updates. Check your connection.', { icon: 'warn' }); });
+  }
   function updateNow() {
     if (emuIsGameLoaded && !confirm('This closes the game. Save in the game first if you need to.\n\nUpdate now?')) return;
     var reloaded = false;
@@ -1089,7 +1111,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     if (m === 'import') $('file-save').click();
     // Study: the Study screen (its settings when study mode is off).
     if (m === 'study' && window.KRUI) { closeMenu(); KRUI.open('now'); }
-    if (m === 'update') return updateNow();
+    if (m === 'update') return checkUpdate();
     if (m === 'advanced') {
       var open = $('m-advanced').hidden; $('m-advanced').hidden = !open;
       $('m-adv-chev').style.transform = open ? 'rotate(90deg)' : '';
