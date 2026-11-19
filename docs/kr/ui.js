@@ -1370,7 +1370,7 @@
       var due = dueCount();
       var tb = function (id, label) { return '<button class="' + C.tab + '" data-tab="' + id + '" aria-pressed="' + (tab === id) + '">' + label + '</button>'; };
       h = '<div class="flex items-center"><p class="flex-1 text-xl font-bold">Study</p>' +
-        '<button class="-mr-2 grid size-10 place-items-center rounded-full text-zinc-500 active:bg-zinc-200 dark:text-zinc-400 dark:active:bg-zinc-800" data-tab="settings" aria-label="Study settings">' + HI('cog-6-tooth', 'size-6') + '</button></div>' +
+        '<button class="-mr-2 grid size-10 place-items-center rounded-full text-zinc-500 active:bg-zinc-200 dark:text-zinc-400 dark:active:bg-zinc-800" data-act="game-menu" aria-label="Menu">' + HI('cog-6-tooth', 'size-6') + '</button></div>' +
         '<div class="mt-2 flex rounded-xl bg-zinc-100 p-1 dark:bg-zinc-800">' + tb('now', 'Now') + tb('words', 'Words') +
         // Review: a floating badge on the corner of the word, like an app icon with notifications.
         tb('review', '<span class="relative">Review' + (due ? '<span class="absolute -right-[19px] -top-3 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-[#ff3b30] px-1 text-[11px] font-semibold leading-none text-white ring-2 ring-zinc-100 dark:ring-zinc-800">' + (due > 99 ? '99+' : due) + '</span>' : '') + '</span>') + tb('progress', 'Progress') + '</div>';
@@ -1420,6 +1420,8 @@
       if (act === 'pg-know-all') { markKnown(Array.prototype.map.call(card.querySelectorAll('[data-know]'), function (n) { return n.dataset.know; })); return stay('progress'); }
       if (act === 'study-toggle') { setStudy(!settings.study); if (settings.study) stay('settings'); else toast('Study mode off', 'ok'); return; }
       if (act === 'reset-box') { resetBox(); return; }
+      // The gear: the game menu, where the study settings live.
+      if (act === 'game-menu') { closeSheet(); if (window.emuOpenMenu) window.emuOpenMenu(); return; }
     };
   }
   var SEC = function (t, extra) { return '<p class="mt-5 px-1 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400' + (extra || '') + '">' + t + '</p>'; };

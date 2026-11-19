@@ -1008,6 +1008,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
 
   // ---------- menu ----------
   var wasRunning = false;
+  window.emuOpenMenu = function () { openMenu(); };   // the Study screen's gear (kr/ui.js)
   function openMenu() {
     $('btn-menu').classList.add('active');
     wasRunning = emuIsRunning; emuIsRunning = false;
