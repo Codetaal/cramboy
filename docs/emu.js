@@ -1016,6 +1016,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     // The game's own title from its banner (as on the DS menu); the short header name as a fallback.
     $('menu-title').textContent = gameBanner || gameTitle || 'Menu';
     $('m-advanced').hidden = true; $('m-adv-chev').style.transform = '';
+    $('m-about').hidden = true; $('m-about-chev').style.transform = '';
     menuLabels();
     $('menu').hidden = false;
   }
@@ -1042,13 +1043,16 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     $('m-study-sum').textContent = !study ? 'Off · tap to turn on' : parts.join(' · ');
     ['!text-violet-700', 'dark:!text-violet-400', 'font-semibold'].forEach(function (c) { $('m-study-sum').classList.toggle(c, !!due); });
     ['!bg-violet-100', '!text-violet-700', 'dark:!bg-violet-600/15', 'dark:!text-violet-400'].forEach(function (c) { $('m-study-icon').classList.toggle(c, !!due); });
-    var st = window.KRReaderStats ? KRReaderStats() : null;
-    $('m-info').innerHTML = 'Version ' + APP_VERSION + ' · ' + (gameID ? gameID.trim() : '') +
-      (lastLoadError ? '<br>Last load problem (retried): ' + lastLoadError.replace(/</g, '&lt;') : '') +
-      (st ? '<br>Reader: ' + st.strings + ' strings in memory, ' + st.korean + ' in the game’s language, ' + st.printers + ' being printed' : '') +
-      (window.KRSettings && KRSettings.voiceName ? '<br>Voice: ' + (KRSettings.voiceName() || 'none found').replace(/</g, '&lt;') : '') +
-      '<br>The game saves automatically a few seconds after you save in‑game.' +
-      '<br>Emulator: desmume‑wasm (GPL‑2.0). Character table and Pokémon names: PKHeX (GPL‑3.0). Dictionaries: kengdic (MPL‑2.0), JMdict by the EDRDG (CC BY‑SA 4.0). Icons: Heroicons (MIT).';
+    // About: version, game, voice; the reader's numbers and a load problem only when something is off.
+    var st = window.KRReaderStats ? KRReaderStats() : null, esc = function (t) { return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;'); };
+    var rows = [['Version', APP_VERSION]];
+    if (gameID && gameID.trim()) rows.push(['Game code', gameID.trim()]);
+    if (window.KRSettings && KRSettings.voiceName) rows.push(['Voice', KRSettings.voiceName() || 'None found on this device']);
+    if (st && st.strings && !st.korean) rows.push(['Subtitles', 'No text in the game’s language found (' + st.strings + ' strings in memory)']);
+    if (lastLoadError) rows.push(['Load problem', lastLoadError + ' (retried)']);
+    $('m-about-list').innerHTML = rows.map(function (r) {
+      return '<dt class="text-zinc-500 dark:text-zinc-400">' + esc(r[0]) + '</dt><dd class="min-w-0 break-words tabular-nums">' + esc(r[1]) + '</dd>';
+    }).join('');
   }
 
   // Menu > Advanced > Update now: drop the offline copy of the app and load the newest one.
@@ -1112,10 +1116,10 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     // Study: the Study screen (its settings when study mode is off).
     if (m === 'study' && window.KRUI) { closeMenu(); KRUI.open('now'); }
     if (m === 'update') return checkUpdate();
-    if (m === 'advanced') {
-      var open = $('m-advanced').hidden; $('m-advanced').hidden = !open;
-      $('m-adv-chev').style.transform = open ? 'rotate(90deg)' : '';
-      if (open) setTimeout(function () { $('m-advanced').scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }, 0);
+    if (m === 'advanced' || m === 'about') {
+      var sec = $(m === 'advanced' ? 'm-advanced' : 'm-about'), open = sec.hidden; sec.hidden = !open;
+      $(m === 'advanced' ? 'm-adv-chev' : 'm-about-chev').style.transform = open ? 'rotate(90deg)' : '';
+      if (open) setTimeout(function () { sec.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }, 0);
     }
     if (m === 'snapshot') exportSnapshot();
     if (m === 'fps-toggle') {
