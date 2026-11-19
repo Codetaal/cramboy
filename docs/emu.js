@@ -35,12 +35,12 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   var APP_VERSION = '0.21.3';   // semantic version; keep in sync with sw.js
   $('ver').textContent = 'Version ' + APP_VERSION;
   $('m-update-ver').textContent = APP_VERSION;
-  // A newer version installed while a game runs: say so on the Update row and with a dot on the menu button.
+  // A newer version installed while a game runs: say so on the Update row.
   function showUpdateReady() {
     updateReady = true;
     $('m-update-title').textContent = 'Update ready';
     $('m-update-sub').textContent = 'Tap to restart with the new version';
-    $('m-update-ver').hidden = true; $('m-update-badge').hidden = false; $('menu-dot').hidden = false;
+    $('m-update-ver').hidden = true; $('m-update-badge').hidden = false;
   }
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
     var hadController = !!navigator.serviceWorker.controller;
