@@ -1040,7 +1040,8 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     if (due) parts.push(due + ' to review');
     if (kp !== null) parts.push(kp + '% known');
     if (study && !parts.length) parts.push(window.KRSettings ? KRSettings.savedCount() + ' saved words' : '');
-    $('m-study-sum').textContent = !study ? 'Off · tap to turn on' : parts.join(' · ');
+    $('m-study-sum').textContent = !study ? 'Study mode is off' : parts.join(' · ');
+    if (window.KRUI && KRUI.fillMenuSettings) KRUI.fillMenuSettings($('m-study-settings'), menuLabels);
     ['!text-violet-700', 'dark:!text-violet-400', 'font-semibold'].forEach(function (c) { $('m-study-sum').classList.toggle(c, !!due); });
     ['!bg-violet-100', '!text-violet-700', 'dark:!bg-violet-600/15', 'dark:!text-violet-400'].forEach(function (c) { $('m-study-icon').classList.toggle(c, !!due); });
     // About: version, game, voice; the reader's numbers and a load problem only when something is off.

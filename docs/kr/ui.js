@@ -138,7 +138,7 @@
   window.KRSettings = { getMode: function () { return settings.mode; }, setMode: setMode, savedCount: function () { return saved.length; }, voiceName: function () { var v = bestVoice(lang); return v ? v.name + (/premium/i.test(v.name + v.voiceURI) ? ' (Premium)' : /enhanced/i.test(v.name + v.voiceURI) ? ' (Enhanced)' : '') : ''; }, knownPct: function () { var p = gameProgress(); return p.n ? pct(p.known, p.n) : null; }, dueCount: function () { return dueCount(); },
     getStudy: function () { return settings.study; }, setStudy: setStudy,
     getFrame: function () { return settings.frame; }, setFrame: setFrame, frames: FRAMES };
-  window.KRUI = { open: function (tab) { openMenu(tab || 'now'); }, resetBox: resetBox };
+  window.KRUI = { open: function (tab) { openMenu(tab || 'now'); }, resetBox: resetBox, fillMenuSettings: fillMenuSettings };
 
   function loadSaved() {
     if (!store) return;
@@ -1481,29 +1481,55 @@
   }
   // Study settings, behind the gear.
   var FRAME_NAMES = { classic: 'Classic', ball: 'Poké Ball', ocean: 'Ocean', night: 'Night', sakura: 'Sakura' };
-  function settingsHTML() {
+  // The study settings inside the game menu (Menu > Study), under the Study row: same settings as the
+  // settings page, as one list. onChange: emu.js refreshes the menu (the Study row's summary).
+  function fillMenuSettings(el, onChange) {
+    var p = settingsParts(), row = 'flex items-center gap-2 px-4 py-2.5';
+    var h = '<div class="' + C.list + '">' + p.study.replace('px-4 py-3', 'px-4 py-3 active:bg-zinc-50 dark:active:bg-zinc-800');
+    if (settings.study) h += '<div class="' + row + '"><span class="flex-1">Subtitles</span>' + p.mode + '</div>' + (settings.mode === 'box' ? p.frame + p.reset : '') +
+      '<div class="' + row + '"><span class="flex-1">New words a day</span>' + p.npd + '</div>';
+    el.innerHTML = h + '</div>';
+    el.onclick = function (e) {
+      var b = e.target.closest('[data-act],[data-mode],[data-frame-pick],[data-npd]');
+      if (!b) return;
+      if (b.dataset.mode) setMode(b.dataset.mode);
+      else if (b.dataset.framePick) setFrame(b.dataset.framePick);
+      else if (b.dataset.npd) { settings.newPerDay = +b.dataset.npd; saveSettings(); }
+      else if (b.dataset.act === 'study-toggle') setStudy(!settings.study);
+      else if (b.dataset.act === 'reset-box') { resetBox(); toast('Box back in its place', 'ok'); return; }
+      fillMenuSettings(el, onChange);
+      if (onChange) onChange();
+    };
+  }
+  function settingsParts() {
     var SW = function (on) { return '<span class="relative h-[31px] w-[51px] shrink-0 rounded-full transition-colors ' + (on ? 'bg-violet-600 dark:bg-violet-500' : 'bg-zinc-200 dark:bg-zinc-700') + '"><span class="absolute left-0.5 top-0.5 size-[27px] rounded-full bg-white shadow transition-transform' + (on ? ' translate-x-5' : '') + '"></span></span>'; };
     var seg = function (attr, opts, cur) {
       return '<div class="flex rounded-lg bg-zinc-100 p-0.5 text-[13px] dark:bg-zinc-800">' + opts.map(function (o) {
         return '<button class="rounded-md px-2.5 py-1.5 text-zinc-500 aria-pressed:bg-white aria-pressed:font-semibold aria-pressed:text-zinc-900 aria-pressed:shadow-sm dark:text-zinc-400 dark:aria-pressed:bg-zinc-600 dark:aria-pressed:text-white" ' + attr + '="' + o[0] + '" aria-pressed="' + (String(o[0]) === String(cur)) + '">' + o[1] + '</button>';
       }).join('') + '</div>';
     };
-    var h = (settings.study ? '<button class="-ml-1.5 -mt-1 flex items-center gap-0.5 py-1 pr-2 font-medium text-zinc-600 active:opacity-60 dark:text-zinc-300" data-tab="' + settingsBack + '" data-swipe-back>' + HI('chevron-left', 'size-5') + 'Study</button>' : '') +
-      '<p class="mt-1 text-2xl font-bold">Study settings</p>' +
-      '<div class="mt-4 ' + C.list + '"><button class="flex w-full items-center gap-3 px-4 py-3 text-left" data-act="study-toggle" role="switch" aria-checked="' + settings.study + '"><span class="flex-1">Study mode<span class="block text-sm ' + C.muted + '">' +
-        (settings.study ? 'Subtitles, word lookup, review and progress' : 'Off: no subtitles and no translate button') + '</span></span>' + SW(settings.study) + '</button></div>';
-    if (!settings.study) return h;
-    h += SEC('Subtitles') + '<div class="mt-1.5 ' + C.list + '">' +
-      '<div class="flex items-center gap-2 px-4 py-2.5"><span class="flex-1">Show</span>' + seg('data-mode', [['off', 'Off'], ['bar', 'Bar'], ['box', 'In box']], settings.mode) + '</div>';
-    if (settings.mode === 'box') {
-      h += '<div class="px-4 py-2.5"><div class="flex items-center"><span class="flex-1">Box frame</span><span class="text-sm ' + C.muted + '">' + (FRAME_NAMES[settings.frame] || '') + '</span></div>' +
+    return {
+      study: '<button class="flex w-full items-center gap-3 px-4 py-3 text-left" data-act="study-toggle" role="switch" aria-checked="' + settings.study + '"><span class="flex-1">Study mode<span class="block text-sm ' + C.muted + '">' +
+        (settings.study ? 'Subtitles, word lookup, review and progress' : 'Off: no subtitles and no translate button') + '</span></span>' + SW(settings.study) + '</button>',
+      mode: seg('data-mode', [['off', 'Off'], ['bar', 'Bar'], ['box', 'In box']], settings.mode),
+      frame: '<div class="px-4 py-2.5"><div class="flex items-center"><span class="flex-1">Box frame</span><span class="text-sm ' + C.muted + '">' + (FRAME_NAMES[settings.frame] || '') + '</span></div>' +
         '<div class="-mx-1.5 mt-0.5 flex gap-0.5 overflow-x-auto px-0.5 py-1">' + Object.keys(FRAME_NAMES).map(function (f) {
           return '<button class="grid place-items-center rounded-xl p-1.5 ring-2 ring-transparent aria-pressed:ring-zinc-900 dark:aria-pressed:ring-white" data-frame-pick="' + f + '" aria-label="' + FRAME_NAMES[f] + ' frame" aria-pressed="' + (settings.frame === f) + '"><span class="kr-frame-swatch" data-frame="' + f + '"></span></button>';
-        }).join('') + '</div></div>' +
-        '<button class="flex w-full items-center px-4 py-3 text-left text-zinc-600 active:bg-zinc-50 dark:text-zinc-300 dark:active:bg-zinc-800" data-act="reset-box">Reset box position</button>';
-    }
-    h += '</div>' + SEC('Review') + '<div class="mt-1.5 ' + C.list + '"><div class="flex items-center gap-2 px-4 py-2.5"><span class="flex-1">New words per day</span>' +
-      seg('data-npd', [[5, '5'], [10, '10'], [15, '15'], [20, '20'], [30, '30']], newPerDay()) + '</div></div>';
+        }).join('') + '</div></div>',
+      reset: '<button class="flex w-full items-center px-4 py-3 text-left text-zinc-600 active:bg-zinc-50 dark:text-zinc-300 dark:active:bg-zinc-800" data-act="reset-box">Reset box position</button>',
+      npd: seg('data-npd', [[5, '5'], [10, '10'], [15, '15'], [20, '20'], [30, '30']], newPerDay())
+    };
+  }
+  function settingsHTML() {
+    var p = settingsParts();
+    var h = (settings.study ? '<button class="-ml-1.5 -mt-1 flex items-center gap-0.5 py-1 pr-2 font-medium text-zinc-600 active:opacity-60 dark:text-zinc-300" data-tab="' + settingsBack + '" data-swipe-back>' + HI('chevron-left', 'size-5') + 'Study</button>' : '') +
+      '<p class="mt-1 text-2xl font-bold">Study settings</p>' +
+      '<div class="mt-4 ' + C.list + '">' + p.study + '</div>';
+    if (!settings.study) return h;
+    h += SEC('Subtitles') + '<div class="mt-1.5 ' + C.list + '">' +
+      '<div class="flex items-center gap-2 px-4 py-2.5"><span class="flex-1">Show</span>' + p.mode + '</div>';
+    if (settings.mode === 'box') h += p.frame + p.reset;
+    h += '</div>' + SEC('Review') + '<div class="mt-1.5 ' + C.list + '"><div class="flex items-center gap-2 px-4 py-2.5"><span class="flex-1">New words per day</span>' + p.npd + '</div></div>';
     return h;
   }
 
