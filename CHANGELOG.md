@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.21.6
+- Legal notes on the home screen and in Menu > About: your files are processed locally and never uploaded; don't use it for games you haven't legally obtained; "Nintendo DS" is a trademark of Nintendo, and CramBoy isn't affiliated with Nintendo. The version line on the home screen is bold.
+
 ## 0.21.5
 - Study screen: the gear opens the game menu, where the study settings are.
 
