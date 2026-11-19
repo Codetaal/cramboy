@@ -40,6 +40,10 @@
       <button id="btn-open" class="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl bg-violet-600 px-4 py-3.5 font-semibold text-white shadow-sm ring-1 ring-inset ring-violet-500/20 transition active:scale-[0.98] active:bg-violet-500 disabled:opacity-50" disabled>
         <span data-hi="plus" data-hi-class="size-5"></span>Add a game</button>
       <input id="file-rom" type="file" multiple hidden>
+      <button id="btn-faq" class="mt-3 flex w-full items-center gap-3 rounded-2xl bg-white px-4 py-3 text-left shadow-sm ring-1 ring-zinc-900/5 active:bg-zinc-50 dark:bg-zinc-900 dark:ring-white/10 dark:active:bg-zinc-800">
+        <span class="grid size-9 shrink-0 place-items-center rounded-xl bg-zinc-100 text-zinc-600 dark:bg-white/10 dark:text-zinc-300"><span data-hi="question-mark-circle" data-hi-class="size-5"></span></span>
+        <span class="min-w-0 flex-1"><span class="block font-semibold">Help &amp; FAQ</span><span class="block text-sm text-zinc-500 dark:text-zinc-400">Games, saves, subtitles, reviews</span></span>
+        <span data-hi="chevron-right" data-hi-class="size-5 shrink-0 text-zinc-300 dark:text-zinc-600"></span></button>
       <p id="recent-f" class="mt-3 px-1 text-sm text-zinc-500 dark:text-zinc-400">Swipe left on a game to remove it. Its save stays on this device.</p>
       <div id="ios-hint" class="mt-4 rounded-2xl bg-violet-50 p-4 text-sm leading-relaxed text-violet-900 ring-1 ring-violet-200 dark:bg-violet-600/10 dark:text-violet-100 dark:ring-violet-400/20" hidden>
         In Safari, tap <b>Share → Add to Home Screen</b> and open it from there. Saves are only kept reliably in the Home Screen app.</div>
@@ -146,6 +150,7 @@
           <span class="min-w-0 flex-1"><span id="m-update-title" class="block">Check for updates</span><span id="m-update-sub" class="block text-sm text-zinc-500 dark:text-zinc-400">Keeps your games and saves</span></span>
           <span id="m-update-ver" class="text-sm tabular-nums text-zinc-500 dark:text-zinc-400"></span>
           <span id="m-update-badge" class="rounded-full bg-violet-600 px-2 py-0.5 text-xs font-semibold text-white" hidden>New</span></button>
+        <button class="flex w-full items-center gap-2 px-4 py-3 text-left active:bg-zinc-50 dark:active:bg-zinc-800" data-m="faq"><span class="flex-1">Help &amp; FAQ</span><span data-hi="chevron-right" data-hi-class="size-5 shrink-0 text-zinc-300 dark:text-zinc-600"></span></button>
         <button class="flex w-full items-center gap-2 px-4 py-3 text-left active:bg-zinc-50 dark:active:bg-zinc-800" data-m="advanced"><span class="flex-1">Advanced</span><span class="text-sm text-zinc-500 dark:text-zinc-400">FPS, memory dump</span>
           <span id="m-adv-chev" class="inline-flex transition-transform duration-150"><span data-hi="chevron-right" data-hi-class="size-5 shrink-0 text-zinc-300 dark:text-zinc-600"></span></span></button>
         <div id="m-advanced" class="bg-zinc-50/60 dark:bg-white/[0.02]" hidden>
@@ -166,6 +171,39 @@
         <button class="flex w-full items-center gap-2 px-4 py-3 text-left active:bg-zinc-50 dark:active:bg-zinc-800 text-red-500" data-m="home">Close game</button>
       </div>
       </div>
+    </div>
+  </div>
+
+  <!-- Help & FAQ: from the home screen and from the game menu (above it; back returns there). -->
+  <div id="page-faq" data-swipe-pane class="sub-page fixed inset-0 z-30 overflow-y-auto bg-zinc-50 dark:bg-zinc-950" hidden>
+    <div class="mx-auto max-w-xl px-4 pb-[calc(2rem+env(safe-area-inset-bottom))] pt-[env(safe-area-inset-top)]">
+      <div class="flex h-11 items-center">
+        <button id="faq-back" data-swipe-back class="-ml-2 flex items-center gap-0.5 rounded-lg px-1 py-1 text-[17px] text-violet-600 active:opacity-60 dark:text-violet-400">
+          <span data-hi="chevron-left" data-hi-class="size-6"></span><span id="faq-back-label">CramBoy</span></button>
+      </div>
+      <h1 class="mt-1 text-[34px] font-bold tracking-tight">Help &amp; FAQ</h1>
+      <p class="mt-0.5 text-[15px] text-zinc-500 dark:text-zinc-400">Tap a question.</p>
+      <div class="mt-4 divide-y divide-zinc-100 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-zinc-900/5 dark:divide-white/5 dark:bg-zinc-900 dark:ring-white/10">
+          <details class="group"><summary class="flex cursor-pointer list-none items-center gap-3 px-4 py-3.5 font-medium group-open:text-violet-700 dark:group-open:text-violet-300 [&amp;::-webkit-details-marker]:hidden"><span class="flex-1">Where do I get games?</span><span class="-rotate-90 text-zinc-400 transition-transform group-open:rotate-0 group-open:text-violet-600 dark:text-zinc-500 dark:group-open:text-violet-300"><span data-hi="chevron-down" data-hi-class="size-5"></span></span></summary>
+            <p class="-mt-1 px-4 pb-4 text-[15px] leading-relaxed text-zinc-600 dark:text-zinc-300">Use your own games: copy (dump) them from cartridges you own and add the .nds file with “Add a game”. CramBoy doesn’t offer or link to game downloads.</p></details>
+          <details class="group"><summary class="flex cursor-pointer list-none items-center gap-3 px-4 py-3.5 font-medium group-open:text-violet-700 dark:group-open:text-violet-300 [&amp;::-webkit-details-marker]:hidden"><span class="flex-1">Why don’t I see subtitles?</span><span class="-rotate-90 text-zinc-400 transition-transform group-open:rotate-0 group-open:text-violet-600 dark:text-zinc-500 dark:group-open:text-violet-300"><span data-hi="chevron-down" data-hi-class="size-5"></span></span></summary>
+            <p class="-mt-1 px-4 pb-4 text-[15px] leading-relaxed text-zinc-600 dark:text-zinc-300">Subtitles work in Pokémon HeartGold, SoulSilver, Black and White, in Korean and Japanese. In the game menu, check that Study mode is on and that Subtitles isn’t set to Off.</p></details>
+          <details class="group"><summary class="flex cursor-pointer list-none items-center gap-3 px-4 py-3.5 font-medium group-open:text-violet-700 dark:group-open:text-violet-300 [&amp;::-webkit-details-marker]:hidden"><span class="flex-1">How do I keep my save safe?</span><span class="-rotate-90 text-zinc-400 transition-transform group-open:rotate-0 group-open:text-violet-600 dark:text-zinc-500 dark:group-open:text-violet-300"><span data-hi="chevron-down" data-hi-class="size-5"></span></span></summary>
+            <p class="-mt-1 px-4 pb-4 text-[15px] leading-relaxed text-zinc-600 dark:text-zinc-300">Save in the game as usual: CramBoy stores it a few seconds later. On iPhone, open CramBoy from your Home Screen, because Safari tabs can lose their data. For an extra backup, use Export save in the game menu.</p></details>
+          <details class="group"><summary class="flex cursor-pointer list-none items-center gap-3 px-4 py-3.5 font-medium group-open:text-violet-700 dark:group-open:text-violet-300 [&amp;::-webkit-details-marker]:hidden"><span class="flex-1">Can I move my save to another device?</span><span class="-rotate-90 text-zinc-400 transition-transform group-open:rotate-0 group-open:text-violet-600 dark:text-zinc-500 dark:group-open:text-violet-300"><span data-hi="chevron-down" data-hi-class="size-5"></span></span></summary>
+            <p class="-mt-1 px-4 pb-4 text-[15px] leading-relaxed text-zinc-600 dark:text-zinc-300">Yes. Export save in the game menu gives you a .dsz file. On the other device, start the same game and use Import save; .dsz, .sav and .dsv files work.</p></details>
+          <details class="group"><summary class="flex cursor-pointer list-none items-center gap-3 px-4 py-3.5 font-medium group-open:text-violet-700 dark:group-open:text-violet-300 [&amp;::-webkit-details-marker]:hidden"><span class="flex-1">What do Learning and Known mean?</span><span class="-rotate-90 text-zinc-400 transition-transform group-open:rotate-0 group-open:text-violet-600 dark:text-zinc-500 dark:group-open:text-violet-300"><span data-hi="chevron-down" data-hi-class="size-5"></span></span></summary>
+            <p class="-mt-1 px-4 pb-4 text-[15px] leading-relaxed text-zinc-600 dark:text-zinc-300">Learning saves a word as a flashcard. It comes back in Review at growing intervals until you know it. Known removes the word’s underline in the subtitles, so you can focus on new words.</p></details>
+          <details class="group"><summary class="flex cursor-pointer list-none items-center gap-3 px-4 py-3.5 font-medium group-open:text-violet-700 dark:group-open:text-violet-300 [&amp;::-webkit-details-marker]:hidden"><span class="flex-1">Why does it say “Update ready”?</span><span class="-rotate-90 text-zinc-400 transition-transform group-open:rotate-0 group-open:text-violet-600 dark:text-zinc-500 dark:group-open:text-violet-300"><span data-hi="chevron-down" data-hi-class="size-5"></span></span></summary>
+            <p class="-mt-1 px-4 pb-4 text-[15px] leading-relaxed text-zinc-600 dark:text-zinc-300">A new version downloaded in the background. Save in the game, then tap Update ready in the game menu. Your games, saves and words stay.</p></details>
+          <details class="group"><summary class="flex cursor-pointer list-none items-center gap-3 px-4 py-3.5 font-medium group-open:text-violet-700 dark:group-open:text-violet-300 [&amp;::-webkit-details-marker]:hidden"><span class="flex-1">Is anything uploaded?</span><span class="-rotate-90 text-zinc-400 transition-transform group-open:rotate-0 group-open:text-violet-600 dark:text-zinc-500 dark:group-open:text-violet-300"><span data-hi="chevron-down" data-hi-class="size-5"></span></span></summary>
+            <p class="-mt-1 px-4 pb-4 text-[15px] leading-relaxed text-zinc-600 dark:text-zinc-300">No. Your games, saves and words stay on this device. CramBoy only downloads the app itself and its dictionaries.</p></details>
+          <details class="group"><summary class="flex cursor-pointer list-none items-center gap-3 px-4 py-3.5 font-medium group-open:text-violet-700 dark:group-open:text-violet-300 [&amp;::-webkit-details-marker]:hidden"><span class="flex-1">How do I hide the controls or move the subtitle box?</span><span class="-rotate-90 text-zinc-400 transition-transform group-open:rotate-0 group-open:text-violet-600 dark:text-zinc-500 dark:group-open:text-violet-300"><span data-hi="chevron-down" data-hi-class="size-5"></span></span></summary>
+            <p class="-mt-1 px-4 pb-4 text-[15px] leading-relaxed text-zinc-600 dark:text-zinc-300">The fingerprint button under the translate button hides the controls, so you can use the touch screen; the arrow button brings them back. Drag the subtitle box by its top edge to move it, or by its corner to resize it. Reset box position in the game menu puts it back.</p></details>
+      </div>
+      <a class="mt-3 flex items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-sm ring-1 ring-zinc-900/5 active:bg-zinc-50 dark:bg-zinc-900 dark:ring-white/10 dark:active:bg-zinc-800" href="https://github.com/Codetaal/cramboy" target="_blank" rel="noopener">
+        <span class="grid size-9 shrink-0 place-items-center rounded-xl bg-zinc-100 text-zinc-600 dark:bg-white/10 dark:text-zinc-300"><span data-hi="arrow-top-right-on-square" data-hi-class="size-5"></span></span>
+        <span class="min-w-0 flex-1"><span class="block font-semibold">More on GitHub</span><span class="block text-sm text-zinc-500 dark:text-zinc-400">Report a bug, source code, what’s new</span></span></a>
     </div>
   </div>
 

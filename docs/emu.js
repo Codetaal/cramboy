@@ -271,6 +271,17 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     setTimeout(function () { pg.hidden = true; }, 300);
   }
   $('nav-back').onclick = closeAllGames;
+  // Help & FAQ: the same sliding page from the home screen and from the game menu (it covers the menu,
+  // and back returns to it).
+  function openFaq(fromMenu) {
+    $('faq-back-label').textContent = fromMenu ? 'Menu' : 'CramBoy';
+    Array.prototype.forEach.call($('page-faq').querySelectorAll('details'), function (d) { d.open = false; });
+    var pg = $('page-faq'); pg.scrollTop = 0; pg.hidden = false; pg.classList.add('off');
+    requestAnimationFrame(function () { requestAnimationFrame(function () { pg.classList.remove('off'); }); });
+  }
+  function closeFaq() { var pg = $('page-faq'); pg.classList.add('off'); setTimeout(function () { pg.hidden = true; }, 300); }
+  $('btn-faq').onclick = function () { openFaq(false); };
+  $('faq-back').onclick = closeFaq;
 
   // ---------- swipe back, as on iOS ----------
   // On any page with a back button (marked data-swipe-back, inside its data-swipe-pane), a swipe that
@@ -1119,6 +1130,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     // Study: the Study screen (its settings when study mode is off).
     if (m === 'study' && window.KRUI) { closeMenu(); KRUI.open('now'); }
     if (m === 'update') return checkUpdate();
+    if (m === 'faq') return openFaq(true);
     if (m === 'advanced' || m === 'about') {
       var sec = $(m === 'advanced' ? 'm-advanced' : 'm-about'), open = sec.hidden; sec.hidden = !open;
       $(m === 'advanced' ? 'm-adv-chev' : 'm-about-chev').style.transform = open ? 'rotate(90deg)' : '';
