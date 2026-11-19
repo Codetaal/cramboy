@@ -22,8 +22,8 @@
   };
   var saved = [];             // [{w, base, gloss, s, t}]
   var history = [];           // finished dialogue messages (newest last)
-  // mode: 'box' = Pokémon-style box over the game's own text, 'bar' = bar at the top. (No subtitles at all:
-  // Study mode off. An older 'off' setting becomes the box.)
+  // mode: always 'box', the Pokémon-style box over the game's own text (the 'bar' and 'off' choices were
+  // removed in 0.23.2; no subtitles at all = Study mode off). The bar code below is no longer reachable.
   // study: false hides everything Korean-related (subtitles, translate button, word sheets) and stops reading.
   var settings = { mode: 'box', frame: 'classic', study: true, debug: /krdebug/.test(location.search) };
   var FRAMES = ['classic', 'ball', 'ocean', 'night', 'sakura'];
@@ -108,7 +108,7 @@
 
   // ---------- storage ----------
   function setMode(m) {
-    settings.mode = m === 'bar' ? 'bar' : 'box';
+    settings.mode = 'box';
     saveSettings();
     renderPanel();
   }
@@ -147,7 +147,7 @@
     store.getItem('settings').then(function (v) {
       if (!v) return;
       // Older versions stored {subs: true/false} for the bar.
-      settings.mode = v.mode === 'bar' || (!v.mode && v.subs === true) ? 'bar' : 'box';
+      settings.mode = 'box';
       if (v.box && typeof v.box === 'object') boxGeo = v.box;
       settings.study = v.study !== false;
       settings.frame = FRAMES.indexOf(v.frame) >= 0 ? v.frame : 'classic';
@@ -1422,7 +1422,6 @@
       if (b.dataset.know) { markKnown([b.dataset.know]); return stay('progress'); }
       if (b.dataset.gp) { var sp = (seen[lang].p || {})[b.dataset.gp] || []; return openGrammar(sp[2] || '', sp[3] || '', null, lang, b.dataset.gp); }
       if (b.dataset.pw) { var e2 = seen[lang].w[b.dataset.pw]; return openWord(b.dataset.pw, e2 ? e2[2] : '', null, lang); }
-      if (b.dataset.mode) { setMode(b.dataset.mode); return stay('settings'); }
       if (b.dataset.framePick) { setFrame(b.dataset.framePick); return stay('settings'); }
       if (b.dataset.npd) { settings.newPerDay = +b.dataset.npd; saveSettings(); return stay('settings'); }
       if (b.dataset.rpd !== undefined) { settings.reviewsPerDay = +b.dataset.rpd; saveSettings(); return stay('settings'); }
@@ -1502,14 +1501,13 @@
   function fillMenuSettings(el, onChange) {
     var p = settingsParts(), row = 'flex items-center gap-2 px-4 py-2.5';
     var h = '<div class="' + C.list + '">' + p.study.replace('px-4 py-3', 'px-4 py-3 active:bg-zinc-50 dark:active:bg-zinc-800');
-    if (settings.study) h += '<div class="' + row + '"><span class="flex-1">Subtitles</span>' + p.mode + '</div>' + (settings.mode === 'box' ? p.frame + p.reset : '') +
+    if (settings.study) h += p.frame + p.reset +
       p.npdRow + p.rpdRow;
     el.innerHTML = h + '</div>';
     el.onclick = function (e) {
       var b = e.target.closest('[data-act],[data-mode],[data-frame-pick],[data-npd],[data-rpd]');
       if (!b) return;
-      if (b.dataset.mode) setMode(b.dataset.mode);
-      else if (b.dataset.framePick) setFrame(b.dataset.framePick);
+      if (b.dataset.framePick) setFrame(b.dataset.framePick);
       else if (b.dataset.npd) { settings.newPerDay = +b.dataset.npd; saveSettings(); }
       else if (b.dataset.rpd !== undefined) { settings.reviewsPerDay = +b.dataset.rpd; saveSettings(); }
       else if (b.dataset.act === 'study-toggle') setStudy(!settings.study);
@@ -1532,7 +1530,6 @@
     return {
       study: '<button class="flex w-full items-center gap-3 px-4 py-3 text-left" data-act="study-toggle" role="switch" aria-checked="' + settings.study + '"><span class="flex-1">Study mode<span class="block text-sm ' + C.muted + '">' +
         (settings.study ? 'Subtitles, word lookup, review and progress' : 'Off: no subtitles and no translate button') + '</span></span>' + SW(settings.study) + '</button>',
-      mode: seg('data-mode', [['bar', 'Bar'], ['box', 'In box']], settings.mode),
       frame: '<div class="px-4 py-2.5"><div class="flex items-center"><span class="flex-1">Box frame</span><span class="text-sm ' + C.muted + '">' + (FRAME_NAMES[settings.frame] || '') + '</span></div>' +
         '<div class="-mx-1.5 mt-0.5 flex gap-0.5 overflow-x-auto px-0.5 py-1">' + Object.keys(FRAME_NAMES).map(function (f) {
           return '<button class="grid place-items-center rounded-xl p-1.5 ring-2 ring-transparent aria-pressed:ring-zinc-900 dark:aria-pressed:ring-white" data-frame-pick="' + f + '" aria-label="' + FRAME_NAMES[f] + ' frame" aria-pressed="' + (settings.frame === f) + '"><span class="kr-frame-swatch" data-frame="' + f + '"></span></button>';
@@ -1549,9 +1546,7 @@
       '<p class="mt-1 text-2xl font-bold">Study settings</p>' +
       '<div class="mt-4 ' + C.list + '">' + p.study + '</div>';
     if (!settings.study) return h;
-    h += SEC('Subtitles') + '<div class="mt-1.5 ' + C.list + '">' +
-      '<div class="flex items-center gap-2 px-4 py-2.5"><span class="flex-1">Show</span>' + p.mode + '</div>';
-    if (settings.mode === 'box') h += p.frame + p.reset;
+    h += SEC('Subtitles') + '<div class="mt-1.5 ' + C.list + '">' + p.frame + p.reset;
     h += '</div>' + SEC('Review') + '<div class="mt-1.5 ' + C.list + '">' + p.npdRow + p.rpdRow + '</div>';
     return h;
   }
