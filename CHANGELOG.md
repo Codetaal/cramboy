@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.21.1
+- Going back (swipe or back button) returns to the previous page at the same scroll position.
+
 ## 0.21.0
 - Swipe back from the left edge, as on iOS: on All Games, word and grammar pages and Study settings. The page you go back to shows underneath while you swipe.
 - Study settings goes back to the tab you opened it from.
