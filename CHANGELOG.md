@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.21.5
+- Study screen: the gear opens the game menu, where the study settings are.
+
 ## 0.21.4
 - Menu: the Study card stands on its own at the top; the Study heading with the study settings starts below it.
 - No more dot on the menu button when an update is ready; the Update row in the menu still says "Update ready".
