@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.21.3
+- Menu: a Study section again, with the Study row (what needs attention) and the study settings right below it: study mode, subtitles, box frame, reset box position and new words a day. The settings page behind the gear on the Study screen stays.
+
 ## 0.21.2
 - Menu: an About row with your version, the game's code, the voice and the credits, instead of the info text under Advanced. Reader details and load problems only show when something is wrong. The note about automatic saving now sits under Saves.
 
