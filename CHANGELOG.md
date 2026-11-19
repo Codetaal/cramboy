@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.23.0
+- New: Help & FAQ, from the home screen and from the game menu (under More). Eight short answers about getting games, subtitles, keeping and moving saves, Learning and Known, updates, privacy and the controls, plus a link to the project on GitHub.
+
 ## 0.22.1
 - Controls: the hide-controls button sits right under the translate button. In landscape the top row now matches portrait: settings, translate button and fast forward side by side, with the hide-controls button under the translate button.
 
