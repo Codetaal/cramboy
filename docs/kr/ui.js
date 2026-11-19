@@ -22,7 +22,8 @@
   };
   var saved = [];             // [{w, base, gloss, s, t}]
   var history = [];           // finished dialogue messages (newest last)
-  // mode: 'box' = Pokémon-style box over the game's own text, 'bar' = bar at the top, 'off' = only via 가
+  // mode: 'box' = Pokémon-style box over the game's own text, 'bar' = bar at the top. (No subtitles at all:
+  // Study mode off. An older 'off' setting becomes the box.)
   // study: false hides everything Korean-related (subtitles, translate button, word sheets) and stops reading.
   var settings = { mode: 'box', frame: 'classic', study: true, debug: /krdebug/.test(location.search) };
   var FRAMES = ['classic', 'ball', 'ocean', 'night', 'sakura'];
@@ -107,7 +108,7 @@
 
   // ---------- storage ----------
   function setMode(m) {
-    settings.mode = m === 'bar' || m === 'off' ? m : 'box';
+    settings.mode = m === 'bar' ? 'bar' : 'box';
     saveSettings();
     renderPanel();
   }
@@ -146,7 +147,7 @@
     store.getItem('settings').then(function (v) {
       if (!v) return;
       // Older versions stored {subs: true/false} for the bar.
-      settings.mode = v.mode || (v.subs === false ? 'off' : v.subs === true ? 'bar' : 'box');
+      settings.mode = v.mode === 'bar' || (!v.mode && v.subs === true) ? 'bar' : 'box';
       if (v.box && typeof v.box === 'object') boxGeo = v.box;
       settings.study = v.study !== false;
       settings.frame = FRAMES.indexOf(v.frame) >= 0 ? v.frame : 'classic';
@@ -1531,7 +1532,7 @@
     return {
       study: '<button class="flex w-full items-center gap-3 px-4 py-3 text-left" data-act="study-toggle" role="switch" aria-checked="' + settings.study + '"><span class="flex-1">Study mode<span class="block text-sm ' + C.muted + '">' +
         (settings.study ? 'Subtitles, word lookup, review and progress' : 'Off: no subtitles and no translate button') + '</span></span>' + SW(settings.study) + '</button>',
-      mode: seg('data-mode', [['off', 'Off'], ['bar', 'Bar'], ['box', 'In box']], settings.mode),
+      mode: seg('data-mode', [['bar', 'Bar'], ['box', 'In box']], settings.mode),
       frame: '<div class="px-4 py-2.5"><div class="flex items-center"><span class="flex-1">Box frame</span><span class="text-sm ' + C.muted + '">' + (FRAME_NAMES[settings.frame] || '') + '</span></div>' +
         '<div class="-mx-1.5 mt-0.5 flex gap-0.5 overflow-x-auto px-0.5 py-1">' + Object.keys(FRAME_NAMES).map(function (f) {
           return '<button class="grid place-items-center rounded-xl p-1.5 ring-2 ring-transparent aria-pressed:ring-zinc-900 dark:aria-pressed:ring-white" data-frame-pick="' + f + '" aria-label="' + FRAME_NAMES[f] + ' frame" aria-pressed="' + (settings.frame === f) + '"><span class="kr-frame-swatch" data-frame="' + f + '"></span></button>';
