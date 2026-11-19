@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.23.1
+- Home: the "Swipe left on a game" hint sits right under Add a game again, with Help & FAQ below it.
+
 ## 0.23.0
 - New: Help & FAQ, from the home screen and from the game menu (under More). Eight short answers about getting games, subtitles, keeping and moving saves, Learning and Known, updates, privacy and the controls, plus a link to the project on GitHub.
 
