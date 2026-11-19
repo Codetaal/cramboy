@@ -264,6 +264,84 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   }
   $('nav-back').onclick = closeAllGames;
 
+  // ---------- swipe back, as on iOS ----------
+  // On any page with a back button (marked data-swipe-back, inside its data-swipe-pane), a swipe that
+  // starts at the left edge drags the page along with the finger; let go past a third of the width (or
+  // flick) and it goes back, otherwise it springs back into place.
+  (function () {
+    var EDGE = 24, drag = null;
+    function target() {
+      var bs = document.querySelectorAll('[data-swipe-back]');
+      for (var i = bs.length - 1; i >= 0; i--) {
+        var pane = bs[i].closest('[data-swipe-pane]');
+        if (pane && bs[i].getClientRects().length && !pane.closest('[hidden]')) return { btn: bs[i], pane: pane };
+      }
+      return null;
+    }
+    // A pane can offer the page it goes back to (pane.swipeUnder() -> { html, y }): a still copy of it
+    // sits underneath and slides in a little from the left, as on iOS.
+    function makeUnder(pane) {
+      var u = pane.swipeUnder && pane.swipeUnder();
+      if (!u) return null;
+      var r = pane.getBoundingClientRect(), n = pane.cloneNode(false);
+      n.removeAttribute('data-swipe-pane'); n.removeAttribute('id'); n.setAttribute('aria-hidden', 'true'); n.inert = true;
+      n.innerHTML = u.html;
+      n.style.cssText = 'position:fixed;left:' + r.left + 'px;top:' + r.top + 'px;width:' + r.width + 'px;height:' + r.height + 'px;margin:0;pointer-events:none;';
+      pane.parentNode.insertBefore(n, pane);
+      n.scrollTop = u.y;
+      pane.style.position = 'relative'; pane.style.zIndex = '1';
+      return n;
+    }
+    function put(pane, x, ms, under) {
+      var tr = ms ? 'transform ' + ms + 'ms cubic-bezier(.2,.8,.2,1)' : 'none', w = pane.getBoundingClientRect().width;
+      pane.style.transition = tr;
+      pane.style.transform = x ? 'translateX(' + x + 'px)' : '';
+      pane.style.boxShadow = x ? '-8px 0 24px rgba(0,0,0,.18)' : '';
+      if (under) { under.style.transition = tr; under.style.transform = 'translateX(' + Math.round((x / w - 1) * w * 0.3) + 'px)'; }
+    }
+    function cleanUp(d) {
+      if (d.under) d.under.remove();
+      d.t.pane.style.position = d.t.pane.style.zIndex = '';
+    }
+    document.addEventListener('touchstart', function (e) {
+      drag = null;
+      if (e.touches.length !== 1 || e.touches[0].clientX > EDGE) return;
+      var t = target();
+      if (t) drag = { t: t, x0: e.touches[0].clientX, y0: e.touches[0].clientY, on: false, last: 0, lastT: 0, v: 0 };
+    }, { capture: true, passive: true });
+    document.addEventListener('touchmove', function (e) {
+      if (!drag) return;
+      var p = e.touches[0], dx = p.clientX - drag.x0, dy = p.clientY - drag.y0;
+      if (!drag.on) {
+        if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) { drag = null; return; }   // a scroll
+        if (dx < 10) return;
+        drag.on = true;
+        drag.under = makeUnder(drag.t.pane);
+      }
+      e.preventDefault(); e.stopPropagation();
+      var now = e.timeStamp, x = Math.max(0, dx);
+      if (drag.lastT) drag.v = (x - drag.last) / Math.max(1, now - drag.lastT);
+      drag.last = x; drag.lastT = now;
+      put(drag.t.pane, x, 0, drag.under);
+    }, { capture: true, passive: false });
+    function end(e) {
+      if (!drag) return;
+      var d = drag; drag = null;
+      if (!d.on) return;
+      if (e) { e.preventDefault(); e.stopPropagation(); }
+      var w = d.t.pane.getBoundingClientRect().width;
+      if (d.last > w / 3 || (d.v > 0.5 && d.last > 30)) {
+        put(d.t.pane, w, 200, d.under);
+        setTimeout(function () { d.t.btn.click(); put(d.t.pane, 0, 0); cleanUp(d); }, 200);
+      } else {
+        put(d.t.pane, 0, 200, d.under);
+        setTimeout(function () { put(d.t.pane, 0, 0); cleanUp(d); }, 200);
+      }
+    }
+    document.addEventListener('touchend', end, { capture: true, passive: false });
+    document.addEventListener('touchcancel', function () { end(null); }, { capture: true });
+  })();
+
   function readHeader(blob) {
     return blob.slice(0, 0x200).arrayBuffer().then(function (ab) {
       var u8 = new Uint8Array(ab), id = '', title = '';

@@ -60,6 +60,9 @@
     tab: 'flex flex-1 items-center justify-center gap-1 rounded-lg py-2 text-sm font-semibold text-zinc-500 aria-pressed:bg-white aria-pressed:text-zinc-900 aria-pressed:shadow-sm dark:text-zinc-400 dark:aria-pressed:bg-zinc-700 dark:aria-pressed:text-white',
     mark: 'rounded-md bg-violet-200 px-1 font-semibold text-violet-900 ring-1 ring-violet-300 dark:bg-violet-500/40 dark:text-white dark:ring-violet-400/50',
   };
+  card.setAttribute('data-swipe-pane', '');   // swipe from the left edge = the back button (emu.js)
+  var swipePrev = null;
+  card.swipeUnder = function () { return swipePrev && !swipePrev.full && !sheet.classList.contains('kr-full') ? swipePrev : null; };
   sheet.appendChild(card);
 
   function mount() {
@@ -752,8 +755,15 @@
   // (Start review, Show meaning, Got it).
   function openSheet(html, withBack, full) {
     if (sheet.hidden) pause();
+    // The page before this one, drawn under the card while you swipe back (emu.js asks card.swipeUnder).
+    // (A page redrawn in place, with the same back button, keeps the page under it.)
+    var keep = swipePrev, oldBack = card.querySelector('[data-swipe-back]');
+    swipePrev = sheet.hidden ? null : { html: card.innerHTML, y: card.scrollTop, full: sheet.classList.contains('kr-full') };
     sheet.classList.toggle('kr-full', !!full);
     card.innerHTML = (full ? '' : GRAB) + html + (withBack ? BACK : '<div class="pb-[calc(1.5rem+env(safe-area-inset-bottom))]"></div>');
+    var newBack = card.querySelector('[data-swipe-back]');
+    if (!sheet.hidden && oldBack && newBack && oldBack.outerHTML === newBack.outerHTML) swipePrev = keep;
+    if (swipePrev && /data-loading/.test(swipePrev.html)) swipePrev = keep;   // not the "Looking up…" placeholder
     sheet.hidden = false; card.scrollTop = 0;
   }
   // Redraw the open tab after a change made on it (Know, a setting) without jumping back to the top.
@@ -904,7 +914,7 @@
   // ---------- word sheet ----------
   // Which Words & text tab the word sheet's back button returns to: the tab the word was
   // tapped in, or Now when it was tapped in the subtitles.
-  var menuTab = null, wordBack = 'now';
+  var menuTab = null, wordBack = 'now', settingsBack = 'now';
   var TAB_LABEL = { now: 'Study', words: 'Words', review: 'Review', progress: 'Progress', session: 'Review', settings: 'Study settings' };
   // l: the word's own language (a saved word from a game in the other language); default the game's.
   var wlang = 'ko';
@@ -914,14 +924,14 @@
     if (wlang === 'ja') {
       wordBack = menuTab || 'now';
       if (span) span.classList.add('kr-sel');
-      openSheet('<p class="' + C.muted + '">Looking up…</p>');
+      openSheet('<p class="' + C.muted + '" data-loading>Looking up…</p>');
       loadDict('ja').then(function (d) { var r = KRLookupJa.lookup(d, raw, 5); noteLookup(r.hits && r.hits[0] ? r.hits[0].word : r.matched, wlang); showWord(r.matched, r.matched, sentence, r.hits); })
         .catch(function () { showWord(KRLookupJa.clean(raw), raw, sentence, null); });
       return;
     }
     wordBack = menuTab || 'now';
     if (span) span.classList.add('kr-sel');
-    openSheet('<p class="' + C.muted + '">Looking up…</p>');
+    openSheet('<p class="' + C.muted + '" data-loading>Looking up…</p>');
     loadDict(wlang).then(function (d) { var hits = KRLookup.lookup(d, raw, 3); noteLookup(hits && hits[0] ? hits[0].word : word, wlang); showWord(word, raw, sentence, hits); })
       .catch(function () { showWord(word, raw, sentence, null); });
   }
@@ -943,7 +953,7 @@
       return '<button class="flex items-center justify-center gap-1 rounded-lg py-2 text-sm font-semibold transition-colors ' + (status === st ? on : 'text-zinc-500 dark:text-zinc-400') +
         '" data-status="' + st + '" aria-pressed="' + (status === st) + '">' + (icon ? HI(icon, 'size-4') : '') + label + '</button>';
     };
-    var h = '<button class="-ml-1.5 -mt-1 mb-1 flex items-center gap-0.5 py-1 pr-2 font-medium text-zinc-600 active:opacity-60 dark:text-zinc-300" data-act="back">' +
+    var h = '<button class="-ml-1.5 -mt-1 mb-1 flex items-center gap-0.5 py-1 pr-2 font-medium text-zinc-600 active:opacity-60 dark:text-zinc-300" data-act="back" data-swipe-back>' +
       HI('chevron-left', 'size-5') + TAB_LABEL[wordBack] + '</button>' +
       '<div class="flex items-center gap-1"><div class="kr-selectable min-w-0 break-keep text-[30px] font-bold">' + esc(word) + '</div>' +
       '<button class="' + SPEAK_BTN + '" data-act="say-word" aria-label="Hear the word">' + HI('speaker-wave', 'size-6') + '</button></div>' +
@@ -1037,7 +1047,7 @@
   function openGrammar(chunk, sentence, span, l, onlyId) {
     wlang = l || lang; wordBack = menuTab || 'now';
     if (span) span.classList.add('kr-sel');
-    openSheet('<p class="' + C.muted + '">Looking up…</p>');
+    openSheet('<p class="' + C.muted + '" data-loading>Looking up…</p>');
     loadDict(wlang).then(function (d) { showGrammar(chunk, sentence, d, onlyId); }).catch(function () { showGrammar(chunk, sentence, null, onlyId); });
   }
   function showGrammar(chunk, sentence, d, onlyId) {
@@ -1046,7 +1056,7 @@
     if (onlyId && !pats.some(function (x) { return x.id === onlyId; })) pats = [g.byId(onlyId)].filter(Boolean);
     var title = chunk || (pats[0] ? pats[0].label : '');
     pats.forEach(function (x) { var e = (seen[wlang].p || {})[x.id]; if (e) { e[1]++; saveSeen(); } });
-    var h = '<button class="-ml-1.5 -mt-1 mb-1 flex items-center gap-0.5 py-1 pr-2 font-medium text-zinc-600 active:opacity-60 dark:text-zinc-300" data-act="back">' +
+    var h = '<button class="-ml-1.5 -mt-1 mb-1 flex items-center gap-0.5 py-1 pr-2 font-medium text-zinc-600 active:opacity-60 dark:text-zinc-300" data-act="back" data-swipe-back>' +
       HI('chevron-left', 'size-5') + TAB_LABEL[wordBack] + '</button>' +
       '<div class="flex items-center gap-1"><div class="kr-selectable min-w-0 break-keep text-[30px] font-bold">' + esc(title) + '</div>' +
       '<button class="' + SPEAK_BTN + '" data-act="say-chunk" aria-label="Hear it">' + HI('speaker-wave', 'size-6') + '</button></div>' +
@@ -1345,6 +1355,7 @@
     tab = OLD_TABS[tab] || tab || 'now';
     if (!settings.study) tab = 'settings';   // study mode off: only the settings (to turn it back on)
     if (tab !== 'session') review = null;    // a review session starts fresh each time
+    if (tab === 'settings' && menuTab !== 'settings') settingsBack = menuTab && menuTab !== 'session' ? menuTab : 'now';
     menuTab = tab;
     if (tab === 'session') return openReview();
     var h;
@@ -1471,7 +1482,7 @@
         return '<button class="rounded-md px-2.5 py-1.5 text-zinc-500 aria-pressed:bg-white aria-pressed:font-semibold aria-pressed:text-zinc-900 aria-pressed:shadow-sm dark:text-zinc-400 dark:aria-pressed:bg-zinc-600 dark:aria-pressed:text-white" ' + attr + '="' + o[0] + '" aria-pressed="' + (String(o[0]) === String(cur)) + '">' + o[1] + '</button>';
       }).join('') + '</div>';
     };
-    var h = (settings.study ? '<button class="-ml-1.5 -mt-1 flex items-center gap-0.5 py-1 pr-2 font-medium text-zinc-600 active:opacity-60 dark:text-zinc-300" data-tab="now">' + HI('chevron-left', 'size-5') + 'Study</button>' : '') +
+    var h = (settings.study ? '<button class="-ml-1.5 -mt-1 flex items-center gap-0.5 py-1 pr-2 font-medium text-zinc-600 active:opacity-60 dark:text-zinc-300" data-tab="' + settingsBack + '" data-swipe-back>' + HI('chevron-left', 'size-5') + 'Study</button>' : '') +
       '<p class="mt-1 text-2xl font-bold">Study settings</p>' +
       '<div class="mt-4 ' + C.list + '"><button class="flex w-full items-center gap-3 px-4 py-3 text-left" data-act="study-toggle" role="switch" aria-checked="' + settings.study + '"><span class="flex-1">Study mode<span class="block text-sm ' + C.muted + '">' +
         (settings.study ? 'Subtitles, word lookup, review and progress' : 'Off: no subtitles and no translate button') + '</span></span>' + SW(settings.study) + '</button></div>';
