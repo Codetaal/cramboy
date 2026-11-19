@@ -3,7 +3,7 @@
 var VERSION = 'cramboy-v0.23.2';
 var FILES = ['./', './index.html', './tw.css', './app.css', './kv.js', './icons.js', './emu.js', './manifest.json', './icon-180.png', './icon-512.png', './icons/cramlab-logo-512.png',
   './build/nds.js', './build/nds.wasm',
-  './kr/ui.css', './kr/table.js', './kr/reader.js', './kr/lookup.js', './kr/grammar.js', './kr/ja-lookup.js', './kr/ja-grammar.js', './kr/ui.js', './kr/dict.json', './kr/ko-pos.json', './kr/ko-forms.json', './kr/ko-common.json'];
+  './kr/ui.css', './fonts/fonts.css', './kr/table.js', './kr/reader.js', './kr/lookup.js', './kr/grammar.js', './kr/ja-lookup.js', './kr/ja-grammar.js', './kr/ui.js', './kr/dict.json', './kr/ko-pos.json', './kr/ko-forms.json', './kr/ko-common.json'];
 // Downloaded only when first needed (Japanese games), then kept for offline use.
 var ON_DEMAND = ['kr/ja-dict.json'];
 
@@ -34,7 +34,8 @@ self.addEventListener('fetch', function (e) {
     if (r) return r;
     return fetch(e.request).then(function (res) {
       var path = new URL(e.request.url).pathname;
-      if (res.ok && ON_DEMAND.some(function (f) { return path.slice(-f.length) === f; })) {
+      // (subtitle font files too: downloaded when you pick that font, then kept)
+      if (res.ok && (ON_DEMAND.some(function (f) { return path.slice(-f.length) === f; }) || /\/fonts\/.+\.woff2$/.test(path))) {
         var copy = res.clone();
         caches.open(VERSION).then(function (c) { c.put(e.request, copy); });
       }

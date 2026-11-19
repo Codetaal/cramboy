@@ -113,7 +113,7 @@
     renderPanel();
   }
   function saveSettings() {
-    if (store) store.setItem('settings', { mode: settings.mode, box: boxGeo, study: settings.study, frame: settings.frame, newPerDay: settings.newPerDay, reviewsPerDay: settings.reviewsPerDay }).catch(function () {});
+    if (store) store.setItem('settings', { mode: settings.mode, box: boxGeo, study: settings.study, frame: settings.frame, font: settings.font, newPerDay: settings.newPerDay, reviewsPerDay: settings.reviewsPerDay }).catch(function () {});
   }
   function setStudy(on) {
     settings.study = !!on;
@@ -128,6 +128,13 @@
       if (!sheet.hidden) closeSheet();
     }
     renderPanel();
+  }
+  // Subtitle font: gothic (the phone's own, Apple SD Gothic Neo), serif (Nanum Myeongjo) or pixel (Galmuri).
+  var FONTS = { gothic: 'Gothic', serif: 'Serif', pixel: 'Pixel' };
+  function setFont(f) {
+    settings.font = FONTS[f] ? f : 'gothic';
+    box.dataset.font = settings.font;
+    saveSettings();
   }
   function setFrame(f) {
     settings.frame = FRAMES.indexOf(f) >= 0 ? f : 'classic';
@@ -154,6 +161,7 @@
       if (v.newPerDay) settings.newPerDay = v.newPerDay;
       if (typeof v.reviewsPerDay === 'number') settings.reviewsPerDay = v.reviewsPerDay;
       box.dataset.frame = settings.frame;
+      settings.font = FONTS[v.font] ? v.font : 'gothic'; box.dataset.font = settings.font;
       applyStudy();
       krLayout();
       renderPanel();
@@ -1395,7 +1403,7 @@
     var search = card.querySelector('#kr-search');
     if (search) search.oninput = function () { savedQuery = search.value; card.querySelector('#kr-saved-list').innerHTML = savedListHTML(savedQuery); };
     card.onclick = function (e) {
-      var b = e.target.closest('[data-tab],[data-act],[data-del],[data-open],[data-know],[data-pw],[data-gp],[data-mode],[data-frame-pick],[data-npd],[data-rpd],.kr-w');
+      var b = e.target.closest('[data-tab],[data-act],[data-del],[data-open],[data-know],[data-pw],[data-gp],[data-mode],[data-font-pick],[data-frame-pick],[data-npd],[data-rpd],.kr-w');
       if (!b) return;
       if (b.dataset.open) {
         var x = saved.filter(function (y) { return String(y.t) === b.dataset.open; })[0];
@@ -1422,6 +1430,7 @@
       if (b.dataset.know) { markKnown([b.dataset.know]); return stay('progress'); }
       if (b.dataset.gp) { var sp = (seen[lang].p || {})[b.dataset.gp] || []; return openGrammar(sp[2] || '', sp[3] || '', null, lang, b.dataset.gp); }
       if (b.dataset.pw) { var e2 = seen[lang].w[b.dataset.pw]; return openWord(b.dataset.pw, e2 ? e2[2] : '', null, lang); }
+      if (b.dataset.fontPick) { setFont(b.dataset.fontPick); return stay('settings'); }
       if (b.dataset.framePick) { setFrame(b.dataset.framePick); return stay('settings'); }
       if (b.dataset.npd) { settings.newPerDay = +b.dataset.npd; saveSettings(); return stay('settings'); }
       if (b.dataset.rpd !== undefined) { settings.reviewsPerDay = +b.dataset.rpd; saveSettings(); return stay('settings'); }
@@ -1501,13 +1510,14 @@
   function fillMenuSettings(el, onChange) {
     var p = settingsParts(), row = 'flex items-center gap-2 px-4 py-2.5';
     var h = '<div class="' + C.list + '">' + p.study.replace('px-4 py-3', 'px-4 py-3 active:bg-zinc-50 dark:active:bg-zinc-800');
-    if (settings.study) h += p.frame + p.reset +
+    if (settings.study) h += p.font + p.frame + p.reset +
       p.npdRow + p.rpdRow;
     el.innerHTML = h + '</div>';
     el.onclick = function (e) {
-      var b = e.target.closest('[data-act],[data-mode],[data-frame-pick],[data-npd],[data-rpd]');
+      var b = e.target.closest('[data-act],[data-font-pick],[data-frame-pick],[data-npd],[data-rpd]');
       if (!b) return;
-      if (b.dataset.framePick) setFrame(b.dataset.framePick);
+      if (b.dataset.fontPick) setFont(b.dataset.fontPick);
+      else if (b.dataset.framePick) setFrame(b.dataset.framePick);
       else if (b.dataset.npd) { settings.newPerDay = +b.dataset.npd; saveSettings(); }
       else if (b.dataset.rpd !== undefined) { settings.reviewsPerDay = +b.dataset.rpd; saveSettings(); }
       else if (b.dataset.act === 'study-toggle') setStudy(!settings.study);
@@ -1530,6 +1540,11 @@
     return {
       study: '<button class="flex w-full items-center gap-3 px-4 py-3 text-left" data-act="study-toggle" role="switch" aria-checked="' + settings.study + '"><span class="flex-1">Study mode<span class="block text-sm ' + C.muted + '">' +
         (settings.study ? 'Subtitles, word lookup, review and progress' : 'Off: no subtitles and no translate button') + '</span></span>' + SW(settings.study) + '</button>',
+      font: '<div class="px-4 py-2.5"><div class="flex items-center"><span class="flex-1">Font</span><span class="text-sm ' + C.muted + '">' + FONTS[settings.font || 'gothic'] + '</span></div>' +
+        '<div class="mt-1.5 grid grid-cols-3 gap-2">' + Object.keys(FONTS).map(function (f) {
+          return '<button class="rounded-xl bg-zinc-100 px-2 py-2 text-center ring-2 ring-transparent aria-pressed:bg-white aria-pressed:ring-zinc-900 dark:bg-zinc-800 dark:aria-pressed:ring-white" data-font-pick="' + f + '" aria-pressed="' + ((settings.font || 'gothic') === f) + '">' +
+            '<span class="kr-font-sample block text-xl leading-tight text-zinc-900 dark:text-white" data-font="' + f + '">' + (lang === 'ja' ? 'あいう' : '가나다') + '</span><span class="mt-0.5 block text-xs ' + C.muted + '">' + FONTS[f] + '</span></button>';
+        }).join('') + '</div></div>',
       frame: '<div class="px-4 py-2.5"><div class="flex items-center"><span class="flex-1">Box frame</span><span class="text-sm ' + C.muted + '">' + (FRAME_NAMES[settings.frame] || '') + '</span></div>' +
         '<div class="-mx-1.5 mt-0.5 flex gap-0.5 overflow-x-auto px-0.5 py-1">' + Object.keys(FRAME_NAMES).map(function (f) {
           return '<button class="grid place-items-center rounded-xl p-1.5 ring-2 ring-transparent aria-pressed:ring-zinc-900 dark:aria-pressed:ring-white" data-frame-pick="' + f + '" aria-label="' + FRAME_NAMES[f] + ' frame" aria-pressed="' + (settings.frame === f) + '"><span class="kr-frame-swatch" data-frame="' + f + '"></span></button>';
@@ -1546,7 +1561,7 @@
       '<p class="mt-1 text-2xl font-bold">Study settings</p>' +
       '<div class="mt-4 ' + C.list + '">' + p.study + '</div>';
     if (!settings.study) return h;
-    h += SEC('Subtitles') + '<div class="mt-1.5 ' + C.list + '">' + p.frame + p.reset;
+    h += SEC('Subtitles') + '<div class="mt-1.5 ' + C.list + '">' + p.font + p.frame + p.reset;
     h += '</div>' + SEC('Review') + '<div class="mt-1.5 ' + C.list + '">' + p.npdRow + p.rpdRow + '</div>';
     return h;
   }
