@@ -2,6 +2,11 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.21.0
+- Swipe back from the left edge, as on iOS: on All Games, word and grammar pages and Study settings. The page you go back to shows underneath while you swipe.
+- Study settings goes back to the tab you opened it from.
+- Check for updates now has its own row in the game menu, with your version. It only closes the game when there is a new version; a new version that downloads while you play shows as "Update ready" with a dot on the menu button.
+
 ## 0.20.3
 - Subtitles for signs you walk up against ("여기는 연두마을"): their text shows as soon as the sign pops up and goes away when you walk off (HeartGold, SoulSilver).
 
