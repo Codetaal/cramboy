@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.21.2
+- Menu: an About row with your version, the game's code, the voice and the credits, instead of the info text under Advanced. Reader details and load problems only show when something is wrong. The note about automatic saving now sits under Saves.
+
 ## 0.21.1
 - Going back (swipe or back button) returns to the previous page at the same scroll position.
 
