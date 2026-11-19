@@ -991,7 +991,7 @@
     card.onclick = null;
     openSheet(h, true);
     card.querySelector('[data-act=close]').onclick = closeSheet;
-    card.querySelector('[data-act=back]').onclick = function () { openMenu(wordBack); };
+    card.querySelector('[data-act=back]').onclick = function () { goBack(wordBack); };
     card.querySelector('[data-act=say-word]').onclick = function () { speak(word, wlang); };
     if (sentence) card.querySelector('[data-act=say-sentence]').onclick = function () { speak(sentence, wlang); };
     Array.prototype.forEach.call(card.querySelectorAll('[data-status]'), function (btn) {
@@ -1095,7 +1095,7 @@
     card.onclick = null;
     openSheet(h, true);
     card.querySelector('[data-act=close]').onclick = closeSheet;
-    card.querySelector('[data-act=back]').onclick = function () { openMenu(wordBack); };
+    card.querySelector('[data-act=back]').onclick = function () { goBack(wordBack); };
     card.querySelector('[data-act=say-chunk]').onclick = function () { speak(chunk || title, wlang); };
     if (sentence) card.querySelector('[data-act=say-sentence]').onclick = function () { speak(sentence, wlang); };
     Array.prototype.forEach.call(card.querySelectorAll('[data-verb]'), function (r) { r.onclick = function () { openWord(r.dataset.verb, sentence, null, wlang); }; });
@@ -1351,6 +1351,12 @@
   // One place for everything study: Now | Words | Review | Progress, and the settings behind the gear.
   // The translate button opens it on Now; the game menu has one "Study" row that opens it too.
   var OLD_TABS = { saved: 'words', recent: 'now' };
+  // Back to the page you came from, at the same scroll position (back button and swipe back).
+  function goBack(tab) {
+    var y = swipePrev ? swipePrev.y : 0;
+    openMenu(tab);
+    card.scrollTop = y;
+  }
   function openMenu(tab) {
     tab = OLD_TABS[tab] || tab || 'now';
     if (!settings.study) tab = 'settings';   // study mode off: only the settings (to turn it back on)
@@ -1393,7 +1399,7 @@
         openWord(b.getAttribute('data-w'), ls, null);
         return;
       }
-      if (b.dataset.tab) return openMenu(b.dataset.tab);
+      if (b.dataset.tab) return b.hasAttribute('data-swipe-back') ? goBack(b.dataset.tab) : openMenu(b.dataset.tab);
       if (b.dataset.del) {
         saved = saved.filter(function (x) { var hit = String(x.t) === b.dataset.del; if (hit) dropShot(x.t); return !hit; }); persist(); updatePill();
         if (!saved.length) return openMenu('words');
