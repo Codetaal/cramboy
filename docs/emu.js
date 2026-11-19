@@ -766,9 +766,10 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     return {
       D: D, b: b, pad: pad, cy: cy, lr: { y: rowY, w: 84, h: P.lrH },
       menu: [mid - spot - 4 - sw, sy, sw, sh], ff: [mid + spot + 4, sy, sw, sh],
-      // SELECT above START in the middle, level with the lower half of the clusters; the hide-controls button above them.
+      // SELECT above START in the middle, level with the lower half of the clusters; the hide-controls
+      // button right under the translate button.
       select: [mid - sw / 2, cy + D / 2 - 2 * sh - 8, sw, sh], start: [mid - sw / 2, cy + D / 2 - sh, sw, sh],
-      touch: [mid - sw / 2, cy + D / 2 - 3 * sh - 26, sw, sh],
+      touch: [mid - sw / 2, rowY + P.lrH / 2 + 24 + 10, sw, sh],
       // Translate button: in the top row between menu and fast forward.
       pill: { y: rowY + P.lrH / 2, size: 48 },
       // The whole left part is the D-pad, the whole right part the face buttons.
@@ -783,16 +784,16 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     var cy = ch - D / 2 - 14, ax = cw - pad - D / 2;
     var pw = Math.min(84, D * 0.75), ph = 30, rowY = Math.max(4, cy - D / 2 - ph - 12);   // L / R just above the clusters
     var colW = Math.min(84, cw - 2 * (pad + D) - 12), mid = cw / 2, h = 26, sw2 = Math.min(84, colW);
-    // Translate button: in the middle, level with the centre of the D-pad, at the same size relative
-    // to the D-pad as in portrait (48 px next to 152 px). The hide-controls button above it.
-    var ps = Math.round(D * 48 / 152), tw = 39;
+    // As in portrait: the translate button in the top row between menu and fast forward (same size), the
+    // hide-controls button right under it.
+    var ps = 48, tw = 39, spot = 30, py = rowY + ph / 2, sy = py - h / 2;
     return {
       D: D, b: D * 0.37, pad: pad, cy: cy, lr: { y: rowY, w: pw, h: ph },
-      menu: [mid - colW / 2, rowY + 2, colW / 2 - 3, h], ff: [mid + 3, rowY + 2, colW / 2 - 3, h],
+      menu: [mid - spot - 4 - tw, sy, tw, h], ff: [mid + spot + 4, sy, tw, h],
       // SELECT and START side by side at the bottom centre.
       select: [mid - sw2 - 4, ch - h - 10, sw2, h], start: [mid + 4, ch - h - 10, sw2, h],
-      touch: [mid - tw / 2, cy - ps / 2 - 12 - h, tw, h],
-      pill: { y: cy, size: ps },
+      touch: [mid - tw / 2, py + ps / 2 + 10, tw, h],
+      pill: { y: py, size: ps },
       // The D-pad area is everything around the D-pad below L (the top screen under it is not a touch
       // screen). The face buttons go by angle within a circle a bit bigger than their cluster: the
       // bottom screen is right next to them, so it can't be the whole right side as in portrait.
