@@ -112,7 +112,7 @@
     renderPanel();
   }
   function saveSettings() {
-    if (store) store.setItem('settings', { mode: settings.mode, box: boxGeo, study: settings.study, frame: settings.frame, newPerDay: settings.newPerDay }).catch(function () {});
+    if (store) store.setItem('settings', { mode: settings.mode, box: boxGeo, study: settings.study, frame: settings.frame, newPerDay: settings.newPerDay, reviewsPerDay: settings.reviewsPerDay }).catch(function () {});
   }
   function setStudy(on) {
     settings.study = !!on;
@@ -151,6 +151,7 @@
       settings.study = v.study !== false;
       settings.frame = FRAMES.indexOf(v.frame) >= 0 ? v.frame : 'classic';
       if (v.newPerDay) settings.newPerDay = v.newPerDay;
+      if (typeof v.reviewsPerDay === 'number') settings.reviewsPerDay = v.reviewsPerDay;
       box.dataset.frame = settings.frame;
       applyStudy();
       krLayout();
@@ -1156,7 +1157,11 @@
   //  - "Again" starts the word over (next "Got it": 1 day) and lowers its ease, so a word you keep
   //    forgetting comes back more often from then on. It is shown once more at the end of the session.
   //  - New words (never reviewed): at most newPerDay() a day (a setting, 15 by default), so a long game doesn't bury you in reviews.
+  //  - Reviews of words you've started: at most reviewsPerDay() a day (a setting, 100 by default; 0 = no
+  //    limit), most overdue first, so coming back after a break doesn't mean hundreds at once.
   var DAY = 864e5, EASE = 2.5, MIN_EASE = 1.3, KNOWN_DAYS = 180;
+  function reviewsPerDay() { return [50, 100, 200, 0].indexOf(settings.reviewsPerDay) >= 0 ? settings.reviewsPerDay : 100; }
+  function reviewsLeft() { newLeft(); var cap = reviewsPerDay(); return cap ? Math.max(0, cap - (newToday.r || 0)) : Infinity; }
   function newPerDay() { return [5, 10, 15, 20, 30].indexOf(settings.newPerDay) >= 0 ? settings.newPerDay : 15; }
   // Older saved words used a fixed ladder (step 0..5): carry their progress over.
   var OLD_LADDER = [1, 3, 7, 14, 30];
@@ -1170,14 +1175,14 @@
   // How many new words you've started today (kept per calendar day).
   var newToday = { day: '', n: 0 };
   function today() { var d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
-  function newLeft() { if (newToday.day !== today()) newToday = { day: today(), n: 0 }; return Math.max(0, newPerDay() - newToday.n); }
+  function newLeft() { if (newToday.day !== today()) newToday = { day: today(), n: 0, r: 0 }; return Math.max(0, newPerDay() - newToday.n); }
   if (store) store.getItem('review-day').then(function (v) { if (v && v.day) newToday = v; }).catch(function () {});
   function dueAt(x) { return typeof x.due === 'number' ? x.due : (x.t || 0); }
   // Due now: every review that is due, plus new words up to today's limit (oldest saved first).
   function dueList() {
     var n = Date.now(), byDue = function (a, b) { return dueAt(a) - dueAt(b); };
     var due = saved.filter(function (x) { return dueAt(x) <= n; });
-    var reviews = due.filter(function (x) { return !isNew(x); }).sort(byDue);
+    var reviews = due.filter(function (x) { return !isNew(x); }).sort(byDue).slice(0, reviewsLeft());
     var fresh = due.filter(isNew).sort(function (a, b) { return (a.t || 0) - (b.t || 0); }).slice(0, newLeft());
     return reviews.concat(fresh);
   }
@@ -1235,6 +1240,7 @@
       var next = saved.slice().sort(function (a, b) { return dueAt(a) - dueAt(b); })[0];
       var capped = !newLeft() && saved.some(function (y) { return isNew(y) && dueAt(y) <= Date.now(); });
       var msg = !saved.length ? 'No saved words yet. Tap a word in the subtitles and choose Learning; it comes back here to review.'
+        : reviewsCapped() ? 'That’s ' + reviewsPerDay() + ' reviews for today. The rest wait until tomorrow.'
         : capped ? 'That’s ' + newPerDay() + ' new words for today. More tomorrow, so your reviews stay manageable.'
         : 'Next review ' + whenText(dueAt(next)) + '.';
       return h + '<div class="my-auto flex flex-col items-center text-center">' + HI('check', 'size-12 text-emerald-500') +
@@ -1327,7 +1333,10 @@
     review.queue.shift(); review.open = false; review.done++;
     var n = Date.now();
     sched(x);
-    if (!x.reps && how !== 'known') { newLeft(); newToday.n++; if (store) store.setItem('review-day', newToday).catch(function () {}); }
+    newLeft();
+    if (!x.reps && how !== 'known') newToday.n++;
+    else if (x.reps) newToday.r = (newToday.r || 0) + 1;
+    if (store) store.setItem('review-day', newToday).catch(function () {});
     var iv = nextIv(x);
     x.reps++;
     if (how === 'again') { x.ease = Math.max(MIN_EASE, x.ease - 0.2); x.iv = 0; x.due = n + 10 * 60000; review.queue.push(x.t); }
@@ -1344,6 +1353,8 @@
     persist(); updatePill();
     openReview();
   }
+  // Reviews waiting that today's limit holds back.
+  function reviewsCapped() { var n = Date.now(); return !reviewsLeft() && saved.some(function (y) { return !isNew(y) && dueAt(y) <= n; }); }
   function dueCount() { return dueList().length; }
 
   // ---------- menu: saved words / recent text ----------
@@ -1383,7 +1394,7 @@
     var search = card.querySelector('#kr-search');
     if (search) search.oninput = function () { savedQuery = search.value; card.querySelector('#kr-saved-list').innerHTML = savedListHTML(savedQuery); };
     card.onclick = function (e) {
-      var b = e.target.closest('[data-tab],[data-act],[data-del],[data-open],[data-know],[data-pw],[data-gp],[data-mode],[data-frame-pick],[data-npd],.kr-w');
+      var b = e.target.closest('[data-tab],[data-act],[data-del],[data-open],[data-know],[data-pw],[data-gp],[data-mode],[data-frame-pick],[data-npd],[data-rpd],.kr-w');
       if (!b) return;
       if (b.dataset.open) {
         var x = saved.filter(function (y) { return String(y.t) === b.dataset.open; })[0];
@@ -1413,6 +1424,7 @@
       if (b.dataset.mode) { setMode(b.dataset.mode); return stay('settings'); }
       if (b.dataset.framePick) { setFrame(b.dataset.framePick); return stay('settings'); }
       if (b.dataset.npd) { settings.newPerDay = +b.dataset.npd; saveSettings(); return stay('settings'); }
+      if (b.dataset.rpd !== undefined) { settings.reviewsPerDay = +b.dataset.rpd; saveSettings(); return stay('settings'); }
       var act = b.dataset.act;
       if (act === 'close') { card.onclick = null; return closeSheet(); }
       if (act === 'say-now') { var nb = card.querySelector('.kr-now'); return speak(nb ? nb.getAttribute('data-s') : ''); }
@@ -1472,10 +1484,11 @@
       '<button class="mt-4 ' + C.primary + '" data-act="start-review">Start review</button>';
     else h += '<p class="mt-2 text-xl font-bold">Nothing to review right now</p><p class="mt-0.5 px-2 ' + C.muted + '">' +
       (!saved.length ? 'Tap a word in the subtitles and choose Learning; it comes back here to review.'
+        : reviewsCapped() ? 'That’s ' + reviewsPerDay() + ' reviews for today. The rest wait until tomorrow.'
         : !newLeft() && saved.some(function (y) { return isNew(y) && dueAt(y) <= n; }) ? 'That’s ' + newPerDay() + ' new words for today. More tomorrow.'
         : 'Next review ' + whenText(Math.min.apply(null, saved.map(dueAt))) + '.') + '</p>';
     h += '</div>' + SEC('Coming up') + '<div class="mt-1.5 ' + C.list + '">' +
-      [['Tomorrow', tomorrow], ['This week', week], ['New words left today', newLeft() + ' of ' + newPerDay()]].map(function (r) {
+      [['Tomorrow', tomorrow], ['This week', week], ['New words left today', newLeft() + ' of ' + newPerDay()]].concat(reviewsPerDay() ? [['Reviews left today', reviewsLeft() + ' of ' + reviewsPerDay()]] : []).map(function (r) {
         return '<div class="flex items-center px-4 py-3"><span class="flex-1">' + r[0] + '</span><span class="' + C.muted + '">' + (typeof r[1] === 'number' ? r[1] + (r[1] === 1 ? ' word' : ' words') : r[1]) + '</span></div>';
       }).join('') + '</div>' +
       '<p class="mt-3 px-1 text-sm ' + C.muted + '">Words you mark as Learning come back here at growing intervals until you know them.</p>';
@@ -1489,19 +1502,24 @@
     var p = settingsParts(), row = 'flex items-center gap-2 px-4 py-2.5';
     var h = '<div class="' + C.list + '">' + p.study.replace('px-4 py-3', 'px-4 py-3 active:bg-zinc-50 dark:active:bg-zinc-800');
     if (settings.study) h += '<div class="' + row + '"><span class="flex-1">Subtitles</span>' + p.mode + '</div>' + (settings.mode === 'box' ? p.frame + p.reset : '') +
-      '<div class="' + row + '"><span class="flex-1">New words a day</span>' + p.npd + '</div>';
+      p.npdRow + p.rpdRow;
     el.innerHTML = h + '</div>';
     el.onclick = function (e) {
-      var b = e.target.closest('[data-act],[data-mode],[data-frame-pick],[data-npd]');
+      var b = e.target.closest('[data-act],[data-mode],[data-frame-pick],[data-npd],[data-rpd]');
       if (!b) return;
       if (b.dataset.mode) setMode(b.dataset.mode);
       else if (b.dataset.framePick) setFrame(b.dataset.framePick);
       else if (b.dataset.npd) { settings.newPerDay = +b.dataset.npd; saveSettings(); }
+      else if (b.dataset.rpd !== undefined) { settings.reviewsPerDay = +b.dataset.rpd; saveSettings(); }
       else if (b.dataset.act === 'study-toggle') setStudy(!settings.study);
       else if (b.dataset.act === 'reset-box') { resetBox(); toast('Box back in its place', 'ok'); return; }
       fillMenuSettings(el, onChange);
       if (onChange) onChange();
     };
+  }
+  function stacked(name, sub, segHTML) {
+    return '<div class="px-4 py-3"><p>' + name + '</p><p class="text-sm ' + C.muted + '">' + sub + '</p><div class="mt-2">' +
+      segHTML.replace('class="flex rounded-lg', 'class="flex w-full rounded-lg').replace(/class="rounded-md px-2.5/g, 'class="flex-1 rounded-md px-2') + '</div></div>';
   }
   function settingsParts() {
     var SW = function (on) { return '<span class="relative h-[31px] w-[51px] shrink-0 rounded-full transition-colors ' + (on ? 'bg-violet-600 dark:bg-violet-500' : 'bg-zinc-200 dark:bg-zinc-700') + '"><span class="absolute left-0.5 top-0.5 size-[27px] rounded-full bg-white shadow transition-transform' + (on ? ' translate-x-5' : '') + '"></span></span>'; };
@@ -1519,7 +1537,9 @@
           return '<button class="grid place-items-center rounded-xl p-1.5 ring-2 ring-transparent aria-pressed:ring-zinc-900 dark:aria-pressed:ring-white" data-frame-pick="' + f + '" aria-label="' + FRAME_NAMES[f] + ' frame" aria-pressed="' + (settings.frame === f) + '"><span class="kr-frame-swatch" data-frame="' + f + '"></span></button>';
         }).join('') + '</div></div>',
       reset: '<button class="flex w-full items-center px-4 py-3 text-left text-zinc-600 active:bg-zinc-50 dark:text-zinc-300 dark:active:bg-zinc-800" data-act="reset-box">Reset box position</button>',
-      npd: seg('data-npd', [[5, '5'], [10, '10'], [15, '15'], [20, '20'], [30, '30']], newPerDay())
+      // The two daily limits: name and explanation on top, the choices full width below.
+      npdRow: stacked('New flashcards a day', 'Saved words that join your reviews each day', seg('data-npd', [[5, '5'], [10, '10'], [15, '15'], [20, '20'], [30, '30']], newPerDay())),
+      rpdRow: stacked('Reviews a day', 'Most overdue first; the rest wait until tomorrow', seg('data-rpd', [[50, '50'], [100, '100'], [200, '200'], [0, 'No limit']], reviewsPerDay()))
     };
   }
   function settingsHTML() {
@@ -1531,7 +1551,7 @@
     h += SEC('Subtitles') + '<div class="mt-1.5 ' + C.list + '">' +
       '<div class="flex items-center gap-2 px-4 py-2.5"><span class="flex-1">Show</span>' + p.mode + '</div>';
     if (settings.mode === 'box') h += p.frame + p.reset;
-    h += '</div>' + SEC('Review') + '<div class="mt-1.5 ' + C.list + '"><div class="flex items-center gap-2 px-4 py-2.5"><span class="flex-1">New words per day</span>' + p.npd + '</div></div>';
+    h += '</div>' + SEC('Review') + '<div class="mt-1.5 ' + C.list + '">' + p.npdRow + p.rpdRow + '</div>';
     return h;
   }
 
