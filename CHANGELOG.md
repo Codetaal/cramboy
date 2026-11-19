@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.23.2
+- Subtitles always show in the box: the Subtitles choice (Off / Bar / In box) is gone. If you had Bar or Off, you get the box; to have no subtitles at all, turn Study mode off.
+
 ## 0.23.1
 - Home: the "Swipe left on a game" hint sits right under Add a game again, with Help & FAQ below it.
 
