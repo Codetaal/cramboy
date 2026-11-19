@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.22.1
+- Controls: the hide-controls button sits right under the translate button. In landscape the top row now matches portrait: settings, translate button and fast forward side by side, with the hide-controls button under the translate button.
+
 ## 0.22.0
 - New: Reviews a day (Study settings): at most 50, 100 (default) or 200 reviews a day, or no limit. The most overdue words come first; the rest wait until tomorrow, so a break doesn't leave you with hundreds at once. The Review tab shows how many are left today.
 - "New words per day" is now "New flashcards a day", with a line explaining it: saved words that join your reviews each day.
