@@ -2,6 +2,10 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.22.0
+- New: Reviews a day (Study settings): at most 50, 100 (default) or 200 reviews a day, or no limit. The most overdue words come first; the rest wait until tomorrow, so a break doesn't leave you with hundreds at once. The Review tab shows how many are left today.
+- "New words per day" is now "New flashcards a day", with a line explaining it: saved words that join your reviews each day.
+
 ## 0.21.6
 - Legal notes on the home screen and in Menu > About: your files are processed locally and never uploaded; don't use it for games you haven't legally obtained; "Nintendo DS" is a trademark of Nintendo, and CramBoy isn't affiliated with Nintendo. The version line on the home screen is bold.
 
