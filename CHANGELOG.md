@@ -2,6 +2,10 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.21.4
+- Menu: the Study card stands on its own at the top; the Study heading with the study settings starts below it.
+- No more dot on the menu button when an update is ready; the Update row in the menu still says "Update ready".
+
 ## 0.21.3
 - Menu: a Study section again, with the Study row (what needs attention) and the study settings right below it: study mode, subtitles, box frame, reset box position and new words a day. The settings page behind the gear on the Study screen stays.
 
