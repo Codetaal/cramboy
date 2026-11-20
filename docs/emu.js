@@ -42,6 +42,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     $('m-update-sub').textContent = 'Tap to restart with the new version';
     $('m-update-ver').hidden = true; $('m-update-badge').hidden = false;
   }
+  window.APP_VERSION = APP_VERSION;   // written into backups
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
     var hadController = !!navigator.serviceWorker.controller;
     var updating = false;   // set by Update now (Advanced menu)
