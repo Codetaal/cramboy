@@ -2,6 +2,10 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.26.0
+- New: back up to Google Drive (Backup page). The backup goes to a hidden CramBoy folder in your own Google Drive that only CramBoy can see; while you're signed in it also backs up when you leave the app. Restore it on any device. The first backup from a new device asks before replacing an existing one.
+- New Privacy and Terms pages, linked at the bottom of the home screen. The privacy line now mentions the optional Google Drive backup.
+
 ## 0.25.0
 - New: Backup. Back up your saved words, progress, settings and every game's save to one file (on iPhone straight to Files or iCloud), and restore it on this or another device. The games themselves are not included. The home screen shows when you last backed up.
 - Home screen redone in one style: a Games list with Add a game as its last row, and a More list with Backup, Help & FAQ and Made by CramLab. The big Add a game button only shows before you've added a game. A short line under the title says what CramBoy is.
