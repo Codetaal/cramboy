@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.24.1
+- Font picker: the selected font is readable in dark mode (it was white on white).
+
 ## 0.24.0
 - New: choose the subtitle font in Study settings: Gothic (the one you had), Serif (Nanum Myeongjo) or Pixel (Galmuri). A font is downloaded only when you pick it, then kept for offline use. Both fonts are free (SIL OFL 1.1) and credited in About.
 
