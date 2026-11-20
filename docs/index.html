@@ -35,33 +35,33 @@
   <div id="home" class="min-h-full overflow-x-hidden">
     <div id="page-home" class="mx-auto max-w-xl px-4 pb-[calc(2rem+env(safe-area-inset-bottom))] pt-[calc(env(safe-area-inset-top)+3.5rem)]">
       <h1 class="text-[34px] font-bold tracking-tight">CramBoy</h1>
+      <p class="mt-0.5 text-[15px] text-zinc-500 dark:text-zinc-400">Learn Korean &amp; Japanese from your DS games</p>
       <div id="status" class="mt-1 text-[15px] text-zinc-500 dark:text-zinc-400 empty:hidden"></div>
-      <h2 id="recent-h" class="mt-5 px-1 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400" hidden>Recent</h2>
+      <h2 id="recent-h" class="mt-6 px-1 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400" hidden>Games</h2>
       <div id="recent" class="mt-2 divide-y divide-zinc-100 dark:divide-white/5 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-zinc-900/5 dark:bg-zinc-900 dark:ring-white/10" hidden></div>
-      <button id="btn-open" class="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl bg-violet-600 px-4 py-3.5 font-semibold text-white shadow-sm ring-1 ring-inset ring-violet-500/20 transition active:scale-[0.98] active:bg-violet-500 disabled:opacity-50" disabled>
+      <button id="btn-open" class="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-violet-600 px-4 py-3.5 font-semibold text-white shadow-sm ring-1 ring-inset ring-violet-500/20 transition active:scale-[0.98] active:bg-violet-500 disabled:opacity-50" disabled>
         <span data-hi="plus" data-hi-class="size-5"></span>Add a game</button>
+      <p id="empty-note" class="mt-3 rounded-2xl border border-dashed border-zinc-300 px-4 py-5 text-center text-sm leading-relaxed text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">Add a DS game you own (.nds). It stays on this device.</p>
       <input id="file-rom" type="file" multiple hidden>
-      <p id="recent-f" class="mt-3 px-1 text-sm text-zinc-500 dark:text-zinc-400">Swipe left on a game to remove it. Its save stays on this device.</p>
-      <!-- One list for the rest: Backup and Help, each opening its own page. -->
-      <div class="mt-6 divide-y divide-zinc-100 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-zinc-900/5 dark:divide-white/5 dark:bg-zinc-900 dark:ring-white/10">
+      <p id="recent-f" class="mt-2 px-1 text-sm text-zinc-500 dark:text-zinc-400">Swipe left on a game to remove it. Its save stays on this device.</p>
+      <!-- More: Backup and Help (each opening its own page) and the maker, linking to donations. -->
+      <h2 class="mt-6 px-1 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">More</h2>
+      <div class="mt-2 divide-y divide-zinc-100 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-zinc-900/5 dark:divide-white/5 dark:bg-zinc-900 dark:ring-white/10">
         <button id="btn-backup" class="flex w-full items-center gap-3 px-4 py-3 text-left active:bg-zinc-50 dark:active:bg-zinc-800">
           <span class="grid size-9 shrink-0 place-items-center rounded-xl bg-zinc-100 text-zinc-600 dark:bg-white/10 dark:text-zinc-300"><span data-hi="arrow-up-tray" data-hi-class="size-5"></span></span>
-          <span class="min-w-0 flex-1"><span class="block font-semibold">Backup</span><span id="backup-sum" class="block text-sm text-zinc-500 dark:text-zinc-400">Saved words, progress and game saves</span></span>
+          <span class="min-w-0 flex-1"><span class="block font-semibold">Backup</span><span id="backup-sum" class="block text-sm text-zinc-500 dark:text-zinc-400">Words, progress and game saves</span></span>
           <span data-hi="chevron-right" data-hi-class="size-5 shrink-0 text-zinc-300 dark:text-zinc-600"></span></button>
         <button id="btn-faq" class="flex w-full items-center gap-3 px-4 py-3 text-left active:bg-zinc-50 dark:active:bg-zinc-800">
           <span class="grid size-9 shrink-0 place-items-center rounded-xl bg-zinc-100 text-zinc-600 dark:bg-white/10 dark:text-zinc-300"><span data-hi="question-mark-circle" data-hi-class="size-5"></span></span>
           <span class="min-w-0 flex-1"><span class="block font-semibold">Help &amp; FAQ</span><span class="block text-sm text-zinc-500 dark:text-zinc-400">Games, saves, subtitles, reviews</span></span>
           <span data-hi="chevron-right" data-hi-class="size-5 shrink-0 text-zinc-300 dark:text-zinc-600"></span></button>
+        <a id="maker" class="flex w-full items-start gap-3 px-4 py-3 text-left active:bg-zinc-50 dark:active:bg-zinc-800" href="https://buymeacoffee.com/cramlab" target="_blank" rel="noopener">
+          <img src="icons/cramlab-logo-512.png" class="size-9 shrink-0 rounded-xl" alt="" width="36" height="36">
+          <span class="min-w-0 flex-1"><span class="block font-semibold">Made by CramLab</span><span class="mt-0.5 block text-sm leading-snug text-zinc-500 dark:text-zinc-400">If you like using this app, consider <span class="font-semibold text-violet-600 dark:text-violet-400">donating</span> this Dutchie some cheese to keep the updates rolling.</span></span>
+          <span data-hi="arrow-top-right-on-square" data-hi-class="mt-2 size-[18px] shrink-0 text-zinc-300 dark:text-zinc-600"></span></a>
       </div>
       <div id="ios-hint" class="mt-4 rounded-2xl bg-violet-50 p-4 text-sm leading-relaxed text-violet-900 ring-1 ring-violet-200 dark:bg-violet-600/10 dark:text-violet-100 dark:ring-violet-400/20" hidden>
         In Safari, tap <b>Share → Add to Home Screen</b> and open it from there. Saves are only kept reliably in the Home Screen app.</div>
-      <div id="maker" class="mt-10 flex items-start gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-zinc-900/5 dark:bg-zinc-900 dark:ring-white/10">
-        <img src="icons/cramlab-logo-512.png" class="size-11 shrink-0 rounded-xl" alt="" width="44" height="44">
-        <div class="text-sm leading-relaxed">
-          <div class="font-semibold text-zinc-900 dark:text-white">Made by CramLab</div>
-          <p class="mt-1.5 text-zinc-500 dark:text-zinc-400">If you like using this app, consider
-            <a class="font-semibold text-violet-600 underline decoration-violet-600/30 underline-offset-2 dark:text-violet-400 dark:decoration-violet-400/30" href="https://buymeacoffee.com/cramlab" target="_blank" rel="noopener">donating</a> this Dutchie some cheese to keep the updates rolling.</p>
-        </div>
       </div>
       <div class="mt-8 space-y-2.5 text-balance text-center text-xs leading-relaxed text-zinc-400 dark:text-zinc-500">
         <p id="ver" class="font-semibold text-zinc-500 dark:text-zinc-400"></p>

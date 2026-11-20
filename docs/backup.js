@@ -187,7 +187,7 @@
       document.getElementById('backup-last').classList.toggle('text-amber-600', old && saved > 0);
       // The Backup row on the home screen: when you last backed up (orange when it's been a while).
       var sum = document.getElementById('backup-sum');
-      if (sum) { sum.textContent = last ? 'Last backup ' + ago(last.at) : saved ? 'No backup yet' : 'Saved words, progress and game saves'; sum.classList.toggle('text-amber-600', old && saved > 0); sum.classList.toggle('dark:text-amber-400', old && saved > 0); }
+      if (sum) { sum.textContent = last ? 'Last backup ' + ago(last.at) : saved ? 'No backup yet' : 'Words, progress and game saves'; sum.classList.toggle('text-amber-600', old && saved > 0); sum.classList.toggle('dark:text-amber-400', old && saved > 0); }
       document.getElementById('backup-drive').hidden = !GOOGLE_CLIENT_ID;
       document.getElementById('backup-drive-on').hidden = !drive;
       document.getElementById('backup-drive-off').hidden = !!drive;

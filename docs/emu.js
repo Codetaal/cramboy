@@ -177,7 +177,16 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     }
     library.forEach(function (e) { all.appendChild(gameRow(e)); });
     var has = library.length > 0;
+    // With games, "Add a game" is the last row of the list; the big button and its note are for the first visit.
+    if (has) {
+      var add = document.createElement('button');
+      add.className = 'flex w-full items-center gap-3 px-4 py-3 text-left font-semibold text-violet-600 active:bg-zinc-50 dark:text-violet-400 dark:active:bg-zinc-800';
+      add.innerHTML = '<span class="grid size-11 shrink-0 place-items-center rounded-xl bg-violet-100 dark:bg-violet-500/15">' + HI('plus', 'size-5') + '</span>Add a game';
+      add.onclick = function () { $('btn-open').click(); };
+      recent.appendChild(add);
+    }
     $('recent').hidden = $('recent-h').hidden = $('recent-f').hidden = !has;
+    $('btn-open').hidden = $('empty-note').hidden = has;
     if (!all.children.length && !$('page-all').hidden) closeAllGames();
   }
 
