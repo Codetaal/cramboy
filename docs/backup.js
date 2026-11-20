@@ -91,24 +91,37 @@
     });
     return gisP;
   }
-  // Needs a tap (Google opens its sign-in window); within the hour after that no window is needed.
+  // Google's sign-in window has to open right inside the tap: iPhones (and most browsers) block a window
+  // that opens later, after a script download. So Google's script and the sign-in client are loaded as soon
+  // as the Backup page opens (not before: nothing is fetched from Google unless you go there), and the tap
+  // only asks the ready client to open its window.
+  var client = null, pending = null;
+  function prepare() {
+    if (!GOOGLE_CLIENT_ID || client) return;
+    loadGis().then(function () {
+      if (client) return;
+      client = google.accounts.oauth2.initTokenClient({
+        client_id: GOOGLE_CLIENT_ID, scope: 'https://www.googleapis.com/auth/drive.appdata',
+        callback: function (r) {
+          var p = pending; pending = null;
+          if (r.error) { if (p) p.rej(new Error(r.error_description || r.error)); return; }
+          token = r.access_token; tokenExp = Date.now() + (r.expires_in || 3600) * 1000;
+          KV.set('backup-drive', true);
+          if (p) p.res(token);
+        },
+        error_callback: function (e) {
+          var p = pending; pending = null;
+          if (p) p.rej(new Error(e && e.type === 'popup_failed_to_open' ? 'Google’s sign-in window was blocked. Try again.' : e && e.type === 'popup_closed' ? 'Google sign-in was closed' : (e && e.message) || 'Google sign-in failed'));
+        }
+      });
+    }).catch(function () {});
+  }
+  // Must be called straight from the tap (no waiting before it), so the window may open.
   function getToken(interactive) {
     if (token && Date.now() < tokenExp - 60000) return Promise.resolve(token);
     if (!interactive) return Promise.reject(new Error('not signed in'));
-    return loadGis().then(function () {
-      return new Promise(function (res, rej) {
-        var c = google.accounts.oauth2.initTokenClient({
-          client_id: GOOGLE_CLIENT_ID, scope: 'https://www.googleapis.com/auth/drive.appdata',
-          callback: function (r) {
-            if (r.error) return rej(new Error(r.error_description || r.error));
-            token = r.access_token; tokenExp = Date.now() + (r.expires_in || 3600) * 1000;
-            KV.set('backup-drive', true); res(token);
-          },
-          error_callback: function (e) { rej(new Error(e && e.message || 'Google sign-in was closed')); }
-        });
-        c.requestAccessToken();
-      });
-    });
+    if (!client) { prepare(); return Promise.reject(new Error('Connecting to Google… try again in a moment.')); }
+    return new Promise(function (res, rej) { pending = { res: res, rej: rej }; client.requestAccessToken(); });
   }
   function api(url, o) {
     o = o || {}; o.headers = o.headers || {}; o.headers.Authorization = 'Bearer ' + token;
@@ -144,7 +157,9 @@
     if (busy) return Promise.resolve();
     busy = true;
     var firstHere = false;
-    return KV.get('backup-drive').then(function (was) { firstHere = !was; return getToken(interactive); }).then(function () {
+    // Sign-in first, in the same tap; whether this device was connected before is read alongside.
+    return Promise.all([KV.get('backup-drive'), getToken(interactive)]).then(function (r0) {
+      firstHere = !r0[0];
       return Promise.all([collect().then(function (j) { return gzip(JSON.stringify(j)); }), findFile()]);
     }).then(function (r) {
       // First time on this device and Drive already has a backup (another phone, or before a reinstall):
@@ -216,6 +231,6 @@
     document.getElementById('file-backup').addEventListener('change', function () { if (this.files[0]) fromFile(this.files[0]); this.value = ''; });
     render();
   }
-  window.CBBackup = { collect: collect, readBackup: readBackup, apply: apply, render: render, toFile: toFile, toDrive: toDrive };
+  window.CBBackup = { collect: collect, readBackup: readBackup, apply: apply, render: render, prepare: prepare, toFile: toFile, toDrive: toDrive };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();

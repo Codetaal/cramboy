@@ -294,7 +294,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   // Backup: the same kind of page (backup.js fills it).
   $('btn-backup').onclick = function () {
     var pg = $('page-backup'); pg.scrollTop = 0; pg.hidden = false; pg.classList.add('off');
-    if (window.CBBackup) CBBackup.render();
+    if (window.CBBackup) { CBBackup.render(); CBBackup.prepare(); }
     requestAnimationFrame(function () { requestAnimationFrame(function () { pg.classList.remove('off'); }); });
   };
   $('backup-back').onclick = function () { var pg = $('page-backup'); pg.classList.add('off'); setTimeout(function () { pg.hidden = true; }, 300); };
