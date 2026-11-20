@@ -2,6 +2,11 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.25.0
+- New: Backup. Back up your saved words, progress, settings and every game's save to one file (on iPhone straight to Files or iCloud), and restore it on this or another device. The games themselves are not included. The home screen shows when you last backed up.
+- Home screen redone in one style: a Games list with Add a game as its last row, and a More list with Backup, Help & FAQ and Made by CramLab. The big Add a game button only shows before you've added a game. A short line under the title says what CramBoy is.
+- Help & FAQ: the answers about keeping and moving saves point to Backup.
+
 ## 0.24.1
 - Font picker: the selected font is readable in dark mode (it was white on white).
 
