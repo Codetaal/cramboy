@@ -53,7 +53,7 @@
   function apply(j) {
     var keys = Object.keys(j.data);
     return Promise.all(keys.map(function (k) { return SKIP.test(k) ? null : KV.set(k, dec(j.data[k])); }))
-      .then(function () { try { sessionStorage.setItem('cb-restored', summary(j)); } catch (e) {} });
+      .then(function () { try { sessionStorage.setItem('cb-restored', summary(j)); sessionStorage.setItem('cb-reopen', 'backup'); } catch (e) {} });
   }
   function summary(j) {
     var d = j.data, saved = (d['kr-saved'] || []).length, games = Object.keys(d).filter(function (k) { return /^sav-/.test(k); }).length;

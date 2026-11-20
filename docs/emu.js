@@ -304,6 +304,14 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     if (window.CBBackup) { CBBackup.render(); CBBackup.prepare(); }
     requestAnimationFrame(function () { requestAnimationFrame(function () { pg.classList.remove('off'); }); });
   };
+  // After a restore the app restarts to load everything; come back on the Backup page, not the home screen.
+  try {
+    if (sessionStorage.getItem('cb-reopen') === 'backup') {
+      sessionStorage.removeItem('cb-reopen');
+      var bp = $('page-backup'); bp.hidden = false; bp.classList.remove('off');
+      if (window.CBBackup) { CBBackup.render(); CBBackup.prepare(); }
+    }
+  } catch (e) {}
   $('backup-back').onclick = function () { var pg = $('page-backup'); pg.classList.add('off'); setTimeout(function () { pg.hidden = true; }, 300); };
   $('faq-back').onclick = closeFaq;
 
