@@ -6,7 +6,7 @@
   'use strict';
   // Google OAuth client id for codetaal.github.io (Google Cloud console > APIs & Services > Credentials).
   // Empty: the Google Drive option is hidden.
-  var GOOGLE_CLIENT_ID = '';
+  var GOOGLE_CLIENT_ID = '524828905859-b17dphmp7rl9dgv8onpjtsbddn5gldh6.apps.googleusercontent.com';
   var DRIVE_FILE = 'cramboy-backup.json.gz';
   // Not backed up: the games (and the list of them, which would point at games a new device doesn't have),
   // resume snapshots, and the backup's own bookkeeping.
@@ -143,12 +143,21 @@
   function toDrive(interactive) {
     if (busy) return Promise.resolve();
     busy = true;
-    return getToken(interactive).then(function () {
+    var firstHere = false;
+    return KV.get('backup-drive').then(function (was) { firstHere = !was; return getToken(interactive); }).then(function () {
       return Promise.all([collect().then(function (j) { return gzip(JSON.stringify(j)); }), findFile()]);
-    }).then(function (r) { return upload(r[0], r[1]); })
+    }).then(function (r) {
+      // First time on this device and Drive already has a backup (another phone, or before a reinstall):
+      // don't overwrite it without asking.
+      if (firstHere && r[1] && !confirm('Your Google Drive already has a CramBoy backup from ' + new Date(r[1].modifiedTime).toLocaleString() +
+        '.\n\nReplace it with what’s on this device? To get that backup back instead, choose Cancel and then Restore from Google Drive.')) {
+        var e = new Error('Nothing replaced'); e.quiet = true; throw e;
+      }
+      return upload(r[0], r[1]);
+    })
       .then(function () { busy = false; return markDone('drive'); })
       .then(function () { if (interactive) toast('Backed up to Google Drive', { icon: 'ok' }); })
-      .catch(function (e) { busy = false; if (interactive) toast((e && e.message) || 'Backup failed', { icon: 'info' }); });
+      .catch(function (e) { busy = false; if (interactive && !(e && e.quiet)) toast((e && e.message) || 'Backup failed', { icon: 'info' }); });
   }
   function fromDrive() {
     getToken(true).then(findFile).then(function (f) {
@@ -190,17 +199,17 @@
       if (sum) { sum.textContent = last ? 'Last backup ' + ago(last.at) : saved ? 'No backup yet' : 'Words, progress and game saves'; sum.classList.toggle('text-amber-600', old && saved > 0); sum.classList.toggle('dark:text-amber-400', old && saved > 0); }
       document.getElementById('backup-drive').hidden = !GOOGLE_CLIENT_ID;
       document.getElementById('backup-drive-on').hidden = !drive;
-      document.getElementById('backup-drive-off').hidden = !!drive;
+      document.getElementById('backup-drive-label').textContent = drive ? 'Back up to Google Drive now' : 'Back up to Google Drive';
     });
   }
   function init() {
-    var card = document.getElementById('backup'); if (!card) return;
+    var card = document.getElementById('page-backup'); if (!card) return;
     card.addEventListener('click', function (e) {
       var b = e.target.closest('[data-bk]'); if (!b) return;
       var a = b.dataset.bk;
       if (a === 'file') toFile();
       if (a === 'restore-file') document.getElementById('file-backup').click();
-      if (a === 'drive' || a === 'drive-connect') toDrive(true);
+      if (a === 'drive') toDrive(true);
       if (a === 'drive-restore') fromDrive();
       if (a === 'drive-off') disconnect();
     });

@@ -1,7 +1,7 @@
 // Offline cache for the app. Bump the version here and APP_VERSION in emu.js whenever any file changes
 // (semantic versioning: patch = fixes, minor = features, major = big changes).
 var VERSION = 'cramboy-v0.25.0';
-var FILES = ['./', './index.html', './tw.css', './app.css', './kv.js', './backup.js', './icons.js', './emu.js', './manifest.json', './icon-180.png', './icon-512.png', './icons/cramlab-logo-512.png',
+var FILES = ['./', './index.html', './privacy.html', './tw.css', './app.css', './kv.js', './backup.js', './icons.js', './emu.js', './manifest.json', './icon-180.png', './icon-512.png', './icons/cramlab-logo-512.png',
   './build/nds.js', './build/nds.wasm',
   './kr/ui.css', './fonts/fonts.css', './kr/table.js', './kr/reader.js', './kr/lookup.js', './kr/grammar.js', './kr/ja-lookup.js', './kr/ja-grammar.js', './kr/ui.js', './kr/dict.json', './kr/ko-pos.json', './kr/ko-forms.json', './kr/ko-common.json'];
 // Downloaded only when first needed (Japanese games), then kept for offline use.
