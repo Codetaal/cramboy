@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.26.4
+- After restoring a backup you're back on the Backup page (with the "Backup restored" message) instead of the home screen.
+
 ## 0.26.3
 - Google Drive backup stays signed in for the hour Google allows, also after restoring or reopening the app, so it doesn't ask you to sign in again. After that, Google's window only flashes up and closes by itself.
 - After restoring a backup the app says what came back ("Backup restored: 12 saved words, 2 game saves").
