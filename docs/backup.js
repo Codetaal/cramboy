@@ -52,7 +52,8 @@
   }
   function apply(j) {
     var keys = Object.keys(j.data);
-    return Promise.all(keys.map(function (k) { return SKIP.test(k) ? null : KV.set(k, dec(j.data[k])); }));
+    return Promise.all(keys.map(function (k) { return SKIP.test(k) ? null : KV.set(k, dec(j.data[k])); }))
+      .then(function () { try { sessionStorage.setItem('cb-restored', summary(j)); } catch (e) {} });
   }
   function summary(j) {
     var d = j.data, saved = (d['kr-saved'] || []).length, games = Object.keys(d).filter(function (k) { return /^sav-/.test(k); }).length;
@@ -95,7 +96,11 @@
   // that opens later, after a script download. So Google's script and the sign-in client are loaded as soon
   // as the Backup page opens (not before: nothing is fetched from Google unless you go there), and the tap
   // only asks the ready client to open its window.
-  var client = null, pending = null;
+  var client = null, pending = null, connected = false;
+  Promise.all([KV.get('backup-drive'), KV.get('backup-token')]).then(function (r) {
+    connected = !!r[0];
+    if (r[1] && r[1].exp > Date.now() + 60000 && !token) { token = r[1].t; tokenExp = r[1].exp; }
+  }).catch(function () {});
   function prepare() {
     if (!GOOGLE_CLIENT_ID || client) return;
     loadGis().then(function () {
@@ -106,7 +111,9 @@
           var p = pending; pending = null;
           if (r.error) { if (p) p.rej(new Error(r.error_description || r.error)); return; }
           token = r.access_token; tokenExp = Date.now() + (r.expires_in || 3600) * 1000;
-          KV.set('backup-drive', true);
+          connected = true; KV.set('backup-drive', true);
+          // Kept for its hour, so a restart (after restoring, or reopening the app) doesn't ask again.
+          KV.set('backup-token', { t: token, exp: tokenExp }).catch(function () {});
           if (p) p.res(token);
         },
         error_callback: function (e) {
@@ -121,7 +128,8 @@
     if (token && Date.now() < tokenExp - 60000) return Promise.resolve(token);
     if (!interactive) return Promise.reject(new Error('not signed in'));
     if (!client) { prepare(); return Promise.reject(new Error('Connecting to Google… try again in a moment.')); }
-    return new Promise(function (res, rej) { pending = { res: res, rej: rej }; client.requestAccessToken(); });
+    // Connected before: Google only flashes its window and closes it by itself (no questions).
+    return new Promise(function (res, rej) { pending = { res: res, rej: rej }; client.requestAccessToken(connected ? { prompt: '' } : {}); });
   }
   function api(url, o) {
     o = o || {}; o.headers = o.headers || {}; o.headers.Authorization = 'Bearer ' + token;
@@ -199,7 +207,8 @@
   }
   function disconnect() {
     if (token && window.google && google.accounts) google.accounts.oauth2.revoke(token, function () {});
-    token = null; tokenExp = 0;
+    token = null; tokenExp = 0; connected = false;
+    KV.del('backup-token').catch(function () {});
     KV.del('backup-drive').then(render);
     toast('Google Drive disconnected', { icon: 'info' });
   }
@@ -244,6 +253,9 @@
     });
     document.getElementById('file-backup').addEventListener('change', function () { if (this.files[0]) fromFile(this.files[0]); this.value = ''; });
     render();
+    // Just restored (the app restarts to load everything): say so.
+    var done = null; try { done = sessionStorage.getItem('cb-restored'); sessionStorage.removeItem('cb-restored'); } catch (e) {}
+    if (done) setTimeout(function () { toast('Backup restored: ' + done.replace(/, from .*$/, ''), { icon: 'ok', ms: 5000 }); }, 600);
   }
   window.CBBackup = { collect: collect, readBackup: readBackup, apply: apply, render: render, prepare: prepare, toFile: toFile, toDrive: toDrive };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
