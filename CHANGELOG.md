@@ -2,6 +2,10 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.26.2
+- Google Drive backup shows what's happening: "Signing in with Google…" and then "Backing up…" (or "Getting your backup…") with a spinner on the row. The last backup is shown at the top of the Backup page.
+- Sliding pages (Backup, Help & FAQ, All Games) no longer scroll the home screen behind them on iPhone.
+
 ## 0.26.1
 - Google Drive backup: Google's sign-in window opens again on iPhone (it was blocked as a pop-up). Google is only contacted once you open the Backup page.
 
