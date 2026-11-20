@@ -15,6 +15,11 @@ body.playing { position: fixed; inset: 0; overflow: hidden; touch-action: none; 
 /* Start screen behaviour */
 .sub-page { transition: transform 300ms cubic-bezier(.2, .8, .2, 1); }
 .sub-page.off { transform: translateX(100%); }
+/* A sliding page scrolls on its own: it never hands the scroll to the home screen behind it (iPhone),
+   and the home screen is held still while one is open. */
+.sub-page { overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+.sub-page > div { min-height: calc(100% + 1px); }
+html.sub-open, html.sub-open body { overflow: hidden; }
 .swipe-del { visibility: hidden; }
 .swipe.open .swipe-del { visibility: visible; }
 .swipe .cell { touch-action: pan-y; will-change: transform; }
@@ -84,3 +89,9 @@ body.touch-mode #controls, body.touch-mode #kr-pill { visibility: hidden; }
 /* Dragging the controls opacity slider: the menu fades so the controls behind it show through. */
 #menu.peek { background: transparent; }
 #menu.peek .menu-card { opacity: 0.12; transition: opacity 0.15s; }
+
+/* Backup page: a row that is busy (signing in, backing up) shows a small spinner and can't be tapped again. */
+.bk-busy { pointer-events: none; }
+.bk-busy > :last-child { visibility: hidden; }
+.bk-busy::after { content: ''; width: 18px; height: 18px; margin-left: -26px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; color: #7c3aed; animation: bk-spin .7s linear infinite; flex: none; }
+@keyframes bk-spin { to { transform: rotate(360deg); } }

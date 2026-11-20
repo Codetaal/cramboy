@@ -191,12 +191,12 @@
       </div>
       <h1 class="mt-1 text-[34px] font-bold tracking-tight">Backup</h1>
       <p class="mt-0.5 text-[15px] leading-snug text-zinc-500 dark:text-zinc-400">Your saved words, progress, settings and game saves. The games themselves are not included.</p>
+      <p id="backup-last" class="mt-2 text-sm font-medium text-zinc-500 dark:text-zinc-400">No backup yet</p>
       <h2 class="mt-6 px-1 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">File</h2>
       <div id="backup" class="mt-2 divide-y divide-zinc-100 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-zinc-900/5 dark:divide-white/5 dark:bg-zinc-900 dark:ring-white/10">
         <button class="flex w-full items-center gap-2 px-4 py-3 text-left active:bg-zinc-50 dark:active:bg-zinc-800" data-bk="file"><span data-hi="arrow-up-tray" data-hi-class="size-5 shrink-0 text-violet-600 dark:text-violet-400"></span><span class="flex-1">Back up to a file</span><span class="text-sm text-zinc-500 dark:text-zinc-400">Files, iCloud</span><span data-hi="chevron-right" data-hi-class="size-5 shrink-0 text-zinc-300 dark:text-zinc-600"></span></button>
         <button class="flex w-full items-center gap-2 px-4 py-3 text-left active:bg-zinc-50 dark:active:bg-zinc-800" data-bk="restore-file"><span data-hi="arrow-down-tray" data-hi-class="size-5 shrink-0 text-violet-600 dark:text-violet-400"></span><span class="flex-1">Restore from a file</span><span data-hi="chevron-right" data-hi-class="size-5 shrink-0 text-zinc-300 dark:text-zinc-600"></span></button>
       </div>
-      <p id="backup-last" class="mt-2 px-1 text-sm text-zinc-500 dark:text-zinc-400">No backup yet</p>
             <input id="file-backup" type="file" hidden>
       <!-- Google Drive: a hidden CramBoy folder in the user's own Drive (backup.js shows it when a client id is set). -->
       <div id="backup-drive" hidden>

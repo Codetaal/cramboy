@@ -281,6 +281,13 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     setTimeout(function () { pg.hidden = true; }, 300);
   }
   $('nav-back').onclick = closeAllGames;
+  // While a sliding page (All Games, Help, Backup) is open, hold the home screen still behind it.
+  (function () {
+    var pages = ['page-all', 'page-faq', 'page-backup'].map($);
+    var sync = function () { document.documentElement.classList.toggle('sub-open', pages.some(function (p) { return p && !p.hidden; })); };
+    var mo = new MutationObserver(sync);
+    pages.forEach(function (p) { if (p) mo.observe(p, { attributes: true, attributeFilter: ['hidden'] }); });
+  })();
   // Help & FAQ: the same sliding page from the home screen and from the game menu (it covers the menu,
   // and back returns to it).
   function openFaq(fromMenu) {

@@ -152,14 +152,24 @@
                             : 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', { method: existing ? 'PATCH' : 'POST', body: fd });
       });
   }
+  // Show on the tapped row what's happening (Google's window closes and the work takes a few seconds).
+  function rowBusy(act, text) {
+    var b = document.querySelector('#page-backup [data-bk="' + act + '"]'); if (!b) return;
+    var label = b.querySelector('.flex-1');
+    if (text) { if (!b.dataset.label) b.dataset.label = label.textContent; label.textContent = text; b.classList.add('bk-busy'); }
+    else { if (b.dataset.label) label.textContent = b.dataset.label; delete b.dataset.label; b.classList.remove('bk-busy'); }
+  }
   var busy = false;
   function toDrive(interactive) {
     if (busy) return Promise.resolve();
     busy = true;
-    var firstHere = false;
-    // Sign-in first, in the same tap; whether this device was connected before is read alongside.
-    return Promise.all([KV.get('backup-drive'), getToken(interactive)]).then(function (r0) {
+    var firstHere = false, signedIn = token && Date.now() < tokenExp - 60000;
+    var tp = getToken(interactive);   // sign-in first, in the same tap
+    if (interactive) rowBusy('drive', signedIn ? 'Backing up…' : 'Signing in with Google…');
+    // Whether this device was connected before is read alongside.
+    return Promise.all([KV.get('backup-drive'), tp]).then(function (r0) {
       firstHere = !r0[0];
+      if (interactive) rowBusy('drive', 'Backing up…');
       return Promise.all([collect().then(function (j) { return gzip(JSON.stringify(j)); }), findFile()]);
     }).then(function (r) {
       // First time on this device and Drive already has a backup (another phone, or before a reinstall):
@@ -170,18 +180,22 @@
       }
       return upload(r[0], r[1]);
     })
-      .then(function () { busy = false; return markDone('drive'); })
+      .then(function () { busy = false; rowBusy('drive'); return markDone('drive'); })
       .then(function () { if (interactive) toast('Backed up to Google Drive', { icon: 'ok' }); })
-      .catch(function (e) { busy = false; if (interactive && !(e && e.quiet)) toast((e && e.message) || 'Backup failed', { icon: 'info' }); });
+      .catch(function (e) { busy = false; rowBusy('drive'); render(); if (interactive && !(e && e.quiet)) toast((e && e.message) || 'Backup failed', { icon: 'info' }); });
   }
   function fromDrive() {
-    getToken(true).then(findFile).then(function (f) {
+    var signedIn = token && Date.now() < tokenExp - 60000;
+    var tp = getToken(true);
+    rowBusy('drive-restore', signedIn ? 'Getting your backup…' : 'Signing in with Google…');
+    tp.then(function () { rowBusy('drive-restore', 'Getting your backup…'); render(); return findFile(); }).then(function (f) {
       if (!f) throw new Error('No CramBoy backup in this Google Drive yet.');
       return api('https://www.googleapis.com/drive/v3/files/' + f.id + '?alt=media').then(function (r) { return r.blob(); });
     }).then(readBackup).then(function (j) {
+      rowBusy('drive-restore');
       if (!confirm('Restore the backup from Google Drive?\n\n' + summary(j) + '\n\nIt replaces the saved words, progress and game saves on this device.')) return;
       return apply(j).then(function () { location.reload(); });
-    }).catch(function (e) { toast((e && e.message) || 'Restore failed', { icon: 'info' }); });
+    }).catch(function (e) { rowBusy('drive-restore'); toast((e && e.message) || 'Restore failed', { icon: 'info' }); });
   }
   function disconnect() {
     if (token && window.google && google.accounts) google.accounts.oauth2.revoke(token, function () {});
