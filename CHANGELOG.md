@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.26.6
+- Home: the footer has its margins and bottom spacing back (it sat against the screen edge since 0.25.0).
+
 ## 0.26.5
 - Smoother start: the home screen fades in with your games already listed, instead of briefly showing the empty "Add a game" screen. The games list no longer waits for the emulator to load, and a game you tap early starts as soon as it's ready.
 
