@@ -13,6 +13,10 @@ html, body {
 body.playing { position: fixed; inset: 0; overflow: hidden; touch-action: none; }
 
 /* Start screen behaviour */
+/* The home screen fades in once the games list is known, instead of first showing the empty "Add a game"
+   state for a moment. */
+#home { transition: opacity 180ms ease; }
+#home.home-wait { opacity: 0; }
 .sub-page { transition: transform 300ms cubic-bezier(.2, .8, .2, 1); }
 .sub-page.off { transform: translateX(100%); }
 /* A sliding page scrolls on its own: it never hands the scroll to the home screen behind it (iPhone),

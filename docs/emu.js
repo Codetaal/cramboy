@@ -25,8 +25,12 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     ready = true;
     $('status').textContent = TAGLINE;
     $('btn-open').disabled = false;
-    loadLibrary().then(renderLibrary).catch(function () {});
+    if (pendingStart) { var a = pendingStart; pendingStart = null; startGame.apply(null, a); }
   };
+  // The games list doesn't need the emulator: show it straight away (a game tapped before the emulator
+  // is ready starts as soon as it is).
+  var pendingStart = null;
+  loadLibrary().then(renderLibrary).catch(function () {}).then(showHome);
   KV.get('settings').then(function (s) { if (s) { settings.sound = s.sound !== false; settings.controls = 'floating'; /* the Below layout was removed */ settings.resume = s.resume === true; if (s.ctlOpacity >= 0.15 && s.ctlOpacity <= 1) settings.ctlOpacity = s.ctlOpacity; settings.fps = s.fps === true; $('fps').hidden = !settings.fps; } }).catch(function () {});
 
   var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -162,6 +166,8 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   function sizeText(n) { return n >= 1048576 ? Math.round(n / 1048576) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB'; }
 
   var RECENT = 3;
+  function showHome() { $('home').classList.remove('home-wait'); }
+  setTimeout(showHome, 1500);   // never keep it hidden if storage is slow
   function renderLibrary() {
     library.sort(function (a, b) { return b.played - a.played; });
     var recent = $('recent'), all = $('all-list');
@@ -456,7 +462,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   var FW_LANG = { J: 0, E: 1, P: 1, K: 1, F: 2, D: 3, I: 4, S: 5 }, gameRegion = '';
   function startGame(blob, name, libId, retried) {
     unlockAudio();
-    if (!ready) return;
+    if (!ready) { pendingStart = [blob, name, libId, retried]; loader(0, name, null); return; }
     if ($('loader').hidden) loader(0, name, null);
     readHeader(blob).then(function (h) {
       if (h.error) {
