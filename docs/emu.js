@@ -282,6 +282,13 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   }
   function closeFaq() { var pg = $('page-faq'); pg.classList.add('off'); setTimeout(function () { pg.hidden = true; }, 300); }
   $('btn-faq').onclick = function () { openFaq(false); };
+  // Backup: the same kind of page (backup.js fills it).
+  $('btn-backup').onclick = function () {
+    var pg = $('page-backup'); pg.scrollTop = 0; pg.hidden = false; pg.classList.add('off');
+    if (window.CBBackup) CBBackup.render();
+    requestAnimationFrame(function () { requestAnimationFrame(function () { pg.classList.remove('off'); }); });
+  };
+  $('backup-back').onclick = function () { var pg = $('page-backup'); pg.classList.add('off'); setTimeout(function () { pg.hidden = true; }, 300); };
   $('faq-back').onclick = closeFaq;
 
   // ---------- swipe back, as on iOS ----------

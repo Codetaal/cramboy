@@ -171,7 +171,7 @@
     KV.get('backup-last').then(function (l) { if (!l || Date.now() - l.at > 10 * 60000) toDrive(false); });
   });
 
-  // ---------- the Backup card on the home screen ----------
+  // ---------- the Backup page (and its row on the home screen) ----------
   function ago(t) {
     var m = Math.round((Date.now() - t) / 60000);
     if (m < 2) return 'just now'; if (m < 60) return m + ' min ago';
@@ -185,6 +185,9 @@
       var old = !last || Date.now() - last.at > 7 * 86400000;
       document.getElementById('backup-last').textContent = last ? 'Last backup ' + ago(last.at) + (last.where === 'drive' ? ' · Google Drive' : ' · file') : 'No backup yet';
       document.getElementById('backup-last').classList.toggle('text-amber-600', old && saved > 0);
+      // The Backup row on the home screen: when you last backed up (orange when it's been a while).
+      var sum = document.getElementById('backup-sum');
+      if (sum) { sum.textContent = last ? 'Last backup ' + ago(last.at) : saved ? 'No backup yet' : 'Saved words, progress and game saves'; sum.classList.toggle('text-amber-600', old && saved > 0); sum.classList.toggle('dark:text-amber-400', old && saved > 0); }
       document.getElementById('backup-drive').hidden = !GOOGLE_CLIENT_ID;
       document.getElementById('backup-drive-on').hidden = !drive;
       document.getElementById('backup-drive-off').hidden = !!drive;
