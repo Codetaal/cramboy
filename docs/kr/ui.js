@@ -1542,7 +1542,7 @@
         (settings.study ? 'Subtitles, word lookup, review and progress' : 'Off: no subtitles and no translate button') + '</span></span>' + SW(settings.study) + '</button>',
       font: '<div class="px-4 py-2.5"><div class="flex items-center"><span class="flex-1">Font</span><span class="text-sm ' + C.muted + '">' + FONTS[settings.font || 'gothic'] + '</span></div>' +
         '<div class="mt-1.5 grid grid-cols-3 gap-2">' + Object.keys(FONTS).map(function (f) {
-          return '<button class="rounded-xl bg-zinc-100 px-2 py-2 text-center ring-2 ring-transparent aria-pressed:bg-white aria-pressed:ring-zinc-900 dark:bg-zinc-800 dark:aria-pressed:ring-white" data-font-pick="' + f + '" aria-pressed="' + ((settings.font || 'gothic') === f) + '">' +
+          return '<button class="rounded-xl bg-zinc-100 px-2 py-2 text-center ring-2 ring-transparent aria-pressed:bg-white aria-pressed:ring-zinc-900 dark:bg-zinc-800 dark:aria-pressed:bg-zinc-600 dark:aria-pressed:ring-white" data-font-pick="' + f + '" aria-pressed="' + ((settings.font || 'gothic') === f) + '">' +
             '<span class="kr-font-sample block text-xl leading-tight text-zinc-900 dark:text-white" data-font="' + f + '">' + (lang === 'ja' ? 'あいう' : '가나다') + '</span><span class="mt-0.5 block text-xs ' + C.muted + '">' + FONTS[f] + '</span></button>';
         }).join('') + '</div></div>',
       frame: '<div class="px-4 py-2.5"><div class="flex items-center"><span class="flex-1">Box frame</span><span class="text-sm ' + C.muted + '">' + (FRAME_NAMES[settings.frame] || '') + '</span></div>' +
