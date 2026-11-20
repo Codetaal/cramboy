@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.26.5
+- Smoother start: the home screen fades in with your games already listed, instead of briefly showing the empty "Add a game" screen. The games list no longer waits for the emulator to load, and a game you tap early starts as soon as it's ready.
+
 ## 0.26.4
 - After restoring a backup you're back on the Backup page (with the "Backup restored" message) instead of the home screen.
 
