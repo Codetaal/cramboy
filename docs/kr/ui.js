@@ -813,7 +813,9 @@
   // "Back to game" stays pinned to the bottom of the sheet while the content above it scrolls.
   var BACK = '<div class="sticky bottom-0 -mx-4 mt-auto bg-gradient-to-t from-zinc-50 from-70% to-zinc-50/0 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-5 dark:from-zinc-950 dark:to-zinc-950/0">' +
     '<button class="' + C.secondary + '" data-act="close">' + HI('play', 'size-5 text-violet-500 dark:text-violet-300') + 'Back to game</button></div>';
-  // Back to game is the secondary button everywhere (soft lilac); solid purple is kept for real actions
+  // The Study screen and Study settings use the game menu's Resume button at the top right instead.
+  var RESUME = '<button class="flex shrink-0 items-center gap-1.5 rounded-full bg-violet-600 px-4 py-2.5 font-semibold text-white shadow-sm active:scale-95 active:bg-violet-500" data-act="close">' + HI('play', 'size-4') + 'Resume</button>';
+  // Back to game is the secondary button everywhere else (soft lilac); solid purple is kept for real actions
   // (Start review, Show meaning, Got it).
   function openSheet(html, withBack, full) {
     if (sheet.hidden) pause();
@@ -1441,8 +1443,8 @@
     else {
       var due = dueCount();
       var tb = function (id, label) { return '<button class="' + C.tab + '" data-tab="' + id + '" aria-pressed="' + (tab === id) + '">' + label + '</button>'; };
-      h = '<div class="flex items-center"><p class="flex-1 text-xl font-bold">Study</p>' +
-        '<button class="-mr-2 grid size-10 place-items-center rounded-full text-zinc-500 active:bg-zinc-200 dark:text-zinc-400 dark:active:bg-zinc-800" data-act="game-menu" aria-label="Menu">' + HI('cog-6-tooth', 'size-6') + '</button></div>' +
+      h = '<div class="flex items-center gap-1"><p class="flex-1 text-xl font-bold">Study</p>' +
+        '<button class="grid size-10 place-items-center rounded-full text-zinc-500 active:bg-zinc-200 dark:text-zinc-400 dark:active:bg-zinc-800" data-act="game-menu" aria-label="Settings">' + HI('cog-6-tooth', 'size-6') + '</button>' + RESUME + '</div>' +
         '<div class="mt-2 flex rounded-xl bg-zinc-100 p-1 dark:bg-zinc-800">' + tb('now', 'Dialogue') + tb('words', 'Words') +
         // Review: a floating badge on the corner of the word, like an app icon with notifications.
         tb('review', '<span class="relative">Review' + (due ? '<span class="absolute -right-[19px] -top-3 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-[#ff3b30] px-1 text-[11px] font-semibold leading-none text-white ring-2 ring-zinc-100 dark:ring-zinc-800">' + (due > 99 ? '99+' : due) + '</span>' : '') + '</span>') + tb('progress', 'Progress') + '</div>';
@@ -1451,7 +1453,7 @@
       else if (tab === 'review') h += reviewStartHTML(due);
       else if (tab === 'progress') h += progressHTML();
     }
-    openSheet(h, true);
+    openSheet(h, false);
     var search = card.querySelector('#kr-search');
     if (search) search.oninput = function () { savedQuery = search.value; card.querySelector('#kr-saved-list').innerHTML = savedListHTML(savedQuery); };
     card.onclick = function (e) {
@@ -1631,7 +1633,7 @@
   function settingsHTML() {
     var p = settingsParts();
     var h = (settings.study ? '<button class="-ml-1.5 -mt-1 flex items-center gap-0.5 py-1 pr-2 font-medium text-zinc-600 active:opacity-60 dark:text-zinc-300" data-tab="' + settingsBack + '" data-swipe-back>' + HI('chevron-left', 'size-5') + 'Study</button>' : '') +
-      '<p class="mt-1 text-2xl font-bold">Study settings</p>' +
+      '<div class="mt-1 flex items-center gap-2"><p class="flex-1 text-2xl font-bold">Study settings</p>' + RESUME + '</div>' +
       '<div class="mt-4 ' + C.list + '">' + p.study + '</div>';
     if (!settings.study) return h;
     h += SEC('Subtitles') + '<div class="mt-1.5 ' + C.list + '">' + p.font + p.frame + p.reset;
