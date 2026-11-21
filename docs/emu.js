@@ -298,7 +298,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   // Help & FAQ: the same sliding page from the home screen and from the game menu (it covers the menu,
   // and back returns to it).
   function openFaq(fromMenu) {
-    $('faq-back-label').textContent = fromMenu ? 'Menu' : 'CramBoy';
+    $('faq-back-label').textContent = fromMenu ? 'Settings' : 'CramBoy';
     Array.prototype.forEach.call($('page-faq').querySelectorAll('details'), function (d) { d.open = false; });
     var pg = $('page-faq'); pg.scrollTop = 0; pg.hidden = false; pg.classList.add('off');
     requestAnimationFrame(function () { requestAnimationFrame(function () { pg.classList.remove('off'); }); });
@@ -307,7 +307,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   $('btn-faq').onclick = function () { openFaq(false); };
   // Backup: the same kind of page (backup.js fills it), from the home screen and the game menu (App tab).
   function openBackup(fromMenu) {
-    $('backup-back-label').textContent = fromMenu ? 'Menu' : 'CramBoy';
+    $('backup-back-label').textContent = fromMenu ? 'Settings' : 'CramBoy';
     var pg = $('page-backup'); pg.scrollTop = 0; pg.hidden = false; pg.classList.add('off');
     if (window.CBBackup) { CBBackup.render(); CBBackup.prepare(); }
     requestAnimationFrame(function () { requestAnimationFrame(function () { pg.classList.remove('off'); }); });
@@ -1077,8 +1077,6 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     wasRunning = emuIsRunning; emuIsRunning = false;
     touchKeys = 0; touchDown = 0;
     checkSave(true);
-    // The game's own title from its banner (as on the DS menu); the short header name as a fallback.
-    $('menu-title').textContent = gameBanner || gameTitle || 'Menu';
     showMenuTab(menuTab);
     $('m-about').hidden = true; $('m-about-chev').style.transform = '';
     menuLabels();
