@@ -167,6 +167,8 @@
 
 /* Words you know: no dotted underline (still tappable). */
 .kr-w.kr-known, #kr-sheet .kr-w.kr-known, #kr-box .kr-w.kr-known { border-bottom-color: transparent; }
+/* Names: no underline either (they can't be translated), still tappable. */
+.kr-w.kr-name, #kr-sheet .kr-w.kr-name, #kr-box .kr-w.kr-name { border-bottom-color: transparent; }
 /* A grammar chunk ("알 수 있단다") is one tap target with the same dotted line as a word, across all its words. */
 
 /* Review: the game snapshot keeps its sharp pixels when scaled. */

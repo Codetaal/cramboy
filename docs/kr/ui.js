@@ -269,7 +269,55 @@
     var b = baseFor(tok);
     return !!(b && k[b]);
   }
-  function wordClass(tok) { return 'kr-w' + (isSaved(tok) ? ' kr-saved' : isKnown(tok) ? ' kr-known' : ''); }
+  function wordClass(tok) { return 'kr-w' + (isSaved(tok) ? ' kr-saved' : isKnown(tok) ? ' kr-known' : nameInfo(tok) ? ' kr-name' : ''); }
+
+  // ---------- names ----------
+  // Names can't be translated, and the dictionary even turns some into wrong words (우박사님 → 우박 "hail").
+  // A name loses its underline and its popup says it's a name. Found two ways: a word you marked as a
+  // name, or (Korean) an unknown word with a title: 공박사님 = 공 + 박사 (Professor) + 님 (polite).
+  var names = { ko: {}, ja: {} }, notNames = { ko: {}, ja: {} };
+  function loadNames() {
+    if (!store) return;
+    store.getItem('names').then(function (v) {
+      if (!v) return;
+      ['ko', 'ja'].forEach(function (l) {
+        (v[l] || []).forEach(function (w) { names[l][w] = 1; });
+        (v.not && v.not[l] || []).forEach(function (w) { notNames[l][w] = 1; });
+      });
+      if (current) renderPanel();
+    }).catch(function () {});
+  }
+  function persistNames() {
+    if (store) store.setItem('names', { ko: Object.keys(names.ko), ja: Object.keys(names.ja), not: { ko: Object.keys(notNames.ko), ja: Object.keys(notNames.ja) } }).catch(function () { toast('Could not save', 'warn'); });
+  }
+  var NAME_PARTICLES = ['께서', '에게', '한테', '이랑', '이나', '이야', '이여', '에서', '으로', '이는', '이가', '은', '는', '이', '가', '을', '를', '의', '에', '도', '만', '와', '과', '로', '랑', '야', '아', '여'];
+  // Titles after a name. Strong ones (박사, 관장…) mark a name whenever name + title isn't a word itself;
+  // the light ones (님, 씨, 군, 양) only when the part before them isn't a word either (손님 is "guest").
+  var TITLES = [['박사님', 'Professor (polite)', 1], ['박사', 'Professor', 1], ['관장님', 'Gym Leader (polite)', 1], ['관장', 'Gym Leader', 1],
+    ['선생님', 'teacher (polite)', 1], ['사장님', 'boss (polite)', 1], ['회장님', 'chairman (polite)', 1], ['아저씨', 'mister', 1],
+    ['님', 'polite title', 0], ['씨', 'Mr. / Ms.', 0], ['군', 'young man', 0], ['양', 'Miss', 0]];
+  function nameStems(tok, l) {
+    var c = l === 'ja' ? KRLookupJa.clean(tok) : KRLookup.clean(tok), out = [c];
+    if (l !== 'ja') NAME_PARTICLES.forEach(function (p) { if (c.length > p.length + 1 && c.slice(-p.length) === p) out.push(c.slice(0, -p.length)); });
+    return out;
+  }
+  function nameInfo(tok, l) {
+    l = l || lang;
+    var stems = nameStems(tok, l), d = dicts[l], has = function (w) { return !!(d && Object.prototype.hasOwnProperty.call(d, w)); };
+    for (var i = 0; i < stems.length; i++) if (names[l][stems[i]]) return { name: stems[i], whole: stems[i], mine: true };
+    if (l === 'ja' || !d) return null;
+    for (var j = 0; j < stems.length; j++) {
+      var w = stems[j];
+      if (notNames[l][w] || has(w)) continue;
+      for (var k = 0; k < TITLES.length; k++) {
+        var t = TITLES[k], n = w.slice(0, -t[0].length);
+        if (w.slice(-t[0].length) !== t[0] || !n || n.length > 3 || !/^[가-힣]+$/.test(n)) continue;
+        if (!t[2] && (n.length < 2 || has(n))) continue;
+        return { name: n, whole: w, title: t[0], titleEn: t[1] };
+      }
+    }
+    return null;
+  }
 
   // ---------- hear it ----------
   // The phone's own voices (Korean / Japanese are built into iPhone): offline and free.
@@ -730,6 +778,8 @@
     loadDict(lang).then(function (d) {
       if (!pop) return;
       if (isChunk) return fillPopGrammar(raw, sentence, span, d);
+      var ni = nameInfo(raw);
+      if (ni) return fillPopName(ni, raw, span);
       var r = lang === 'ja' ? KRLookupJa.lookup(d, raw, 3) : null, hits = r ? r.hits : KRLookup.lookup(d, raw, 3);
       var word = r ? r.matched : KRLookup.clean(raw);
       noteLookup(hits && hits[0] ? hits[0].word : word, lang);
@@ -744,11 +794,33 @@
     return '<div class="mt-2.5 flex items-center gap-1.5">' + b('learning', 'Learning', 'star', 'bg-violet-600 text-white') + b('known', 'Known', 'check', 'bg-emerald-500 text-white') +
       '<button class="ml-auto flex items-center gap-0.5 py-1.5 pl-2 text-[13px] font-semibold text-violet-600 dark:text-violet-300" data-pop="more">More' + HI('chevron-right', 'size-4') + '</button></div>';
   }
-  function popHead(title, from, type, built, rare) {
+  // A name's popup: what it is, and a way to undo it (Not a name).
+  function fillPopName(info, raw, span) {
+    var draw = function () {
+      pop.innerHTML = popHead(info.whole, '', 'name') +
+        '<p class="mt-0.5 text-[15px] leading-snug text-zinc-700 dark:text-zinc-200"><b>' + esc(info.name) + '</b> a name' +
+        (info.title ? ' <span class="text-zinc-400">+</span> <b class="text-violet-700 dark:text-violet-300">' + esc(info.title) + '</b> ' + esc(info.titleEn) : '') + '</p>' +
+        '<p class="mt-0.5 text-[13px] text-zinc-500 dark:text-zinc-400">Names aren\'t translated or reviewed.</p>' +
+        '<div class="mt-2.5 flex"><button class="flex items-center gap-1 rounded-lg bg-zinc-100 px-2.5 py-1.5 text-[13px] font-semibold text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200" data-pop="not-name">' + HI('x-mark', 'size-4') + 'Not a name</button></div>';
+      placePop(span);
+    };
+    draw();
+    pop.onclick = function (e) {
+      var b = e.target.closest('[data-pop]'); if (!b) return;
+      if (b.dataset.pop === 'say') return speak(info.whole, lang);
+      if (b.dataset.pop === 'not-name') {
+        if (info.mine) delete names[lang][info.name]; else notNames[lang][info.whole] = 1;
+        persistNames(); renderPanel(); closePop(true);
+        var sp = boxSpan(raw); if (sp) sp.click();   // show what it is as a word
+      }
+    };
+  }
+  function popHead(title, from, type, built, rare, nameBtn) {
     return '<div class="flex items-start gap-2"><div class="min-w-0 flex-1"><p class="flex flex-wrap items-baseline gap-x-1.5"><span class="kr-selectable text-[22px] font-bold leading-tight">' + esc(title) + '</span>' +
       (from ? '<span class="text-[13px] text-zinc-500 dark:text-zinc-400">from ' + esc(from) + '</span>' : '') +
       (built ? '<span class="text-[13px] text-zinc-500 dark:text-zinc-400">' + esc(built) + '</span>' : '') + '</p>' +
       (type || rare ? '<p class="text-xs font-semibold uppercase tracking-wider text-violet-600 dark:text-violet-300">' + esc(type || '') + (rare ? RARE_CHIP.replace('ml-1.5', type ? 'ml-1.5' : '') : '') + '</p>' : '') + '</div>' +
+      (nameBtn ? '<button class="-mt-0.5 shrink-0 rounded-lg px-2 py-1 text-[12.5px] font-semibold text-zinc-500 ring-1 ring-inset ring-zinc-200 active:bg-zinc-100 dark:text-zinc-400 dark:ring-zinc-600 dark:active:bg-zinc-700" data-pop="name" aria-label="This is a name">Name</button>' : '') +
       '<button class="-mr-1 -mt-0.5 grid size-8 shrink-0 place-items-center rounded-full text-zinc-500 active:bg-zinc-100 dark:text-zinc-400 dark:active:bg-zinc-700" data-pop="say" aria-label="Hear it">' + HI('speaker-wave', 'size-5') + '</button></div>';
   }
   function fillPopWord(word, raw, sentence, span, hits) {
@@ -756,7 +828,7 @@
     var draw = function () {
       var meaning = hit ? verbFirst(hit).split('; ').slice(0, 2).join('; ') : 'Not in the offline dictionary. Tap More for other dictionaries.';
       var bd = breakdownText(word, hit, lang);
-      pop.innerHTML = popHead(base, bd ? '' : base !== word ? word : '', wordType(hit, lang), bd, isRare(hit, lang)) +
+      pop.innerHTML = popHead(base, bd ? '' : base !== word ? word : '', wordType(hit, lang), bd, isRare(hit, lang), true) +
         (hit && hit.reading ? '<p class="text-sm text-zinc-500 dark:text-zinc-400">' + esc(hit.reading) + '</p>' : '') +
         '<p class="mt-0.5 truncate text-[15px] text-zinc-700 dark:text-zinc-200">' + esc(meaning) + '</p>' + popButtons(wordStatus(word, base));
       placePop(span);
@@ -767,6 +839,13 @@
       var a = b.dataset.pop;
       if (a === 'say') return speak(base, lang);
       if (a === 'more') { closePop(); return asPage('game', function () { showWordSheet(word, raw, sentence, hits); }); }   // the word as a full page
+      if (a === 'name') {   // mark it as a name: no underline, no translation, not reviewed
+        var st2 = nameStems(raw, lang), stem = st2[1] || st2[0];   // without its particle: 지겸이 → 지겸
+        delete notNames[lang][stem]; names[lang][stem] = 1;
+        persistNames(); renderPanel(); closePop(true);
+        var sp2 = boxSpan(raw); if (sp2) sp2.click();
+        return;
+      }
       setWordStatus(word, base, hits, sentence, wordStatus(word, base) === a ? 'new' : a);
       span = boxSpan(raw) || span; span.classList.add('kr-sel');
       draw();
@@ -1736,4 +1815,5 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount); else mount();
   loadSaved();
   loadKnown();
+  loadNames();
 })();
