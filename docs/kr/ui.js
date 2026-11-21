@@ -846,7 +846,7 @@
   // the top, the large title, and what belongs under it (Study's tabs), which stays pinned under the bar.
   function PAGE_HEAD(back, title, below) {
     return '<div class="sticky top-0 z-20 -mx-4 flex h-[60px] items-center gap-1 bg-zinc-50 px-4 dark:bg-zinc-950">' + (back || '') + '<div class="flex-1"></div>' +
-      (pageFrom === 'game' ? GEAR : '') + (pageFrom === 'home' ? '' : RESUME) + '</div>' +
+      (pageFrom === 'home' ? '' : RESUME) + '</div>' +
       '<h1 class="text-[34px] font-bold leading-tight tracking-tight">' + title + '</h1>' +
       (below ? '<div class="sticky top-[60px] z-10 -mx-4 bg-zinc-50 px-4 pb-1 pt-2 dark:bg-zinc-950" data-sheet-head>' + below + FADE_DOWN + '</div>' : '<div data-sheet-head></div>');
   }
@@ -1498,7 +1498,8 @@
       var tabs = '<div class="flex rounded-xl bg-zinc-100 p-1 dark:bg-zinc-800">' + (home ? '' : tb('now', 'Dialogue')) + tb('words', 'Words') +
         // Review: a floating badge on the corner of the word, like an app icon with notifications.
         tb('review', '<span class="relative">Review' + (due ? '<span class="absolute -right-[19px] -top-3 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-[#ff3b30] px-1 text-[11px] font-semibold leading-none text-white ring-2 ring-zinc-100 dark:ring-zinc-800">' + (due > 99 ? '99+' : due) + '</span>' : '') + '</span>') + (home ? '' : tb('progress', 'Progress')) + '</div>';
-      h = pageMode ? PAGE_HEAD(pageFrom === 'settings' ? backLink('Settings', 'data-act="to-settings"') : home ? backLink('CramBoy', 'data-act="to-settings"') : '', 'Study', tabs)
+      // Back: to Settings (open it when Study came from the study button), or to the home screen.
+      h = pageMode ? PAGE_HEAD(pageFrom === 'settings' ? backLink('Settings', 'data-act="to-settings"') : home ? backLink('CramBoy', 'data-act="to-settings"') : backLink('Settings', 'data-act="game-menu"'), 'Study', tabs)
         : SHEET_HEAD('', 'Study', GEAR + RESUME, '<div class="mt-3">' + tabs + '</div>');
       if (tab === 'now') h += nowHTML();
       else if (tab === 'words') h += wordsTabHTML();
