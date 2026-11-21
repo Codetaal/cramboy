@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.33.5
+- Closing a game is easier: a round home button next to Resume in Settings, on every tab. It replaces the Close game button at the bottom of the Game tab.
+
 ## 0.33.4
 - Fix: with Study opened from the home screen, scrolling also moved the home screen behind it. The page behind now stays put, as with Backup and Help.
 
