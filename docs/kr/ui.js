@@ -129,8 +129,9 @@
     }
     renderPanel();
   }
-  // Subtitle font: gothic (the phone's own, Apple SD Gothic Neo), serif (Nanum Myeongjo) or pixel (Galmuri).
-  var FONTS = { gothic: 'Gothic', serif: 'Serif', pixel: 'Pixel' };
+  // Subtitle font: gothic (the phone's own, Apple SD Gothic Neo), serif (Nanum Myeongjo) or cute (Jua for Korean,
+  // Kosugi Maru for Japanese). Cute replaced pixel (Galmuri): a saved pixel choice becomes cute.
+  var FONTS = { gothic: 'Gothic', serif: 'Serif', cute: 'Cute' };
   function setFont(f) {
     settings.font = FONTS[f] ? f : 'gothic';
     box.dataset.font = settings.font;
@@ -162,7 +163,7 @@
       if (v.newPerDay) settings.newPerDay = v.newPerDay;
       if (typeof v.reviewsPerDay === 'number') settings.reviewsPerDay = v.reviewsPerDay;
       box.dataset.frame = settings.frame;
-      settings.font = FONTS[v.font] ? v.font : 'gothic'; box.dataset.font = settings.font;
+      settings.font = v.font === 'pixel' ? 'cute' : FONTS[v.font] ? v.font : 'gothic'; box.dataset.font = settings.font;
       applyStudy();
       krLayout();
       renderPanel();
@@ -762,7 +763,7 @@
       var b = e.target.closest('[data-pop]'); if (!b) return;
       var a = b.dataset.pop;
       if (a === 'say') return speak(base, lang);
-      if (a === 'more') { closePop(); return showWordSheet(word, raw, sentence, hits); }
+      if (a === 'more') { closePop(); return asPage('game', function () { showWordSheet(word, raw, sentence, hits); }); }   // the word as a full page
       setWordStatus(word, base, hits, sentence, wordStatus(word, base) === a ? 'new' : a);
       span = boxSpan(raw) || span; span.classList.add('kr-sel');
       draw();
@@ -784,7 +785,7 @@
       var b = e.target.closest('[data-pop]'); if (!b) return;
       var a = b.dataset.pop;
       if (a === 'say') return speak(chunk, lang);
-      if (a === 'more') { closePop(); return openGrammar(chunk, sentence, null); }
+      if (a === 'more') { closePop(); return asPage('game', function () { openGrammar(chunk, sentence, null); }); }
       setPatternStatus(x, chunk, sentence, patternState(x.id, lang) === a ? 'new' : a);
       span = boxSpan(chunk) || span; span.classList.add('kr-sel');
       draw();
@@ -826,16 +827,18 @@
   // Settings). Pages opened inside it (a word, Study settings, a review) stay full pages; a word looked up
   // from the subtitles still opens as a bottom sheet.
   var pageMode = false, pageFrom = 'game', openingPage = false, pageTimer = null;
-  function openPage(tab, from) {
+  function openPage(tab, from) { asPage(from, function () { openMenu(tab); }); }
+  // Run show() (which opens the sheet) as a full page sliding in from the right; when the sheet is already
+  // open it just shows the next page in it.
+  function asPage(from, show) {
     // Still sliding out: finish that at once and open afresh.
     if (pageTimer) { clearTimeout(pageTimer); pageTimer = null; sheet.hidden = true; sheet.classList.remove('kr-page', 'kr-off', 'kr-full'); }
-    if (sheet.hidden) {
-      pageMode = true; pageFrom = from === 'settings' || from === 'home' ? from : 'game';
-      card.style.transition = card.style.transform = '';   // left over from a swipe back
-      sheet.classList.add('kr-page', 'kr-off');
-      openingPage = true; openMenu(tab); openingPage = false;
-      requestAnimationFrame(function () { requestAnimationFrame(function () { sheet.classList.remove('kr-off'); }); });
-    } else openMenu(tab);
+    if (!sheet.hidden) return show();
+    pageMode = true; pageFrom = from === 'settings' || from === 'home' ? from : 'game';
+    card.style.transition = card.style.transform = '';   // left over from a swipe back
+    sheet.classList.add('kr-page', 'kr-off');
+    openingPage = true; show(); openingPage = false;
+    requestAnimationFrame(function () { requestAnimationFrame(function () { sheet.classList.remove('kr-off'); }); });
   }
   var FADE_DOWN = '<div class="pointer-events-none absolute inset-x-0 top-full h-3 bg-gradient-to-b from-zinc-50 to-transparent dark:from-zinc-950" aria-hidden="true"></div>';
   var GEAR = '<button class="grid size-10 shrink-0 place-items-center rounded-full text-zinc-500 active:bg-zinc-200 dark:text-zinc-400 dark:active:bg-zinc-800" data-act="game-menu" aria-label="Settings">' + HI('cog-6-tooth', 'size-6') + '</button>';
@@ -862,7 +865,7 @@
     swipePrev = sheet.hidden ? null : { html: card.innerHTML, y: card.scrollTop, full: sheet.classList.contains('kr-full') };
     sheet.classList.toggle('kr-full', !!full);
     // The handle on a bottom sheet; on the Study page a page without its own header (a word) starts a bit lower.
-    card.innerHTML = (full || html.indexOf('data-sheet-head') >= 0 ? '' : pageMode ? '<div class="h-4"></div>' : GRAB) + html + (withBack && !(pageMode && pageFrom === 'home') ? BACK : '<div class="pb-[calc(1.5rem+env(safe-area-inset-bottom))]"></div>');
+    card.innerHTML = (full || html.indexOf('data-sheet-head') >= 0 ? '' : pageMode ? '<div class="h-4"></div>' : GRAB) + html + (withBack && !pageMode ? BACK : '<div class="pb-[calc(1.5rem+env(safe-area-inset-bottom))]"></div>');
     var newBack = card.querySelector('[data-swipe-back]');
     if (!sheet.hidden && oldBack && newBack && oldBack.outerHTML === newBack.outerHTML) swipePrev = keep;
     if (swipePrev && /data-loading/.test(swipePrev.html)) swipePrev = keep;   // not the "Looking up…" placeholder
@@ -1056,6 +1059,13 @@
     if (/다$/.test(hit.word) && toS.length) senses = toS.concat(senses.filter(function (x) { return toS.indexOf(x) < 0; }));
     return senses.join('; ');
   }
+  // The top of a word or grammar page: back to where it came from; on a page also Resume (as Study has).
+  function wordHead() {
+    if (pageMode) return '<div class="sticky top-0 z-20 -mx-4 flex h-[60px] items-center gap-1 bg-zinc-50 px-4 dark:bg-zinc-950" data-sheet-head>' +
+      backLink(TAB_LABEL[wordBack], 'data-act="back"') + '<div class="flex-1"></div>' + (pageFrom === 'home' ? '' : RESUME) + '</div>';
+    return '<button class="-ml-1.5 -mt-1 mb-1 flex items-center gap-0.5 py-1 pr-2 font-medium text-zinc-600 active:opacity-60 dark:text-zinc-300" data-act="back" data-swipe-back>' +
+      HI('chevron-left', 'size-5') + TAB_LABEL[wordBack] + '</button>';
+  }
   function showWordSheet(word, raw, sentence, hits) { wordBack = menuTab || 'now'; showWord(word, raw, sentence, hits); }
   function showWord(word, raw, sentence, hits) {
     var savedNow = isSaved(word), OUT = HI('arrow-top-right-on-square', 'size-4 text-zinc-400');
@@ -1066,8 +1076,7 @@
       return '<button class="flex items-center justify-center gap-1 rounded-lg py-2 text-sm font-semibold transition-colors ' + (status === st ? on : 'text-zinc-500 dark:text-zinc-400') +
         '" data-status="' + st + '" aria-pressed="' + (status === st) + '">' + (icon ? HI(icon, 'size-4') : '') + label + '</button>';
     };
-    var h = '<button class="-ml-1.5 -mt-1 mb-1 flex items-center gap-0.5 py-1 pr-2 font-medium text-zinc-600 active:opacity-60 dark:text-zinc-300" data-act="back" data-swipe-back>' +
-      HI('chevron-left', 'size-5') + TAB_LABEL[wordBack] + '</button>' +
+    var h = wordHead() +
       '<div class="flex items-center gap-1"><div class="kr-selectable min-w-0 break-keep text-[30px] font-bold">' + esc(word) + '</div>' +
       '<button class="' + SPEAK_BTN + '" data-act="say-word" aria-label="Hear the word">' + HI('speaker-wave', 'size-6') + '</button></div>' +
       (wordType(hits && hits[0], wlang) || isRare(hits && hits[0], wlang) ? '<p class="-mt-0.5 text-xs font-semibold uppercase tracking-wider text-violet-600 dark:text-violet-300">' + esc(wordType(hits && hits[0], wlang) || '') + (isRare(hits && hits[0], wlang) ? RARE_CHIP : '') + '</p>' : '') +
@@ -1169,8 +1178,7 @@
     if (onlyId && !pats.some(function (x) { return x.id === onlyId; })) pats = [g.byId(onlyId)].filter(Boolean);
     var title = chunk || (pats[0] ? pats[0].label : '');
     pats.forEach(function (x) { var e = (seen[wlang].p || {})[x.id]; if (e) { e[1]++; saveSeen(); } });
-    var h = '<button class="-ml-1.5 -mt-1 mb-1 flex items-center gap-0.5 py-1 pr-2 font-medium text-zinc-600 active:opacity-60 dark:text-zinc-300" data-act="back" data-swipe-back>' +
-      HI('chevron-left', 'size-5') + TAB_LABEL[wordBack] + '</button>' +
+    var h = wordHead() +
       '<div class="flex items-center gap-1"><div class="kr-selectable min-w-0 break-keep text-[30px] font-bold">' + esc(title) + '</div>' +
       '<button class="' + SPEAK_BTN + '" data-act="say-chunk" aria-label="Hear it">' + HI('speaker-wave', 'size-6') + '</button></div>' +
       '<p class="mt-0.5 ' + C.muted + '">Grammar pattern' + (verbs.length ? ' built on a verb' : '') + '. Learn the pattern, not the separate pieces.</p>';
@@ -1672,8 +1680,8 @@
         (settings.study ? 'Subtitles, word lookup, review and progress' : 'Off: no subtitles and no translate button') + '</span></span>' + SW(settings.study) + '</button>',
       font: '<div class="px-4 py-2.5"><div class="flex items-center"><span class="flex-1">Font</span><span class="text-sm ' + C.muted + '">' + FONTS[settings.font || 'gothic'] + '</span></div>' +
         '<div class="mt-1.5 grid grid-cols-3 gap-2">' + Object.keys(FONTS).map(function (f) {
-          return '<button class="rounded-xl bg-zinc-100 px-2 py-2 text-center ring-2 ring-transparent aria-pressed:bg-white aria-pressed:ring-zinc-900 dark:bg-zinc-800 dark:aria-pressed:bg-zinc-600 dark:aria-pressed:ring-white" data-font-pick="' + f + '" aria-pressed="' + ((settings.font || 'gothic') === f) + '">' +
-            '<span class="kr-font-sample block text-xl leading-tight text-zinc-900 dark:text-white" data-font="' + f + '">' + (lang === 'ja' ? 'あいう' : '가나다') + '</span><span class="mt-0.5 block text-xs ' + C.muted + '">' + FONTS[f] + '</span></button>';
+          return '<button class="min-w-0 rounded-xl bg-zinc-100 px-1 py-2 text-center ring-2 ring-transparent aria-pressed:bg-white aria-pressed:ring-zinc-900 dark:bg-zinc-800 dark:aria-pressed:bg-zinc-600 dark:aria-pressed:ring-white" data-font-pick="' + f + '" aria-pressed="' + ((settings.font || 'gothic') === f) + '">' +
+            '<span class="kr-font-sample block whitespace-nowrap text-lg leading-tight text-zinc-900 dark:text-white" data-font="' + f + '">' + (lang === 'ja' ? 'あいう' : '가나다') + '</span><span class="mt-0.5 block text-xs ' + C.muted + '">' + FONTS[f] + '</span></button>';
         }).join('') + '</div></div>',
       frame: '<div class="px-4 py-2.5"><div class="flex items-center"><span class="flex-1">Box frame</span><span class="text-sm ' + C.muted + '">' + (FRAME_NAMES[settings.frame] || '') + '</span></div>' +
         '<div class="-mx-1.5 mt-0.5 flex gap-0.5 overflow-x-auto px-0.5 py-1">' + Object.keys(FRAME_NAMES).map(function (f) {

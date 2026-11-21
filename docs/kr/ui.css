@@ -110,8 +110,7 @@
 #kr-box.kr-hidden { display: none; }
 /* Subtitle fonts (Study settings > Font; files in fonts/). Japanese in the serif font uses the phone's Mincho. */
 #kr-box[data-font="serif"], .kr-font-sample[data-font="serif"] { font-family: 'Nanum Myeongjo', 'Hiragino Mincho ProN', 'Yu Mincho', serif; font-weight: 700; }
-#kr-box[data-font="pixel"], .kr-font-sample[data-font="pixel"] { font-family: 'Galmuri11', 'Apple SD Gothic Neo', sans-serif; font-weight: 400; letter-spacing: 0; }
-#kr-box[data-font="pixel"] { -webkit-font-smoothing: none; }
+#kr-box[data-font="cute"], .kr-font-sample[data-font="cute"] { font-family: 'Jua', 'Kosugi Maru', 'Apple SD Gothic Neo', sans-serif; font-weight: 400; letter-spacing: 0; }
 .kr-font-sample[data-font="gothic"] { font-family: 'Apple SD Gothic Neo', -apple-system, 'Noto Sans KR', sans-serif; font-weight: 700; }
 #kr-box .kr-w { border-bottom: 2px dotted var(--f-line); border-radius: 2px; }
 #kr-box .kr-w.kr-saved { color: var(--f-saved); border-bottom-color: #e2a400; }

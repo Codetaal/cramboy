@@ -46,7 +46,7 @@ Styles use Tailwind CSS: after changing classes in `docs/index.html`, `docs/emu.
 
 ## Licences
 GPL-3.0-or-later (see LICENSE). Includes desmume (GPL-2.0-or-later), PKHeX data
-(GPL-3.0), kengdic (MPL-2.0 / LGPL-2.0+) and Heroicons (MIT, notice in docs/icons.js) and Tailwind CSS (MIT). Subtitle fonts: Galmuri by Lee Minseo and Nanum Myeongjo by NHN (both SIL OFL 1.1, licences in docs/fonts/). Play only games you own.
+(GPL-3.0), kengdic (MPL-2.0 / LGPL-2.0+) and Heroicons (MIT, notice in docs/icons.js) and Tailwind CSS (MIT). Subtitle fonts: Nanum Myeongjo by NHN and Jua by Woowahan Brothers (both SIL OFL 1.1) and Kosugi Maru by MOTOYA (Apache 2.0), licences in docs/fonts/. Play only games you own.
 
 ## Japanese games
 Japanese games (region letter `J` in the game code) are read in Japanese: the DS itself is set to
