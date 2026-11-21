@@ -2,6 +2,11 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.30.0
+- New: Study is a full page that slides in from the right, like Backup, with a large title and the Dialogue / Words / Review / Progress tabs pinned under the top bar while you scroll.
+- From the study button: the top bar has the gear (Settings) and Resume. From the Study row in Settings it slides in over Settings, with "‹ Settings" to go back (or swipe from the left edge) and Resume to go back to the game.
+- Words, Study settings and reviews opened from the Study page are full pages too; a word looked up from the subtitles still opens as a bottom sheet.
+
 ## 0.29.3
 - The Study screen uses the same font as Settings and the rest of the app (it used the Korean system font for all its text). Korean and Japanese words look the same as before.
 
