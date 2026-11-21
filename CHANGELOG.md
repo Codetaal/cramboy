@@ -2,6 +2,14 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.28.0
+- New: the game menu has tabs at the bottom, like an app: Game (sound, resume, saves, close game), Study (Study, Dialogue history and the study settings), Controls (opacity, FPS) and App (updates, backup, help, about, memory dump). The menu remembers the last tab. The Advanced section is gone; its options moved to Controls and App.
+- Sound is now a switch in the Game tab instead of the round button next to Resume.
+- New: Backup in the game menu (App tab), showing when you last backed up. Restoring from there closes the game first.
+- The Study row opens Review when words are due, otherwise your saved words; Dialogue history has its own row.
+- Restoring a backup removes the resume snapshots of games whose save it restores, so they don't jump back to a moment that doesn't match.
+- Fix: the back button of Help & FAQ opened from the game menu didn't respond to taps on phones.
+
 ## 0.27.0
 - New: dialogue history. The Study screen's first tab is now called Dialogue: the line on screen at the top, and below it every conversation in this game on a timeline, with day headings and the time of each conversation. A conversation you see again (talking to someone twice, a sign) isn't shown twice but counts up (×2). Kept per game after closing the app, and included in backups.
 
