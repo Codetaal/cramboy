@@ -2,6 +2,10 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.32.0
+- New subtitle font: Cute (Jua for Korean, Kosugi Maru for Japanese) replaces Pixel. If you had Pixel selected, you now get Cute.
+- More in the word popup opens the word as a full page, like Study, with Resume at the top. Word pages inside Study also have Resume at the top instead of "Back to game" at the bottom.
+
 ## 0.31.1
 - Study opened with the study button has "‹ Settings" at the top left instead of the gear; it (or a swipe from the left edge) slides Study away to Settings.
 
