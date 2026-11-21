@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.33.4
+- Fix: with Study opened from the home screen, scrolling also moved the home screen behind it. The page behind now stays put, as with Backup and Help.
+
 ## 0.33.3
 - The Continue playing card no longer shows the last line you read.
 - Study opened from the home screen scrolls normally: its header only stays at the top in a game, where it has Resume.
