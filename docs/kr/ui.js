@@ -174,7 +174,57 @@
   // ---------- where you are ----------
   // The game you're playing, saved with each word. (Only character dialogue is read: no place names.)
   var game = { id: '', name: '' }, place = '';
-  window.KRSetGame = function (id, name) { game = { id: String(id || '').trim(), name: String(name || '').trim() }; };
+  window.KRSetGame = function (id, name) { game = { id: String(id || '').trim(), name: String(name || '').trim() }; loadLog(); };
+
+  // ---------- dialogue history (Study › Dialogue) ----------
+  // Per game, newest first: conversations, each everything said between a dialogue box opening and
+  // closing. A conversation you see again (same lines: talking to someone twice, a sign) isn't added twice;
+  // it moves to the top and counts up. Stored as log:<game id> = [{ l: [lines], t: last time, at: [earlier times] }].
+  var log = [], liveConv = null, logTimer = null, LOG_MAX = 300;
+  function logKey() { return 'log:' + (game.id || 'unknown'); }
+  function loadLog() {
+    log = []; liveConv = null;
+    if (!store) return;
+    var key = logKey();
+    store.getItem(key).then(function (v) { if (key === logKey() && Array.isArray(v)) log = v.concat(log).slice(0, LOG_MAX); }).catch(function () {});
+  }
+  function saveLog() {
+    if (!store) return;
+    if (logTimer) clearTimeout(logTimer);
+    var key = logKey(), data = log;
+    logTimer = setTimeout(function () { logTimer = null; store.setItem(key, data).catch(function () {}); }, 1500);
+  }
+  function logLine(t) {
+    if (!liveConv) { liveConv = { l: [], t: Date.now(), at: [] }; log.unshift(liveConv); if (log.length > LOG_MAX) log.length = LOG_MAX; }
+    if (liveConv.l[liveConv.l.length - 1] !== t) liveConv.l.push(t);
+    liveConv.t = Date.now();
+    saveLog();
+  }
+  // Leaving the app mid-conversation: keep the line on screen too (the same line isn't added twice).
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState !== 'hidden' || !current) return;
+    var t = plain(current.text).trim();
+    if (!t) return;
+    logLine(t);
+    if (logTimer) { clearTimeout(logTimer); logTimer = null; }
+    if (store) store.setItem(logKey(), log).catch(function () {});
+  });
+  function endConv() {
+    var c = liveConv; liveConv = null;
+    if (!c) return;
+    var key = c.l.join('\n\n');
+    for (var i = 0; i < log.length; i++) {
+      var o = log[i];
+      if (o === c || o.l.join('\n\n') !== key) continue;
+      // Seen before: keep one, on top, with the earlier time added.
+      log.splice(log.indexOf(c), 1);
+      log.splice(log.indexOf(o), 1);
+      o.at = (o.at || []).concat(o.t).slice(-20); o.t = c.t;
+      log.unshift(o);
+      break;
+    }
+    saveLog();
+  }
   function whereHTML(pl, gm, cls) {
     if (!pl && !gm) return '';
     return '<p class="flex items-center gap-1 ' + (cls || '') + ' text-xs text-zinc-400 dark:text-zinc-500">' + HI('map-pin', 'size-3.5 shrink-0') +
@@ -416,6 +466,7 @@
     heldAt = 0;
     if (!current) return;
     archive(current);
+    endConv();
     convo = [];   // this conversation is over: the next one starts with a clean box
     current = null;
     box.classList.add('kr-hidden');   // the game's own box has closed too
@@ -429,6 +480,7 @@
     var t = plain(msg.text).trim();
     if (t && history[history.length - 1] !== t) { history.push(t); if (history.length > 100) history.shift(); countText(t); }
     if (t && convo[convo.length - 1] !== t) convo.push(t);
+    if (t) logLine(t);
   }
 
   // ---------- subtitle panel ----------
@@ -925,7 +977,7 @@
   // Which Words & text tab the word sheet's back button returns to: the tab the word was
   // tapped in, or Now when it was tapped in the subtitles.
   var menuTab = null, wordBack = 'now', settingsBack = 'now';
-  var TAB_LABEL = { now: 'Study', words: 'Words', review: 'Review', progress: 'Progress', session: 'Review', settings: 'Study settings' };
+  var TAB_LABEL = { now: 'Dialogue', words: 'Words', review: 'Review', progress: 'Progress', session: 'Review', settings: 'Study settings' };
   // l: the word's own language (a saved word from a game in the other language); default the game's.
   var wlang = 'ko';
   function openWord(raw, sentence, span, l) {
@@ -1391,7 +1443,7 @@
       var tb = function (id, label) { return '<button class="' + C.tab + '" data-tab="' + id + '" aria-pressed="' + (tab === id) + '">' + label + '</button>'; };
       h = '<div class="flex items-center"><p class="flex-1 text-xl font-bold">Study</p>' +
         '<button class="-mr-2 grid size-10 place-items-center rounded-full text-zinc-500 active:bg-zinc-200 dark:text-zinc-400 dark:active:bg-zinc-800" data-act="game-menu" aria-label="Menu">' + HI('cog-6-tooth', 'size-6') + '</button></div>' +
-        '<div class="mt-2 flex rounded-xl bg-zinc-100 p-1 dark:bg-zinc-800">' + tb('now', 'Now') + tb('words', 'Words') +
+        '<div class="mt-2 flex rounded-xl bg-zinc-100 p-1 dark:bg-zinc-800">' + tb('now', 'Dialogue') + tb('words', 'Words') +
         // Review: a floating badge on the corner of the word, like an app icon with notifications.
         tb('review', '<span class="relative">Review' + (due ? '<span class="absolute -right-[19px] -top-3 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-[#ff3b30] px-1 text-[11px] font-semibold leading-none text-white ring-2 ring-zinc-100 dark:ring-zinc-800">' + (due > 99 ? '99+' : due) + '</span>' : '') + '</span>') + tb('progress', 'Progress') + '</div>';
       if (tab === 'now') h += nowHTML();
@@ -1441,6 +1493,7 @@
       if (act === 'pg-know-all') { markKnown(Array.prototype.map.call(card.querySelectorAll('[data-know]'), function (n) { return n.dataset.know; })); return stay('progress'); }
       if (act === 'study-toggle') { setStudy(!settings.study); if (settings.study) stay('settings'); else toast('Study mode off', 'ok'); return; }
       if (act === 'reset-box') { resetBox(); return; }
+      if (act === 'log-more') { logShown += 60; return stay('now'); }
       // The gear: the game menu, where the study settings live.
       if (act === 'game-menu') { closeSheet(); if (window.emuOpenMenu) window.emuOpenMenu(); return; }
     };
@@ -1456,17 +1509,37 @@
         nowText.split(/\n\n+/).filter(function (x) { return x.trim(); }).map(function (pg) { return '<div data-page="' + esc(pg.replace(/\n+/g, ' ')) + '">' + wordsHTML(pg) + '</div>'; }).join('') + '</div>' +
         '<button class="' + SPEAK_BTN + ' -my-1 -mr-2" data-act="say-now" aria-label="Hear it">' + HI('speaker-wave', 'size-5') + '</button></div>' +
         '<p class="mt-1 text-sm ' + C.muted + '">Tap a word to look it up · press and hold to select and copy</p></div>';
-    // Earlier: finished dialogue, newest first (the current line is shown above).
-    var lines = history.slice().reverse();
-    if (!current && lines.length) lines.shift();
-    var block = function (arr) {
-      return '<div class="mt-1.5 ' + C.list + '">' + arr.map(function (t) {
-        var s1 = t.replace(/\n+/g, ' ');
-        return '<div class="kr-selectable px-4 py-2.5 leading-relaxed" data-s="' + esc(s1) + '">' + wordsHTML(s1) + '</div>';
-      }).join('') + '</div>';
-    };
-    if (lines.length) h += SEC('Earlier') + block(lines.slice(0, 60));
-    // Only character dialogue (no signs or other text on screen).
+    // Earlier: this game's conversations on a timeline, newest first, grouped by day.
+    return h + timelineHTML();
+  }
+  var logShown = 60;
+  function dayLabel(t) {
+    var d = new Date(t), today = new Date(); today.setHours(0, 0, 0, 0);
+    var day = new Date(d); day.setHours(0, 0, 0, 0);
+    var diff = Math.round((today - day) / 86400000);
+    return diff === 0 ? 'Today' : diff === 1 ? 'Yesterday' : d.toLocaleDateString('en-GB', diff < 7 ? { weekday: 'long' } : { day: 'numeric', month: 'short', year: d.getFullYear() === today.getFullYear() ? undefined : 'numeric' });
+  }
+  function clock(t) { var d = new Date(t); return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
+  function timelineHTML() {
+    if (!log.length) return '';
+    var h = '', lastDay = '', open = false;
+    log.slice(0, logShown).forEach(function (c) {
+      var day = dayLabel(c.t);
+      if (day !== lastDay) {
+        if (open) h += '</div>';
+        h += SEC(day) + '<div class="kr-tl">'; open = true; lastDay = day;
+      }
+      var n = (c.at || []).length + 1, live = c === liveConv;
+      var prev = n > 1 ? c.at[c.at.length - 1] : 0;
+      h += '<div class="kr-tl-item' + (live ? ' kr-tl-live' : '') + '"><p class="kr-tl-meta">' + clock(c.t) + (live ? ' · now' : '') +
+        (n > 1 ? ' <span class="kr-tl-count">×' + n + '</span> <span>also ' + (dayLabel(prev) === day ? 'at ' + clock(prev) : dayLabel(prev).toLowerCase().replace(/^(\d)/, 'on $1') + ' ' + clock(prev)) + '</span>' : '') + '</p>' +
+        '<div class="mt-1 ' + C.list + '">' + c.l.map(function (t) {
+          var s1 = t.replace(/\n+/g, ' ');
+          return '<div class="kr-selectable px-4 py-2.5 leading-relaxed" data-s="' + esc(s1) + '">' + wordsHTML(s1) + '</div>';
+        }).join('') + '</div></div>';
+    });
+    if (open) h += '</div>';
+    if (log.length > logShown) h += '<button class="mt-2 w-full rounded-xl py-2.5 text-sm font-semibold text-violet-600 active:bg-zinc-100 dark:text-violet-300 dark:active:bg-zinc-800" data-act="log-more">Show older conversations</button>';
     return h;
   }
   function wordsTabHTML() {

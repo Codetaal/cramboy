@@ -192,3 +192,19 @@
   -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 calc(10px * var(--k, 1.46)));
           mask-image: linear-gradient(to bottom, transparent 0, #000 calc(10px * var(--k, 1.46)));
 }
+
+/* Dialogue history timeline (Study › Dialogue): a line with a dot per conversation. */
+.kr-tl { position: relative; margin-top: 6px; padding-left: 22px; }
+.kr-tl::before { content: ''; position: absolute; left: 6px; top: 8px; bottom: 8px; width: 2px; border-radius: 2px; background: #e4e4e7; }
+.kr-tl-item { position: relative; margin-bottom: 12px; }
+.kr-tl-item::before { content: ''; position: absolute; left: -21px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: #fff; border: 2px solid #a78bfa; }
+.kr-tl-live::before { background: #7c3aed; border-color: #7c3aed; }
+.kr-tl-meta { font-size: 12.5px; color: #71717a; }
+.kr-tl-count { margin-left: 2px; border-radius: 999px; background: #ede9fe; padding: 1px 7px; font-size: 11px; font-weight: 700; color: #6d28d9; }
+@media (prefers-color-scheme: dark) {
+  .kr-tl::before { background: #3f3f46; }
+  .kr-tl-item::before { background: #18181b; }
+  .kr-tl-live::before { background: #8b5cf6; border-color: #8b5cf6; }
+  .kr-tl-meta { color: #a1a1aa; }
+  .kr-tl-count { background: rgba(139, 92, 246, .2); color: #ddd6fe; }
+}
