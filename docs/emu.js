@@ -17,7 +17,8 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   var fastForward = false, frameNo = 0, lastT = 0, acc = 0;
   var prevSaveFlag = 0, saveDirty = false;
   // ctlOpacity: how see-through the floating controls are (the same in portrait and landscape).
-  var settings = { sound: true, controls: 'floating', resume: false, ctlOpacity: 0.7, fps: false };
+  // ctlLift: how far (px) the controls sit above their lowest spot, for phones or hands that like them higher.
+  var settings = { sound: true, controls: 'floating', resume: false, ctlOpacity: 0.7, ctlLift: 0, fps: false };
 
   var TAGLINE = '';   // no slogan; the line only shows status messages
   // ---------- startup ----------
@@ -31,7 +32,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   // is ready starts as soon as it is).
   var pendingStart = null;
   loadLibrary().then(renderLibrary).catch(function () {}).then(showHome);
-  KV.get('settings').then(function (s) { if (s) { settings.sound = s.sound !== false; settings.controls = 'floating'; /* the Below layout was removed */ settings.resume = s.resume === true; if (s.ctlOpacity >= 0.15 && s.ctlOpacity <= 1) settings.ctlOpacity = s.ctlOpacity; settings.fps = s.fps === true; $('fps').hidden = !settings.fps; } }).catch(function () {});
+  KV.get('settings').then(function (s) { if (s) { settings.sound = s.sound !== false; settings.controls = 'floating'; /* the Below layout was removed */ settings.resume = s.resume === true; if (s.ctlOpacity >= 0.15 && s.ctlOpacity <= 1) settings.ctlOpacity = s.ctlOpacity; if (s.ctlLift >= 0 && s.ctlLift <= 120) settings.ctlLift = s.ctlLift; settings.fps = s.fps === true; $('fps').hidden = !settings.fps; } }).catch(function () {});
 
   var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var standalone = window.navigator.standalone || matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches;
@@ -766,6 +767,8 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     if (window.scrollX || window.scrollY) window.scrollTo(0, 0);
     var vp = viewSize(), W = vp.w, H = vp.h, ctl = $('controls'), sw, sh, top;
     var floating = true;   // controls always float over the bottom screen (Below was removed)
+    // Portrait only: in landscape the screens fill nearly the full height, so higher controls would only cover them.
+    var lift = H >= W ? settings.ctlLift || 0 : 0;
     // Portrait: the controls area is as tall as the big D-pad and face buttons need (see portraitGeom),
     // but never more than 36% of the screen.
     var ctrlH = Math.max(165, Math.min(PORTRAIT.need(W) + 16, H * 0.36));
@@ -775,7 +778,8 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
       sh = Math.min(W * 0.75, H / 2); sw = sh * 4 / 3; top = 0;
       place(screenCanvas[0], (W - sw) / 2, top, sw, sh);
       place(screenCanvas[1], (W - sw) / 2, top + sh, sw, sh);
-      ctl.style.top = (H - ctrlH) + 'px'; ctl.style.height = ctrlH + 'px';
+      // Lifted: the controls area grows upwards by the lift, so the controls keep their size.
+      ctl.style.top = (H - ctrlH - lift) + 'px'; ctl.style.height = (ctrlH + lift) + 'px';
       setControlsOpacity(settings.ctlOpacity);
     } else {
       // Landscape: screens side by side at the top; the space below is for the controls.
@@ -788,6 +792,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     var C = ctl.getBoundingClientRect(), cw = C.width, ch = C.height;
     // Portrait: keep the controls a bit further up from the bottom edge of the phone.
     if (H >= W) ch -= 16;
+    ch -= lift;   // the Offset setting (Menu > Controls): everything sits that much higher
     setTouchMode(touchMode);
     // One controls system for both orientations: only the sizes and positions differ (portraitGeom /
     // landscapeGeom); placing, the touch areas and how touches work are shared (applyControls, onTouch).
@@ -1095,9 +1100,11 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     document.querySelectorAll('[data-mpanel]').forEach(function (p) { p.hidden = p.dataset.mpanel !== t; });
     try { localStorage.setItem('cb-menu-tab', t); } catch (e) {}
   }
+  function liftLabel() { return settings.ctlLift ? '+' + settings.ctlLift : 'Lowest'; }
   function menuLabels() {
     $('m-opacity').value = Math.round(settings.ctlOpacity * 100);
     $('m-opacity-val').textContent = Math.round(settings.ctlOpacity * 100) + '%';
+    $('m-lift').value = settings.ctlLift || 0; $('m-lift-val').textContent = liftLabel();
     $('m-sound').setAttribute('aria-checked', String(!!settings.sound));
     $('m-resume').setAttribute('aria-checked', String(!!settings.resume));
     $('m-fps').setAttribute('aria-checked', String(!!settings.fps));
@@ -1171,10 +1178,18 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     $('m-opacity-val').textContent = Math.round(settings.ctlOpacity * 100) + '%';
     layout();
   });
-  $('m-opacity').addEventListener('change', function () { saveSettings(); });
-  ['pointerdown', 'touchstart'].forEach(function (t) { $('m-opacity').addEventListener(t, function () { $('menu').classList.add('peek'); }, { passive: true }); });
-  ['pointerup', 'pointercancel', 'touchend', 'touchcancel', 'change'].forEach(function (t) {
-    $('m-opacity').addEventListener(t, function () { $('menu').classList.remove('peek'); }, { passive: true });
+  // Controls offset slider: the same, moving the controls up while you drag.
+  $('m-lift').addEventListener('input', function () {
+    settings.ctlLift = Math.max(0, Math.min(120, +this.value));
+    $('m-lift-val').textContent = liftLabel();
+    layout();
+  });
+  ['m-opacity', 'm-lift'].forEach(function (id) {
+    $(id).addEventListener('change', function () { saveSettings(); });
+    ['pointerdown', 'touchstart'].forEach(function (t) { $(id).addEventListener(t, function () { $('menu').classList.add('peek'); }, { passive: true }); });
+    ['pointerup', 'pointercancel', 'touchend', 'touchcancel', 'change'].forEach(function (t) {
+      $(id).addEventListener(t, function () { $('menu').classList.remove('peek'); }, { passive: true });
+    });
   });
   $('menu').addEventListener('click', function (e) {
     if (e.target === $('menu')) return closeMenu();
