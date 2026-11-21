@@ -2,6 +2,10 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.33.3
+- The Continue playing card no longer shows the last line you read.
+- Study opened from the home screen scrolls normally: its header only stays at the top in a game, where it has Resume.
+
 ## 0.33.2
 - Fix: the Continue playing card said "Nothing read in this game yet" even after reading; it now shows the game's progress and the last line you read.
 - Privacy and Terms use the same layout as the app's other pages (back link, title and text sizes).
