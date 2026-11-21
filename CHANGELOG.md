@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.27.0
+- New: dialogue history. The Study screen's first tab is now called Dialogue: the line on screen at the top, and below it every conversation in this game on a timeline, with day headings and the time of each conversation. A conversation you see again (talking to someone twice, a sign) isn't shown twice but counts up (×2). Kept per game after closing the app, and included in backups.
+
 ## 0.26.6
 - Home: the footer has its margins and bottom spacing back (it sat against the screen edge since 0.25.0).
 
