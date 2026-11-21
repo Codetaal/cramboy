@@ -195,6 +195,52 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     $('recent').hidden = $('recent-h').hidden = $('recent-f').hidden = !has;
     $('btn-open').hidden = $('empty-note').hidden = has;
     if (!all.children.length && !$('page-all').hidden) closeAllGames();
+    renderNow();
+  }
+
+  // Continue playing: the game you played last as a big card on the home screen, built from its own icon
+  // (blown up in the background, with a glow in the icon's main colour), the last line you read in it
+  // (from its dialogue history) and how many of its words you know.
+  var npTint = {};
+  function renderNow() {
+    var e = library[0], card = $('now-card');
+    card.hidden = !e;
+    if (!e) return;
+    card.onclick = function () { unlockAudio(); playFromLibrary(e.id); };
+    $('np-title').textContent = e.title;
+    $('np-meta').textContent = (e.unplayed ? 'Added ' : 'Played ') + ago(e.played);
+    $('np-bg-img').src = e.icon || '';
+    var icon = $('np-icon'); icon.textContent = 'DS';
+    if (e.icon) { icon.textContent = ''; var img = document.createElement('img'); img.alt = ''; img.src = e.icon; icon.appendChild(img); }
+    var st = window.KRSettings && KRSettings.gameStats ? KRSettings.gameStats(e.id) : null;
+    $('np-lang').textContent = st ? (st.lang === 'ja' ? '日本語' : '한국어') : '';
+    $('np-pct').textContent = st ? st.pct + '% of the words you read are known' : 'Nothing read in this game yet';
+    requestAnimationFrame(function () { $('np-fill').style.width = (st ? st.pct : 0) + '%'; });
+    KV.get('kr-log:' + e.id).then(function (log) {
+      var c = Array.isArray(log) && log[0], line = c && c.l && c.l[c.l.length - 1];
+      $('np-quote').hidden = !line; $('np-line').textContent = line || '';
+    }).catch(function () {});
+    tint(e, function (rgb) { card.style.setProperty('--np', rgb); });
+  }
+  // The icon's main colour (the average of its colourful pixels), as "r g b".
+  function tint(e, done) {
+    if (npTint[e.id]) return done(npTint[e.id]);
+    if (!e.icon) return done('124 58 237');
+    var img = new Image();
+    img.onload = function () {
+      var c = document.createElement('canvas'); c.width = c.height = 32;
+      var x = c.getContext('2d'); x.drawImage(img, 0, 0, 32, 32);
+      var d = x.getImageData(0, 0, 32, 32).data, r = 0, g = 0, b = 0, n = 0;
+      for (var i = 0; i < d.length; i += 4) {
+        var mx = Math.max(d[i], d[i + 1], d[i + 2]), mn = Math.min(d[i], d[i + 1], d[i + 2]);
+        if (d[i + 3] < 128 || mx - mn < 40 || mx < 60) continue;   // skip see-through, grey and dark pixels
+        r += d[i]; g += d[i + 1]; b += d[i + 2]; n++;
+      }
+      npTint[e.id] = n > 8 ? Math.round(r / n) + ' ' + Math.round(g / n) + ' ' + Math.round(b / n) : '124 58 237';
+      done(npTint[e.id]);
+    };
+    img.onerror = function () { done('124 58 237'); };
+    img.src = e.icon;
   }
 
   function gameRow(e) {
@@ -318,6 +364,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     var sum = $('home-study-sum');
     sum.textContent = !study ? 'Study mode is off' : due ? due + ' to review' : n ? n + ' saved word' + (n === 1 ? '' : 's') : 'Review your saved words';
     sum.dataset.due = $('home-study-icon').dataset.due = String(!!due);
+    renderNow();   // the game's progress, once the words read are loaded
   };
   // Backup: the same kind of page (backup.js fills it), from the home screen and the game menu (App tab).
   function openBackup(fromMenu) {

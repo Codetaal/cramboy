@@ -60,7 +60,7 @@
   transform: scale(0.9); background: rgba(167, 139, 250, 0.75); color: #fff; box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.18);
   transition-duration: 50ms;
 }
-/* Active (text on screen): only 10% transparent, so the amber is clear. */
+/* Active (text on screen): only 10% transparent, so the purple is clear. */
 #kr-pill.kr-big.kr-live { background: #7c3aed; color: #fff; box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.3); opacity: max(0.9, min(1, calc(var(--ctl-opacity, 0.7) + 0.4))); }
 @keyframes kr-blob {
   0%, 100% { border-radius: 62% 38% 55% 45% / 48% 60% 40% 52%; }
@@ -79,8 +79,8 @@
 #kr-sheet .kr-selectable { -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
 #kr-sheet a { text-decoration: none; }
 @media (prefers-color-scheme: light) {
-  #kr-sheet .kr-w { border-bottom-color: rgba(168, 111, 0, 0.45); }
-  #kr-sheet .kr-w.kr-saved { color: #a86f00; border-bottom-color: #a86f00; }
+  #kr-sheet .kr-w { border-bottom-color: rgba(80, 80, 80, 0.3); }
+  #kr-sheet .kr-w.kr-saved { color: #7c3aed; border-bottom-color: #7c3aed; }   /* Learning words: purple */
 }
 
 /* Pokémon-style text box drawn over the game's own dialogue box. Sizes scale with --k (CSS px per DS px). */
@@ -88,12 +88,12 @@
    no game artwork: each frame is a set of colours, also used by the menu's swatches. */
 #kr-box, .kr-frame-swatch {
   --f-bg: #fbfbfb; --f-border: #6f7378; --f-inner: #d8dadc; --f-text: #4a4a4a; --f-shadow: #cfcfd2;
-  --f-arrow: #e0503c; --f-saved: #b07a00; --f-line: rgba(80, 80, 80, 0.3); --f-radius: 6px; --f-bw: 2.2px; --f-iw: 1.4px; --f-ring: transparent;
+  --f-arrow: #e0503c; --f-saved: #7c3aed; --f-line: rgba(80, 80, 80, 0.3); --f-radius: 6px; --f-bw: 2.2px; --f-iw: 1.4px; --f-ring: transparent;
 }
 #kr-box[data-frame="ball"], .kr-frame-swatch[data-frame="ball"]   { --f-bg: #ffffff; --f-border: #e0453c; --f-inner: #ffffff; --f-ring: #2c2c2e; --f-text: #333; --f-shadow: #d9d9dc; --f-arrow: #e0453c; }
 #kr-box[data-frame="ocean"], .kr-frame-swatch[data-frame="ocean"]  { --f-bg: #f4f9ff; --f-border: #3a6db3; --f-inner: #a8cdf3; --f-text: #22364f; --f-shadow: #cfdff1; --f-arrow: #2f7fd6; }
 #kr-box[data-frame="night"], .kr-frame-swatch[data-frame="night"]  { --f-bg: #1f2434; --f-border: #8b94ba; --f-inner: #3a4262; --f-text: #f1f3ff; --f-shadow: #000000; --f-arrow: #ffd666;
-                        --f-saved: #ffd666; --f-line: rgba(255, 255, 255, 0.35); }
+                        --f-saved: #c4b5fd; --f-line: rgba(255, 255, 255, 0.35); }
 #kr-box[data-frame="sakura"], .kr-frame-swatch[data-frame="sakura"] { --f-bg: #fff7fa; --f-border: #d27394; --f-inner: #f9d0df; --f-text: #5a3a48; --f-shadow: #f0dbe3; --f-arrow: #d27394; }
 #kr-box {
   position: fixed; z-index: 5; box-sizing: border-box;
@@ -113,7 +113,7 @@
 #kr-box[data-font="cute"], .kr-font-sample[data-font="cute"] { font-family: 'Jua', 'Kosugi Maru', 'Apple SD Gothic Neo', sans-serif; font-weight: 400; letter-spacing: 0; }
 .kr-font-sample[data-font="gothic"] { font-family: 'Apple SD Gothic Neo', -apple-system, 'Noto Sans KR', sans-serif; font-weight: 700; }
 #kr-box .kr-w { border-bottom: 2px dotted var(--f-line); border-radius: 2px; }
-#kr-box .kr-w.kr-saved { color: var(--f-saved); border-bottom-color: #e2a400; }
+#kr-box .kr-w.kr-saved { color: var(--f-saved); border-bottom-color: var(--f-saved); }
 #kr-box .kr-w:active, #kr-box .kr-w.kr-sel { background: rgba(167, 139, 250, 0.55); }
 .kr-box-arrow {
   position: absolute; right: calc(12px * var(--k, 1.46) + 14px); bottom: calc(7px * var(--k, 1.46));

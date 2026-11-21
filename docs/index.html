@@ -37,6 +37,18 @@
       <h1 class="text-[34px] font-bold tracking-tight">CramBoy</h1>
       <p class="mt-0.5 text-[15px] text-zinc-500 dark:text-zinc-400">Learn Korean &amp; Japanese from your DS games</p>
       <div id="status" class="mt-1 text-[15px] text-zinc-500 dark:text-zinc-400 empty:hidden"></div>
+      <!-- Continue playing: the game you played last, drawn from its own icon (emu.js renderNow, app.css .np-*). -->
+      <button id="now-card" class="np" hidden>
+        <span class="np-bg" aria-hidden="true"><img id="np-bg-img" alt=""></span>
+        <span class="np-shade" aria-hidden="true"></span>
+        <span class="np-body">
+          <span class="np-top"><span class="np-chip"><span data-hi="play" data-hi-class="size-3.5"></span>Continue playing</span><span id="np-lang" class="np-lang"></span></span>
+          <span class="np-game"><span id="np-icon" class="np-icon">DS</span><span class="min-w-0"><span id="np-title" class="np-title"></span><span id="np-meta" class="np-meta"></span></span></span>
+          <span id="np-quote" class="np-quote" hidden><span class="np-quote-lbl">Where you left off</span><span id="np-line" class="np-line"></span></span>
+          <span class="np-foot"><span id="np-prog" class="np-prog"><span id="np-pct" class="np-pct"></span><span class="np-track"><span id="np-fill"></span></span></span>
+            <span class="np-go">Continue<span data-hi="play" data-hi-class="size-4"></span></span></span>
+        </span>
+      </button>
       <h2 id="recent-h" class="mt-6 px-1 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400" hidden>Games</h2>
       <div id="recent" class="mt-2 divide-y divide-zinc-100 dark:divide-white/5 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-zinc-900/5 dark:bg-zinc-900 dark:ring-white/10" hidden></div>
       <button id="btn-open" class="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-violet-600 px-4 py-3.5 font-semibold text-white shadow-sm ring-1 ring-inset ring-violet-500/20 transition active:scale-[0.98] active:bg-violet-500 disabled:opacity-50" disabled>

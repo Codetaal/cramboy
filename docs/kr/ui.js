@@ -144,7 +144,7 @@
   }
   function resetBox() { boxGeo = {}; saveSettings(); krLayout(); toast('Subtitle box reset', 'ok'); }
   window.KRReaderStats = function () { return reader.stats; };
-  window.KRSettings = { getMode: function () { return settings.mode; }, setMode: setMode, savedCount: function () { return saved.length; }, voiceName: function () { var v = bestVoice(lang); return v ? v.name + (/premium/i.test(v.name + v.voiceURI) ? ' (Premium)' : /enhanced/i.test(v.name + v.voiceURI) ? ' (Enhanced)' : '') : ''; }, knownPct: function () { var p = gameProgress(); return p.n ? pct(p.known, p.n) : null; }, dueCount: function () { return dueCount(); },
+  window.KRSettings = { getMode: function () { return settings.mode; }, setMode: setMode, savedCount: function () { return saved.length; }, voiceName: function () { var v = bestVoice(lang); return v ? v.name + (/premium/i.test(v.name + v.voiceURI) ? ' (Premium)' : /enhanced/i.test(v.name + v.voiceURI) ? ' (Enhanced)' : '') : ''; }, knownPct: function () { var p = gameProgress(); return p.n ? pct(p.known, p.n) : null; }, gameStats: function (id) { return gameStats(id); }, dueCount: function () { return dueCount(); },
     getStudy: function () { return settings.study; }, setStudy: setStudy,
     getFrame: function () { return settings.frame; }, setFrame: setFrame, frames: FRAMES };
   // open(tab, from): the Study page; from 'settings' (the Study row in Settings) its back button returns there.
@@ -895,7 +895,19 @@
   // (세계에 / 세계를 -> 세계), overall and per game. Stored as
   //   seen[lang] = { w: { base: [times read, times looked up, last sentence] }, g: { gameId: { name, n: words read, w: { base: times } } } }
   var seen = { ko: { w: {}, g: {} }, ja: { w: {}, g: {} } }, seenTimer = null, seenPending = [];
-  if (store) store.getItem('seen').then(function (v) { if (v && v.ko && v.ja) { mergeSeen(v); } }).catch(function () {});
+  if (store) store.getItem('seen').then(function (v) { if (v && v.ko && v.ja) { mergeSeen(v); } if (window.cbHomeStudy) cbHomeStudy(); }).catch(function () {});
+  // A game's progress for the home screen, without opening it: the language it was read in and the share
+  // of the words read in it that you know (as the Progress tab counts it). null before anything is read.
+  function gameStats(id) {
+    var best = null;
+    ['ko', 'ja'].forEach(function (l) {
+      var G = seen[l].g[id]; if (!G) return;
+      var n = 0, k = 0;
+      for (var w in G.w) { n += G.w[w]; if (wordState(w, l) === 'known') k += G.w[w]; }
+      if (n && (!best || n > best.n)) best = { lang: l, n: n, pct: pct(k, n) };
+    });
+    return best;
+  }
   // Counts made before the stored ones loaded are added on top.
   function mergeSeen(v) {
     ['ko', 'ja'].forEach(function (l) {
