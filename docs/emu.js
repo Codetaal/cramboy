@@ -1071,7 +1071,8 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
 
   // ---------- menu ----------
   var wasRunning = false;
-  window.emuOpenMenu = function () { menuTab = 'study'; openMenu(); };   // the Study screen's gear (kr/ui.js): opens on the Study tab
+  window.emuOpenMenu = function () { menuTab = 'study'; openMenu(); };
+  window.emuCloseMenu = function () { if (!$('menu').hidden) closeMenu(); };   // Resume on the Study page opened from Settings   // the Study screen's gear (kr/ui.js): opens on the Study tab
   function openMenu() {
     $('btn-menu').classList.add('active');
     wasRunning = emuIsRunning; emuIsRunning = false;
@@ -1199,9 +1200,10 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     if (m === 'export') exportSave();
     if (m === 'import') $('file-save').click();
     // Study: Review when words are due, otherwise the saved words.
+    // (The Study page slides in over Settings; its back button returns here.)
     if (m === 'study' && window.KRUI) {
       var due = window.KRSettings && KRSettings.getStudy() && KRSettings.dueCount ? KRSettings.dueCount() : 0;
-      closeMenu(); KRUI.open(due ? 'review' : 'words');
+      KRUI.open(due ? 'review' : 'words', 'settings');
     }
     if (m === 'update') return checkUpdate();
     if (m === 'faq') return openFaq(true);

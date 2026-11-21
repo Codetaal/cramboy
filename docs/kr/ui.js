@@ -76,7 +76,7 @@
     textBox.addEventListener('click', onWordTap);
     boxText.addEventListener('click', onWordTap);
     dragBox(boxGrip, 'move'); dragBox(boxSize, 'size');
-    pill.addEventListener('click', function () { openMenu('now'); });
+    pill.addEventListener('click', function () { openPage('now', 'game'); });
     // Press feedback like the other controls: quick shrink and purple tint, springing back on release.
     // (While it is purple because text is on screen it keeps its own look.)
     var releaseTimer = null;
@@ -125,7 +125,7 @@
     if (!settings.study) {
       current = null;
       setPanelVisible(false); box.classList.add('kr-hidden');
-      if (!sheet.hidden) closeSheet();
+      if (!sheet.hidden) closeSheet(true);   // back to Settings when the Study page came from there
     }
     renderPanel();
   }
@@ -146,7 +146,8 @@
   window.KRSettings = { getMode: function () { return settings.mode; }, setMode: setMode, savedCount: function () { return saved.length; }, voiceName: function () { var v = bestVoice(lang); return v ? v.name + (/premium/i.test(v.name + v.voiceURI) ? ' (Premium)' : /enhanced/i.test(v.name + v.voiceURI) ? ' (Enhanced)' : '') : ''; }, knownPct: function () { var p = gameProgress(); return p.n ? pct(p.known, p.n) : null; }, dueCount: function () { return dueCount(); },
     getStudy: function () { return settings.study; }, setStudy: setStudy,
     getFrame: function () { return settings.frame; }, setFrame: setFrame, frames: FRAMES };
-  window.KRUI = { open: function (tab) { openMenu(tab || 'now'); }, resetBox: resetBox, fillMenuSettings: fillMenuSettings };
+  // open(tab, from): the Study page; from 'settings' (the Study row in Settings) its back button returns there.
+  window.KRUI = { open: function (tab, from) { openPage(tab || 'now', from || 'game'); }, resetBox: resetBox, fillMenuSettings: fillMenuSettings };
 
   function loadSaved() {
     if (!store) return;
@@ -821,17 +822,47 @@
   var BACK = '<div class="sticky bottom-0 -mx-4 mt-auto bg-gradient-to-t from-zinc-50 from-70% to-zinc-50/0 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-5 dark:from-zinc-950 dark:to-zinc-950/0">' +
     '<button class="' + C.secondary + '" data-act="close">' + HI('play', 'size-5 text-violet-500 dark:text-violet-300') + 'Back to game</button></div>';
   // The Study screen and Study settings use the game menu's Resume button at the top right instead.
+  // The Study page: a full page that slides in from the right, like Backup (from the study button and from
+  // Settings). Pages opened inside it (a word, Study settings, a review) stay full pages; a word looked up
+  // from the subtitles still opens as a bottom sheet.
+  var pageMode = false, pageFrom = 'game', openingPage = false, pageTimer = null;
+  function openPage(tab, from) {
+    // Still sliding out: finish that at once and open afresh.
+    if (pageTimer) { clearTimeout(pageTimer); pageTimer = null; sheet.hidden = true; sheet.classList.remove('kr-page', 'kr-off', 'kr-full'); }
+    if (sheet.hidden) {
+      pageMode = true; pageFrom = from === 'settings' ? 'settings' : 'game';
+      card.style.transition = card.style.transform = '';   // left over from a swipe back
+      sheet.classList.add('kr-page', 'kr-off');
+      openingPage = true; openMenu(tab); openingPage = false;
+      requestAnimationFrame(function () { requestAnimationFrame(function () { sheet.classList.remove('kr-off'); }); });
+    } else openMenu(tab);
+  }
+  var FADE_DOWN = '<div class="pointer-events-none absolute inset-x-0 top-full h-3 bg-gradient-to-b from-zinc-50 to-transparent dark:from-zinc-950" aria-hidden="true"></div>';
+  var GEAR = '<button class="grid size-10 shrink-0 place-items-center rounded-full text-zinc-500 active:bg-zinc-200 dark:text-zinc-400 dark:active:bg-zinc-800" data-act="game-menu" aria-label="Settings">' + HI('cog-6-tooth', 'size-6') + '</button>';
+  function backLink(label, attrs) {
+    return '<button class="-ml-2 flex items-center gap-0.5 rounded-lg px-1 py-1 text-[17px] text-violet-600 active:opacity-60 dark:text-violet-400" ' + attrs + ' data-swipe-back>' + HI('chevron-left', 'size-6') + label + '</button>';
+  }
+  // Page header, as on the Backup page: a bar with the back button (and the gear and Resume) that stays at
+  // the top, the large title, and what belongs under it (Study's tabs), which stays pinned under the bar.
+  function PAGE_HEAD(back, title, below) {
+    return '<div class="sticky top-0 z-20 -mx-4 flex h-[60px] items-center gap-1 bg-zinc-50 px-4 dark:bg-zinc-950">' + (back || '') + '<div class="flex-1"></div>' +
+      (pageFrom === 'game' ? GEAR : '') + RESUME + '</div>' +
+      '<h1 class="text-[34px] font-bold leading-tight tracking-tight">' + title + '</h1>' +
+      (below ? '<div class="sticky top-[60px] z-10 -mx-4 bg-zinc-50 px-4 pb-1 pt-2 dark:bg-zinc-950" data-sheet-head>' + below + FADE_DOWN + '</div>' : '<div data-sheet-head></div>');
+  }
   var RESUME = '<button class="flex shrink-0 items-center gap-1.5 rounded-full bg-violet-600 px-4 py-2.5 font-semibold text-white shadow-sm active:scale-95 active:bg-violet-500" data-act="close">' + HI('play', 'size-4') + 'Resume</button>';
   // Back to game is the secondary button everywhere else (soft lilac); solid purple is kept for real actions
   // (Start review, Show meaning, Got it).
   function openSheet(html, withBack, full) {
-    if (sheet.hidden) pause();
+    if (pageTimer && !openingPage) { clearTimeout(pageTimer); pageTimer = null; sheet.hidden = true; sheet.classList.remove('kr-page', 'kr-off', 'kr-full'); }
+    if (sheet.hidden) { pause(); if (!openingPage) { pageMode = false; sheet.classList.remove('kr-page', 'kr-off'); } }
     // The page before this one, drawn under the card while you swipe back (emu.js asks card.swipeUnder).
     // (A page redrawn in place, with the same back button, keeps the page under it.)
     var keep = swipePrev, oldBack = card.querySelector('[data-swipe-back]');
     swipePrev = sheet.hidden ? null : { html: card.innerHTML, y: card.scrollTop, full: sheet.classList.contains('kr-full') };
     sheet.classList.toggle('kr-full', !!full);
-    card.innerHTML = (full || html.indexOf('data-sheet-head') >= 0 ? '' : GRAB) + html + (withBack ? BACK : '<div class="pb-[calc(1.5rem+env(safe-area-inset-bottom))]"></div>');
+    // The handle on a bottom sheet; on the Study page a page without its own header (a word) starts a bit lower.
+    card.innerHTML = (full || html.indexOf('data-sheet-head') >= 0 ? '' : pageMode ? '<div class="h-4"></div>' : GRAB) + html + (withBack ? BACK : '<div class="pb-[calc(1.5rem+env(safe-area-inset-bottom))]"></div>');
     var newBack = card.querySelector('[data-swipe-back]');
     if (!sheet.hidden && oldBack && newBack && oldBack.outerHTML === newBack.outerHTML) swipePrev = keep;
     if (swipePrev && /data-loading/.test(swipePrev.html)) swipePrev = keep;   // not the "Looking up…" placeholder
@@ -839,8 +870,18 @@
   }
   // Redraw the open tab after a change made on it (Know, a setting) without jumping back to the top.
   function stay(tab) { var y = card.scrollTop; openMenu(tab); card.scrollTop = y; }
-  function closeSheet() {
-    sheet.hidden = true; sheet.classList.remove('kr-full'); resume(); menuTab = null; review = null;
+  // toSettings: the Study page's back button (or study mode turned off) when it came from Settings: Settings
+  // stays open under it. Otherwise closing goes back to the game, closing Settings too.
+  function closeSheet(toSettings) {
+    var fromSettings = pageMode && pageFrom === 'settings';
+    if (pageMode) {
+      // Slide out to the right, then hide (a new page opened meanwhile cancels the hide).
+      sheet.classList.add('kr-off'); clearTimeout(pageTimer);
+      pageTimer = setTimeout(function () { pageTimer = null; sheet.hidden = true; sheet.classList.remove('kr-page', 'kr-off', 'kr-full'); }, 300);
+      pageMode = false;
+    } else { sheet.hidden = true; sheet.classList.remove('kr-full'); }
+    resume(); menuTab = null; review = null;
+    if (fromSettings && toSettings !== true && window.emuCloseMenu) window.emuCloseMenu();
     Array.prototype.forEach.call(document.querySelectorAll('.kr-sel'), function (n) { n.classList.remove('kr-sel'); });
     if (current) renderPanel();
   }
@@ -1450,11 +1491,11 @@
     else {
       var due = dueCount();
       var tb = function (id, label) { return '<button class="' + C.tab + '" data-tab="' + id + '" aria-pressed="' + (tab === id) + '">' + label + '</button>'; };
-      h = SHEET_HEAD('', 'Study',
-        '<button class="grid size-10 shrink-0 place-items-center rounded-full text-zinc-500 active:bg-zinc-200 dark:text-zinc-400 dark:active:bg-zinc-800" data-act="game-menu" aria-label="Settings">' + HI('cog-6-tooth', 'size-6') + '</button>' + RESUME,
-        '<div class="mt-3 flex rounded-xl bg-zinc-100 p-1 dark:bg-zinc-800">' + tb('now', 'Dialogue') + tb('words', 'Words') +
+      var tabs = '<div class="flex rounded-xl bg-zinc-100 p-1 dark:bg-zinc-800">' + tb('now', 'Dialogue') + tb('words', 'Words') +
         // Review: a floating badge on the corner of the word, like an app icon with notifications.
-        tb('review', '<span class="relative">Review' + (due ? '<span class="absolute -right-[19px] -top-3 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-[#ff3b30] px-1 text-[11px] font-semibold leading-none text-white ring-2 ring-zinc-100 dark:ring-zinc-800">' + (due > 99 ? '99+' : due) + '</span>' : '') + '</span>') + tb('progress', 'Progress') + '</div>');
+        tb('review', '<span class="relative">Review' + (due ? '<span class="absolute -right-[19px] -top-3 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-[#ff3b30] px-1 text-[11px] font-semibold leading-none text-white ring-2 ring-zinc-100 dark:ring-zinc-800">' + (due > 99 ? '99+' : due) + '</span>' : '') + '</span>') + tb('progress', 'Progress') + '</div>';
+      h = pageMode ? PAGE_HEAD(pageFrom === 'settings' ? backLink('Settings', 'data-act="to-settings"') : '', 'Study', tabs)
+        : SHEET_HEAD('', 'Study', GEAR + RESUME, '<div class="mt-3">' + tabs + '</div>');
       if (tab === 'now') h += nowHTML();
       else if (tab === 'words') h += wordsTabHTML();
       else if (tab === 'review') h += reviewStartHTML(due);
@@ -1497,6 +1538,7 @@
       if (b.dataset.rpd !== undefined) { settings.reviewsPerDay = +b.dataset.rpd; saveSettings(); return stay('settings'); }
       var act = b.dataset.act;
       if (act === 'close') { card.onclick = null; return closeSheet(); }
+      if (act === 'to-settings') { card.onclick = null; return closeSheet(true); }
       if (act === 'say-now') { var nb = card.querySelector('.kr-now'); return speak(nb ? nb.getAttribute('data-s') : ''); }
       if (act === 'start-review') return openMenu('session');
       if (act === 'pg-know-all') { markKnown(Array.prototype.map.call(card.querySelectorAll('[data-know]'), function (n) { return n.dataset.know; })); return stay('progress'); }
@@ -1642,7 +1684,9 @@
     var p = settingsParts();
     // Back to the Study screen: a chevron before the title (swipe back works too).
     var back = settings.study ? '<button class="-ml-2 grid size-10 shrink-0 place-items-center rounded-full text-zinc-500 active:bg-zinc-200 dark:text-zinc-400 dark:active:bg-zinc-800" data-tab="' + settingsBack + '" data-swipe-back aria-label="Back to Study">' + HI('chevron-left', 'size-6') + '</button>' : '';
-    var h = SHEET_HEAD(back, 'Study settings', RESUME) +
+    // On the Study page: Study settings is a page too, back to Study (or to Settings when study mode is off).
+    if (pageMode) back = settings.study ? backLink('Study', 'data-tab="' + settingsBack + '"') : pageFrom === 'settings' ? backLink('Settings', 'data-act="to-settings"') : '';
+    var h = (pageMode ? PAGE_HEAD(back, 'Study settings') : SHEET_HEAD(back, 'Study settings', RESUME)) +
       '<div class="mt-3 ' + C.list + '">' + p.study + '</div>';
     if (!settings.study) return h;
     h += SEC('Subtitles') + '<div class="mt-1.5 ' + C.list + '">' + p.font + p.frame + p.reset;

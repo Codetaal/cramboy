@@ -176,6 +176,12 @@
 @media (max-height: 700px) { .kr-shot.kr-shot-back { display: none !important; } }
 /* Full-screen pages in the sheet (Review). */
 #kr-sheet.kr-full .kr-card { height: 100%; max-height: 100%; border-radius: 0; padding-top: 0.5rem; }
+/* The Study page: full screen, sliding in from the right like Backup; what's under it shows while it slides. */
+#kr-sheet.kr-page { background: transparent; }
+#kr-sheet.kr-page .kr-card { height: 100%; max-height: 100%; border-radius: 0; box-shadow: none; padding-top: env(safe-area-inset-top);
+  transition: transform 300ms cubic-bezier(.2, .8, .2, 1); }
+#kr-sheet.kr-page.kr-off .kr-card { transform: translateX(100%); }
+#kr-sheet.kr-page.kr-full .kr-card { padding-top: calc(0.5rem + env(safe-area-inset-top)); }
 
 /* Word popover arrow: a rotated square in the bubble's colour, pointing at the tapped word. */
 .kr-pop-arrow { position: absolute; width: 14px; height: 14px; margin-left: -7px; transform: rotate(45deg); background: inherit; }
