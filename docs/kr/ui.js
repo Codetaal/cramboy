@@ -46,7 +46,7 @@
   var boxGeo = {};
   var BOX_DEFAULT = { x: 0, y: 142, w: 256, h: 50 };
   var sheet = el('div', { id: 'kr-sheet', className: 'fixed inset-0 z-30 flex flex-col justify-end bg-black/40', hidden: true });
-  var card = el('div', { className: 'kr-card h-[var(--sheet-h,auto)] max-h-[var(--sheet-max,92vh)] flex flex-col [&>*]:shrink-0 overflow-y-auto rounded-t-3xl bg-zinc-50 px-4 pt-2 text-zinc-900 shadow-2xl dark:bg-zinc-950 dark:text-white' });
+  var card = el('div', { className: 'kr-card h-[var(--sheet-h,auto)] max-h-[var(--sheet-max,92vh)] flex flex-col [&>*]:shrink-0 overflow-y-auto rounded-t-3xl bg-zinc-50 px-4 text-zinc-900 shadow-2xl dark:bg-zinc-950 dark:text-white' });
   // Tailwind class sets for the sheets
   var C = {
     btn: 'flex items-center justify-center gap-1.5 rounded-xl bg-white px-3.5 py-2.5 font-semibold text-zinc-800 shadow-sm ring-1 ring-zinc-900/5 active:scale-[0.98] dark:bg-zinc-800 dark:text-zinc-100 dark:ring-white/10',
@@ -809,7 +809,14 @@
   var wasRunning = false;
   function pause() { wasRunning = !!window.emuIsRunning; window.emuIsRunning = false; }
   function resume() { if (wasRunning && window.uiCurrentMode === 'player' && window.emuIsGameLoaded) window.emuIsRunning = true; wasRunning = false; }
-  var GRAB = '<div class="mx-auto mb-3 h-1.5 w-10 rounded-full bg-zinc-300 dark:bg-zinc-700"></div>'; // same handle as the menu
+  var GRAB = '<div class="mx-auto mb-3 mt-2 h-1.5 w-10 rounded-full bg-zinc-300 dark:bg-zinc-700"></div>'; // same handle as the menu
+  // Sheet header, the same as the Settings menu's (index.html): handle, a title row (title, buttons) and
+  // what belongs under it (tabs), pinned at the top while the content scrolls away under a short fade.
+  function SHEET_HEAD(left, title, right, below) {
+    return '<div class="sticky top-0 z-10 -mx-4 bg-zinc-50 px-4 pb-1 dark:bg-zinc-950" data-sheet-head>' + GRAB +
+      '<div class="flex min-h-11 items-center gap-1">' + left + '<p class="min-w-0 flex-1 truncate text-xl font-bold">' + title + '</p>' + right + '</div>' + (below || '') +
+      '<div class="pointer-events-none absolute inset-x-0 top-full h-3 bg-gradient-to-b from-zinc-50 to-transparent dark:from-zinc-950" aria-hidden="true"></div></div>';
+  }
   // "Back to game" stays pinned to the bottom of the sheet while the content above it scrolls.
   var BACK = '<div class="sticky bottom-0 -mx-4 mt-auto bg-gradient-to-t from-zinc-50 from-70% to-zinc-50/0 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-5 dark:from-zinc-950 dark:to-zinc-950/0">' +
     '<button class="' + C.secondary + '" data-act="close">' + HI('play', 'size-5 text-violet-500 dark:text-violet-300') + 'Back to game</button></div>';
@@ -824,7 +831,7 @@
     var keep = swipePrev, oldBack = card.querySelector('[data-swipe-back]');
     swipePrev = sheet.hidden ? null : { html: card.innerHTML, y: card.scrollTop, full: sheet.classList.contains('kr-full') };
     sheet.classList.toggle('kr-full', !!full);
-    card.innerHTML = (full ? '' : GRAB) + html + (withBack ? BACK : '<div class="pb-[calc(1.5rem+env(safe-area-inset-bottom))]"></div>');
+    card.innerHTML = (full || html.indexOf('data-sheet-head') >= 0 ? '' : GRAB) + html + (withBack ? BACK : '<div class="pb-[calc(1.5rem+env(safe-area-inset-bottom))]"></div>');
     var newBack = card.querySelector('[data-swipe-back]');
     if (!sheet.hidden && oldBack && newBack && oldBack.outerHTML === newBack.outerHTML) swipePrev = keep;
     if (swipePrev && /data-loading/.test(swipePrev.html)) swipePrev = keep;   // not the "Looking up…" placeholder
@@ -1443,11 +1450,11 @@
     else {
       var due = dueCount();
       var tb = function (id, label) { return '<button class="' + C.tab + '" data-tab="' + id + '" aria-pressed="' + (tab === id) + '">' + label + '</button>'; };
-      h = '<div class="flex items-center gap-1"><p class="flex-1 text-xl font-bold">Study</p>' +
-        '<button class="grid size-10 place-items-center rounded-full text-zinc-500 active:bg-zinc-200 dark:text-zinc-400 dark:active:bg-zinc-800" data-act="game-menu" aria-label="Settings">' + HI('cog-6-tooth', 'size-6') + '</button>' + RESUME + '</div>' +
-        '<div class="mt-2 flex rounded-xl bg-zinc-100 p-1 dark:bg-zinc-800">' + tb('now', 'Dialogue') + tb('words', 'Words') +
+      h = SHEET_HEAD('', 'Study',
+        '<button class="grid size-10 shrink-0 place-items-center rounded-full text-zinc-500 active:bg-zinc-200 dark:text-zinc-400 dark:active:bg-zinc-800" data-act="game-menu" aria-label="Settings">' + HI('cog-6-tooth', 'size-6') + '</button>' + RESUME,
+        '<div class="mt-3 flex rounded-xl bg-zinc-100 p-1 dark:bg-zinc-800">' + tb('now', 'Dialogue') + tb('words', 'Words') +
         // Review: a floating badge on the corner of the word, like an app icon with notifications.
-        tb('review', '<span class="relative">Review' + (due ? '<span class="absolute -right-[19px] -top-3 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-[#ff3b30] px-1 text-[11px] font-semibold leading-none text-white ring-2 ring-zinc-100 dark:ring-zinc-800">' + (due > 99 ? '99+' : due) + '</span>' : '') + '</span>') + tb('progress', 'Progress') + '</div>';
+        tb('review', '<span class="relative">Review' + (due ? '<span class="absolute -right-[19px] -top-3 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-[#ff3b30] px-1 text-[11px] font-semibold leading-none text-white ring-2 ring-zinc-100 dark:ring-zinc-800">' + (due > 99 ? '99+' : due) + '</span>' : '') + '</span>') + tb('progress', 'Progress') + '</div>');
       if (tab === 'now') h += nowHTML();
       else if (tab === 'words') h += wordsTabHTML();
       else if (tab === 'review') h += reviewStartHTML(due);
@@ -1584,10 +1591,11 @@
   // settings page, as one list. onChange: emu.js refreshes the menu (the Study row's summary).
   function fillMenuSettings(el, onChange) {
     var p = settingsParts(), row = 'flex items-center gap-2 px-4 py-2.5';
-    var h = '<div class="' + C.list + '">' + p.study.replace('px-4 py-3', 'px-4 py-3 active:bg-zinc-50 dark:active:bg-zinc-800');
-    if (settings.study) h += p.font + p.frame + p.reset +
-      p.npdRow + p.rpdRow;
-    el.innerHTML = h + '</div>';
+    // The same groups as the Study settings page: study mode, then Subtitles and Review.
+    var h = '<div class="' + C.list + '">' + p.study.replace('px-4 py-3', 'px-4 py-3 active:bg-zinc-50 dark:active:bg-zinc-800') + '</div>';
+    if (settings.study) h += SEC('Subtitles') + '<div class="mt-1.5 ' + C.list + '">' + p.font + p.frame + p.reset + '</div>' +
+      SEC('Review') + '<div class="mt-1.5 ' + C.list + '">' + p.npdRow + p.rpdRow + '</div>';
+    el.innerHTML = h;
     el.onclick = function (e) {
       var b = e.target.closest('[data-act],[data-font-pick],[data-frame-pick],[data-npd],[data-rpd]');
       if (!b) return;
@@ -1632,9 +1640,10 @@
   }
   function settingsHTML() {
     var p = settingsParts();
-    var h = (settings.study ? '<button class="-ml-1.5 -mt-1 flex items-center gap-0.5 py-1 pr-2 font-medium text-zinc-600 active:opacity-60 dark:text-zinc-300" data-tab="' + settingsBack + '" data-swipe-back>' + HI('chevron-left', 'size-5') + 'Study</button>' : '') +
-      '<div class="mt-1 flex items-center gap-2"><p class="flex-1 text-2xl font-bold">Study settings</p>' + RESUME + '</div>' +
-      '<div class="mt-4 ' + C.list + '">' + p.study + '</div>';
+    // Back to the Study screen: a chevron before the title (swipe back works too).
+    var back = settings.study ? '<button class="-ml-2 grid size-10 shrink-0 place-items-center rounded-full text-zinc-500 active:bg-zinc-200 dark:text-zinc-400 dark:active:bg-zinc-800" data-tab="' + settingsBack + '" data-swipe-back aria-label="Back to Study">' + HI('chevron-left', 'size-6') + '</button>' : '';
+    var h = SHEET_HEAD(back, 'Study settings', RESUME) +
+      '<div class="mt-3 ' + C.list + '">' + p.study + '</div>';
     if (!settings.study) return h;
     h += SEC('Subtitles') + '<div class="mt-1.5 ' + C.list + '">' + p.font + p.frame + p.reset;
     h += '</div>' + SEC('Review') + '<div class="mt-1.5 ' + C.list + '">' + p.npdRow + p.rpdRow + '</div>';

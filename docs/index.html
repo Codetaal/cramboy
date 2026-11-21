@@ -115,13 +115,18 @@
   </div>
 
   <div id="menu" class="fixed inset-0 z-20 flex items-end bg-black/40" hidden>
-    <div class="menu-card flex h-[var(--sheet-h,auto)] max-h-[var(--sheet-max,92vh)] w-full flex-col overflow-y-auto rounded-t-3xl bg-zinc-50 px-4 pt-2 shadow-2xl dark:bg-zinc-950">
-      <div class="mx-auto mb-3 h-1.5 w-10 rounded-full bg-zinc-300 dark:bg-zinc-700"></div>
+    <div class="menu-card flex h-[var(--sheet-h,auto)] max-h-[var(--sheet-max,92vh)] w-full flex-col overflow-y-auto rounded-t-3xl bg-zinc-50 px-4 shadow-2xl dark:bg-zinc-950">
       <div id="m-main" class="flex flex-1 flex-col">
-      <div class="flex items-center gap-2">
-        <div id="menu-title" class="min-w-0 flex-1 truncate text-lg font-bold">Settings</div>
-        <button class="flex items-center gap-1.5 rounded-full bg-violet-600 px-4 py-2.5 font-semibold text-white shadow-sm active:scale-95 active:bg-violet-500" data-m="resume">
-          <span data-hi="play" data-hi-class="size-4"></span>Resume</button>
+      <!-- Sheet header, the same in Settings and Study (kr/ui.js SHEET_HEAD): the handle and title row stay
+           at the top while the content scrolls away under a short fade. -->
+      <div class="sticky top-0 z-10 -mx-4 bg-zinc-50 px-4 pb-1 pt-2 dark:bg-zinc-950">
+        <div class="mx-auto mb-3 h-1.5 w-10 rounded-full bg-zinc-300 dark:bg-zinc-700"></div>
+        <div class="flex min-h-11 items-center gap-1">
+          <div id="menu-title" class="min-w-0 flex-1 truncate text-xl font-bold">Settings</div>
+          <button class="flex shrink-0 items-center gap-1.5 rounded-full bg-violet-600 px-4 py-2.5 font-semibold text-white shadow-sm active:scale-95 active:bg-violet-500" data-m="resume">
+            <span data-hi="play" data-hi-class="size-4"></span>Resume</button>
+        </div>
+        <div class="pointer-events-none absolute inset-x-0 top-full h-3 bg-gradient-to-b from-zinc-50 to-transparent dark:from-zinc-950" aria-hidden="true"></div>
       </div>
       <!-- Game: sound, resume, saves, close. -->
       <div data-mpanel="game" role="tabpanel">
@@ -133,8 +138,8 @@
             <span class="relative h-[31px] w-[51px] shrink-0 rounded-full bg-zinc-200 transition-colors group-aria-checked:bg-violet-600 dark:bg-zinc-700 dark:group-aria-checked:bg-violet-500"><span class="absolute left-0.5 top-0.5 size-[27px] rounded-full bg-white shadow transition-transform group-aria-checked:translate-x-5"></span></span>
           </button>
       </div>
-      <h3 class="mt-4 px-1 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Saves</h3>
-      <div class="mt-2 divide-y divide-zinc-100 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-zinc-900/5 dark:divide-white/5 dark:bg-zinc-900 dark:ring-white/10">
+      <h3 class="mt-5 px-1 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Saves</h3>
+      <div class="mt-1.5 divide-y divide-zinc-100 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-zinc-900/5 dark:divide-white/5 dark:bg-zinc-900 dark:ring-white/10">
         <button class="flex w-full items-center gap-2 px-4 py-3 text-left active:bg-zinc-50 dark:active:bg-zinc-800" data-m="export"><span class="flex-1">Export save</span><span class="text-sm text-zinc-500 dark:text-zinc-400">.dsz</span><span data-hi="chevron-right" data-hi-class="size-5 shrink-0 text-zinc-300 dark:text-zinc-600"></span></button>
         <button class="flex w-full items-center gap-2 px-4 py-3 text-left active:bg-zinc-50 dark:active:bg-zinc-800" data-m="import"><span class="flex-1">Import save</span><span class="text-sm text-zinc-500 dark:text-zinc-400">.dsz .sav .dsv</span><span data-hi="chevron-right" data-hi-class="size-5 shrink-0 text-zinc-300 dark:text-zinc-600"></span></button>
       </div>
