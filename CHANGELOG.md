@@ -2,6 +2,10 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.31.0
+- New: study without a game. The home screen has a Study row (purple with the number of words to review) that opens the Study page with Words and Review; back goes to the home screen. Dialogue and Progress stay in the game.
+- Fix: on a word page without "Back to game", the back button didn't respond.
+
 ## 0.30.0
 - New: Study is a full page that slides in from the right, like Backup, with a large title and the Dialogue / Words / Review / Progress tabs pinned under the top bar while you scroll.
 - From the study button: the top bar has the gear (Settings) and Resume. From the Study row in Settings it slides in over Settings, with "‹ Settings" to go back (or swipe from the left edge) and Resume to go back to the game.
