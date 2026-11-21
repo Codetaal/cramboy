@@ -1185,12 +1185,11 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     if (m === 'sound') { settings.sound = !settings.sound; saveSettings(); menuLabels(); }
     if (m === 'export') exportSave();
     if (m === 'import') $('file-save').click();
-    // Study: Review when words are due, otherwise the saved words; Dialogue history: what was said.
+    // Study: Review when words are due, otherwise the saved words.
     if (m === 'study' && window.KRUI) {
       var due = window.KRSettings && KRSettings.getStudy() && KRSettings.dueCount ? KRSettings.dueCount() : 0;
       closeMenu(); KRUI.open(due ? 'review' : 'words');
     }
-    if (m === 'dialogue' && window.KRUI) { closeMenu(); KRUI.open('now'); }
     if (m === 'update') return checkUpdate();
     if (m === 'faq') return openFaq(true);
     if (m === 'backup') return openBackup(true);
