@@ -2,6 +2,10 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.33.0
+- New: a Continue playing card at the top of the home screen for the game you played last: its icon blown up in the background with a glow in the icon's colour, the last line you read in it, how many of its words you know, and Continue.
+- Learning words are purple instead of amber in the subtitles and on the Study pages.
+
 ## 0.32.0
 - New subtitle font: Cute (Jua for Korean, Kosugi Maru for Japanese) replaces Pixel. If you had Pixel selected, you now get Cute.
 - More in the word popup opens the word as a full page, like Study, with Resume at the top. Word pages inside Study also have Resume at the top instead of "Back to game" at the bottom.
