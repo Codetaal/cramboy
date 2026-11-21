@@ -23,7 +23,7 @@ body.playing { position: fixed; inset: 0; overflow: hidden; touch-action: none; 
    and the home screen is held still while one is open. */
 .sub-page { overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
 .sub-page > div { min-height: calc(100% + 1px); }
-html.sub-open, html.sub-open body { overflow: hidden; }
+html.sub-open, html.sub-open body, html.kr-open, html.kr-open body { overflow: hidden; }
 .swipe-del { visibility: hidden; }
 .swipe.open .swipe-del { visibility: visible; }
 .swipe .cell { touch-action: pan-y; will-change: transform; }
