@@ -212,14 +212,19 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     $('np-bg-img').src = e.icon || '';
     var icon = $('np-icon'); icon.textContent = 'DS';
     if (e.icon) { icon.textContent = ''; var img = document.createElement('img'); img.alt = ''; img.src = e.icon; icon.appendChild(img); }
-    var st = window.KRSettings && KRSettings.gameStats ? KRSettings.gameStats(e.id) : null;
+    // Study data is kept under the game's own id (the header's, or the file name for homebrew), not the
+    // library's (which adds the file size).
+    var ids = [e.id.replace(/-\d+$/, ''), String(e.name || '').trim()].filter(Boolean);
+    var st = null;
+    if (window.KRSettings && KRSettings.gameStats) ids.some(function (id) { return (st = KRSettings.gameStats(id)); });
     $('np-lang').textContent = st ? (st.lang === 'ja' ? '日本語' : '한국어') : '';
     $('np-pct').textContent = st ? st.pct + '% of the words you read are known' : 'Nothing read in this game yet';
     requestAnimationFrame(function () { $('np-fill').style.width = (st ? st.pct : 0) + '%'; });
-    KV.get('kr-log:' + e.id).then(function (log) {
-      var c = Array.isArray(log) && log[0], line = c && c.l && c.l[c.l.length - 1];
+    Promise.all(ids.map(function (id) { return KV.get('kr-log:' + id).catch(function () {}); })).then(function (logs) {
+      var log = logs.filter(function (l) { return Array.isArray(l) && l.length; })[0];
+      var c = log && log[0], line = c && c.l && c.l[c.l.length - 1];
       $('np-quote').hidden = !line; $('np-line').textContent = line || '';
-    }).catch(function () {});
+    });
     tint(e, function (rgb) { card.style.setProperty('--np', rgb); });
   }
   // The icon's main colour (the average of its colourful pixels), as "r g b".
