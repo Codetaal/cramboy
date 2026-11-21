@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.33.1
+- The Continue playing card is calmer and matches the rest of the home screen: a white (or dark grey) card with a soft wash of the game icon's colour, a green progress bar and the usual purple Continue button.
+
 ## 0.33.0
 - New: a Continue playing card at the top of the home screen for the game you played last: its icon blown up in the background with a glow in the icon's colour, the last line you read in it, how many of its words you know, and Continue.
 - Learning words are purple instead of amber in the subtitles and on the Study pages.
