@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.29.3
+- The Study screen uses the same font as Settings and the rest of the app (it used the Korean system font for all its text). Korean and Japanese words look the same as before.
+
 ## 0.29.2
 - Settings and Study share one header: the same title size, row height and Resume button, with the handle and title (and Study's tabs) staying at the top while the page scrolls under a short fade.
 - Study settings: the back button is a chevron in front of the title.
