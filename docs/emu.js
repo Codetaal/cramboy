@@ -198,9 +198,8 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     renderNow();
   }
 
-  // Continue playing: the game you played last as a big card on the home screen, built from its own icon
-  // (blown up in the background, with a glow in the icon's main colour), the last line you read in it
-  // (from its dialogue history) and how many of its words you know.
+  // Continue playing: the game you played last as a card on the home screen: its icon (faint in the corner,
+  // with a wash of its main colour) and how many of its words you know.
   var npTint = {};
   function renderNow() {
     var e = library[0], card = $('now-card');
@@ -220,11 +219,6 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     $('np-lang').textContent = st ? (st.lang === 'ja' ? '日本語' : '한국어') : '';
     $('np-pct').textContent = st ? st.pct + '% of the words you read are known' : 'Nothing read in this game yet';
     requestAnimationFrame(function () { $('np-fill').style.width = (st ? st.pct : 0) + '%'; });
-    Promise.all(ids.map(function (id) { return KV.get('kr-log:' + id).catch(function () {}); })).then(function (logs) {
-      var log = logs.filter(function (l) { return Array.isArray(l) && l.length; })[0];
-      var c = log && log[0], line = c && c.l && c.l[c.l.length - 1];
-      $('np-quote').hidden = !line; $('np-line').textContent = line || '';
-    });
     tint(e, function (rgb) { card.style.setProperty('--np', rgb); });
   }
   // The icon's main colour (the average of its colourful pixels), as "r g b".

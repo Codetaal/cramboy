@@ -847,9 +847,12 @@
   }
   // Page header, as on the Backup page: a bar with the back button (and the gear and Resume) that stays at
   // the top, the large title, and what belongs under it (Study's tabs), which stays pinned under the bar.
+  // From the home screen there is no Resume, so nothing needs to stay pinned: it scrolls like the Backup page.
   function PAGE_HEAD(back, title, below) {
-    return '<div class="sticky top-0 z-20 -mx-4 flex h-[60px] items-center gap-1 bg-zinc-50 px-4 dark:bg-zinc-950">' + (back || '') + '<div class="flex-1"></div>' +
-      (pageFrom === 'home' ? '' : RESUME) + '</div>' +
+    if (pageFrom === 'home') return '<div class="flex h-11 items-center">' + (back || '') + '</div>' +
+      '<h1 class="mt-1 text-[34px] font-bold leading-tight tracking-tight">' + title + '</h1>' +
+      (below ? '<div class="pt-3" data-sheet-head>' + below + '</div>' : '<div data-sheet-head></div>');
+    return '<div class="sticky top-0 z-20 -mx-4 flex h-[60px] items-center gap-1 bg-zinc-50 px-4 dark:bg-zinc-950">' + (back || '') + '<div class="flex-1"></div>' + RESUME + '</div>' +
       '<h1 class="text-[34px] font-bold leading-tight tracking-tight">' + title + '</h1>' +
       (below ? '<div class="sticky top-[60px] z-10 -mx-4 bg-zinc-50 px-4 pb-1 pt-2 dark:bg-zinc-950" data-sheet-head>' + below + FADE_DOWN + '</div>' : '<div data-sheet-head></div>');
   }
@@ -1073,8 +1076,9 @@
   }
   // The top of a word or grammar page: back to where it came from; on a page also Resume (as Study has).
   function wordHead() {
+    if (pageMode && pageFrom === 'home') return '<div class="flex h-11 items-center" data-sheet-head>' + backLink(TAB_LABEL[wordBack], 'data-act="back"') + '</div>';
     if (pageMode) return '<div class="sticky top-0 z-20 -mx-4 flex h-[60px] items-center gap-1 bg-zinc-50 px-4 dark:bg-zinc-950" data-sheet-head>' +
-      backLink(TAB_LABEL[wordBack], 'data-act="back"') + '<div class="flex-1"></div>' + (pageFrom === 'home' ? '' : RESUME) + '</div>';
+      backLink(TAB_LABEL[wordBack], 'data-act="back"') + '<div class="flex-1"></div>' + RESUME + '</div>';
     return '<button class="-ml-1.5 -mt-1 mb-1 flex items-center gap-0.5 py-1 pr-2 font-medium text-zinc-600 active:opacity-60 dark:text-zinc-300" data-act="back" data-swipe-back>' +
       HI('chevron-left', 'size-5') + TAB_LABEL[wordBack] + '</button>';
   }
