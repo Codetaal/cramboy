@@ -101,44 +101,43 @@ body.touch-mode #controls, body.touch-mode #kr-pill { visibility: hidden; }
 @keyframes bk-spin { to { transform: rotate(360deg); } }
 
 /* ---------- Home: Continue playing (index.html #now-card) ----------
-   The game you played last as a big dark card, built from the game's own icon: the icon blown up in the
-   background, a glow in its main colour (--np, set by emu.js), the last line you read, and Continue. */
-.np { position: relative; display: block; width: 100%; margin-top: 18px; overflow: hidden; border-radius: 28px; text-align: left; color: #fff;
-  background: #16151c; box-shadow: 0 20px 40px -22px rgb(var(--np, 124 58 237) / .75), 0 1px 2px rgba(0, 0, 0, .2); transition: transform .15s; --np: 124 58 237; }
+   The game you played last, as a card like the others on the home screen: a soft wash of the icon's main
+   colour (--np, set by emu.js) in one corner, the icon, the last line you read, and Continue. */
+.np { --np: 124 58 237; --np-bg: #fff; --np-ink: #18181b; --np-muted: #71717a; --np-ring: rgba(24, 24, 27, .06); --np-inset: #f4f4f5; --np-track: #e4e4e7;
+  position: relative; display: block; width: 100%; margin-top: 18px; overflow: hidden; border-radius: 22px; text-align: left; color: var(--np-ink);
+  background: var(--np-bg); box-shadow: 0 0 0 1px var(--np-ring), 0 1px 2px rgba(0, 0, 0, .05); transition: transform .15s; }
+@media (prefers-color-scheme: dark) {
+  .np { --np-bg: #18181b; --np-ink: #fff; --np-muted: #a1a1aa; --np-ring: rgba(255, 255, 255, .1); --np-inset: rgba(255, 255, 255, .06); --np-track: rgba(255, 255, 255, .12); }
+}
 .np[hidden] { display: none; }
 .np:active { transform: scale(.985); }
-.np-bg { position: absolute; inset: -20% -30% -20% 30%; display: grid; place-items: center; }
-.np-bg img { width: 120%; image-rendering: pixelated; opacity: .5; transform: rotate(-8deg); animation: np-drift 24s ease-in-out infinite alternate; }
+/* The icon, large and faint in the top corner, under a wash of its colour. */
+.np-bg { position: absolute; right: -28px; top: -28px; width: 150px; height: 150px; opacity: .1; }
+.np-bg img { width: 100%; height: 100%; image-rendering: pixelated; transform: rotate(-10deg); }
 .np-bg img[src=""] { display: none; }
-@keyframes np-drift { from { transform: rotate(-8deg) scale(1); } to { transform: rotate(-4deg) scale(1.12) translate(-4%, 3%); } }
-.np-shade { position: absolute; inset: 0;
-  background: linear-gradient(105deg, rgb(var(--np) / .0) 0%, transparent 0),
-    radial-gradient(120% 90% at 100% 0%, rgb(var(--np) / .55), transparent 60%),
-    linear-gradient(100deg, #16151c 28%, rgba(22, 21, 28, .82) 55%, rgba(22, 21, 28, .35)),
-    linear-gradient(0deg, #16151c, transparent 45%); }
-.np-shade::after { content: ''; position: absolute; inset: 0; background-image: radial-gradient(rgba(255, 255, 255, .07) 1px, transparent 1.2px); background-size: 6px 6px; }
-.np-body { position: relative; display: flex; flex-direction: column; gap: 14px; padding: 16px 16px 16px 18px; }
+.np-shade { position: absolute; inset: 0; background: radial-gradient(90% 70% at 100% 0%, rgb(var(--np) / .16), transparent 70%); }
+@media (prefers-color-scheme: dark) { .np-shade { background: radial-gradient(90% 70% at 100% 0%, rgb(var(--np) / .22), transparent 70%); } }
+.np-body { position: relative; display: flex; flex-direction: column; gap: 12px; padding: 14px 16px 16px; }
 .np-top { display: flex; align-items: center; gap: 8px; }
-.np-chip { display: inline-flex; align-items: center; gap: 5px; border-radius: 999px; padding: 5px 10px 5px 8px; font-size: 12.5px; font-weight: 650;
-  background: rgba(255, 255, 255, .14); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
-.np-lang { margin-left: auto; font-size: 13px; font-weight: 600; color: rgba(255, 255, 255, .75); }
-.np-game { display: flex; align-items: center; gap: 14px; }
-.np-icon { display: grid; place-items: center; width: 64px; height: 64px; flex: none; border-radius: 16px; font-size: 13px; font-weight: 600; color: rgba(255, 255, 255, .6);
-  background: rgba(255, 255, 255, .1); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .18), 0 8px 18px -8px rgba(0, 0, 0, .6); }
-.np-icon img { width: 48px; height: 48px; image-rendering: pixelated; }
-.np-title { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 22px; font-weight: 750; line-height: 1.2; letter-spacing: -.02em; }
-.np-meta { display: block; margin-top: 3px; font-size: 14px; color: rgba(255, 255, 255, .65); }
-.np-quote { display: block; border-radius: 16px; padding: 10px 12px; background: rgba(255, 255, 255, .1); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .1);
-  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+.np-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 600; color: #7c3aed; }
+@media (prefers-color-scheme: dark) { .np-chip { color: #a78bfa; } }
+.np-lang { margin-left: auto; font-size: 13px; font-weight: 500; color: var(--np-muted); }
+.np-game { display: flex; align-items: center; gap: 12px; }
+.np-icon { display: grid; place-items: center; width: 56px; height: 56px; flex: none; border-radius: 14px; font-size: 13px; font-weight: 600; color: var(--np-muted);
+  background: var(--np-inset); box-shadow: inset 0 0 0 1px var(--np-ring); }
+.np-icon img { width: 44px; height: 44px; image-rendering: pixelated; }
+.np-title { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 19px; font-weight: 700; line-height: 1.25; letter-spacing: -.015em; }
+.np-meta { display: block; margin-top: 2px; font-size: 14px; color: var(--np-muted); }
+.np-quote { display: block; border-radius: 14px; padding: 9px 12px; background: var(--np-inset); }
 .np-quote[hidden] { display: none; }
-.np-quote-lbl { display: block; font-size: 11.5px; font-weight: 600; color: rgba(255, 255, 255, .55); }
-.np-line { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-top: 3px; font-family: 'Apple SD Gothic Neo', -apple-system, 'Noto Sans KR', sans-serif;
+.np-quote-lbl { display: block; font-size: 12px; font-weight: 500; color: var(--np-muted); }
+.np-line { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-top: 2px; font-family: 'Apple SD Gothic Neo', -apple-system, 'Noto Sans KR', sans-serif;
   font-size: 16px; font-weight: 600; line-height: 1.45; white-space: pre-line; }
 .np-foot { display: flex; align-items: center; gap: 14px; }
 .np-prog { flex: 1; min-width: 0; }
-.np-pct { display: block; font-size: 12.5px; font-weight: 600; color: rgba(255, 255, 255, .7); }
-.np-track { display: block; height: 6px; margin-top: 6px; border-radius: 6px; background: rgba(255, 255, 255, .16); overflow: hidden; }
-.np-track > span { display: block; height: 100%; width: 0; border-radius: 6px; background: #fff; transition: width .6s cubic-bezier(.2, .8, .2, 1); }
-.np-go { display: inline-flex; align-items: center; gap: 6px; flex: none; border-radius: 999px; padding: 11px 16px 11px 18px; font-size: 16px; font-weight: 700; color: #16151c; background: #fff;
-  box-shadow: 0 6px 16px -6px rgb(var(--np) / .9); }
-@media (prefers-reduced-motion: reduce) { .np-bg img { animation: none; } .np { transition: none; } }
+.np-pct { display: block; font-size: 12.5px; color: var(--np-muted); }
+.np-track { display: block; height: 6px; margin-top: 6px; border-radius: 6px; background: var(--np-track); overflow: hidden; }
+.np-track > span { display: block; height: 100%; width: 0; border-radius: 6px; background: #10b981; transition: width .6s cubic-bezier(.2, .8, .2, 1); }
+.np-go { display: inline-flex; align-items: center; gap: 6px; flex: none; border-radius: 999px; padding: 10px 16px 10px 18px; font-size: 16px; font-weight: 600; color: #fff; background: #7c3aed; }
+.np:active .np-go { background: #6d28d9; }
+@media (prefers-reduced-motion: reduce) { .np { transition: none; } }
