@@ -275,7 +275,14 @@
   // Names can't be translated, and the dictionary even turns some into wrong words (우박사님 → 우박 "hail").
   // A name loses its underline and its popup says it's a name. Found two ways: a word you marked as a
   // name, or (Korean) an unknown word with a title: 공박사님 = 공 + 박사 (Professor) + 님 (polite).
-  var names = { ko: {}, ja: {} }, notNames = { ko: {}, ja: {} };
+  var names = { ko: {}, ja: {} }, notNames = { ko: {}, ja: {} }, gameNames = {};
+  // Your name and your rival's in the game you're playing, read from its save (emu.js saveNames).
+  window.KRSetGameNames = function (list) {
+    gameNames = {};
+    (list || []).forEach(function (x) { var c = KRLookup.clean(x.name); if (c) gameNames[c] = x.who; });
+    baseOf.clear();
+    if (current) renderPanel();
+  };
   function loadNames() {
     if (!store) return;
     store.getItem('names').then(function (v) {
@@ -304,6 +311,7 @@
   function nameInfo(tok, l) {
     l = l || lang;
     var stems = nameStems(tok, l), d = dicts[l], has = function (w) { return !!(d && Object.prototype.hasOwnProperty.call(d, w)); };
+    for (var g = 0; g < stems.length; g++) if (gameNames[stems[g]]) return { name: stems[g], whole: stems[g], who: gameNames[stems[g]] };
     for (var i = 0; i < stems.length; i++) if (names[l][stems[i]]) return { name: stems[i], whole: stems[i], mine: true };
     if (l === 'ja' || !d) return null;
     for (var j = 0; j < stems.length; j++) {
@@ -798,10 +806,10 @@
   function fillPopName(info, raw, span) {
     var draw = function () {
       pop.innerHTML = popHead(info.whole, '', 'name') +
-        '<p class="mt-0.5 text-[15px] leading-snug text-zinc-700 dark:text-zinc-200"><b>' + esc(info.name) + '</b> a name' +
+        '<p class="mt-0.5 text-[15px] leading-snug text-zinc-700 dark:text-zinc-200"><b>' + esc(info.name) + '</b> ' + (info.who === 'you' ? 'your name in this game' : info.who === 'rival' ? 'your rival\'s name' : 'a name') +
         (info.title ? ' <span class="text-zinc-400">+</span> <b class="text-violet-700 dark:text-violet-300">' + esc(info.title) + '</b> ' + esc(info.titleEn) : '') + '</p>' +
         '<p class="mt-0.5 text-[13px] text-zinc-500 dark:text-zinc-400">Names aren\'t translated or reviewed.</p>' +
-        '<div class="mt-2.5 flex"><button class="flex items-center gap-1 rounded-lg bg-zinc-100 px-2.5 py-1.5 text-[13px] font-semibold text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200" data-pop="not-name">' + HI('x-mark', 'size-4') + 'Not a name</button></div>';
+        (info.who ? '' : '<div class="mt-2.5 flex"><button class="flex items-center gap-1 rounded-lg bg-zinc-100 px-2.5 py-1.5 text-[13px] font-semibold text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200" data-pop="not-name">' + HI('x-mark', 'size-4') + 'Not a name</button></div>');
       placePop(span);
     };
     draw();

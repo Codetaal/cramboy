@@ -522,7 +522,38 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
 
   // ---------- load ----------
   // DS firmware languages: 0 Japanese, 1 English, 2 French, 3 German, 4 Italian, 5 Spanish.
-  var FW_LANG = { J: 0, E: 1, P: 1, K: 1, F: 2, D: 3, I: 4, S: 5 }, gameRegion = '';
+  var FW_LANG = { J: 0, E: 1, P: 1, K: 1, F: 2, D: 3, I: 4, S: 5 }, gameRegion = '', gameCode = '';
+
+  // Your name and your rival's, read from the game's own save, so the subtitles treat them as names
+  // (kr/ui.js). Offsets from PKHeX (GPL-3.0): HeartGold/SoulSilver keep two copies of the general block
+  // (0xF628 bytes, at 0 and 0x40000) with a save counter in the footer; the newer copy has the player's
+  // name at +0x64 and the rival's at +0x22D4, in the Gen 4 character table (kr/table.js). Black/White keep
+  // the trainer block at 0x19400 with the name at +4 in UTF-16.
+  function saveNames(sav) {
+    var code = gameCode.slice(0, 3), out = [];
+    if (!sav || !sav.length) return out;
+    var u16 = function (o) { return sav[o] | sav[o + 1] << 8; }, u32 = function (o) { return (sav[o] | sav[o + 1] << 8 | sav[o + 2] << 16) + sav[o + 3] * 16777216; };
+    var str = function (o, n, g4) {
+      var t = '';
+      for (var i = 0; i < n; i++) {
+        var c = u16(o + i * 2);
+        if (c === 0xFFFF || c === 0) break;
+        var ch = g4 ? (window.KR_TABLE || '').charAt(c) : String.fromCharCode(c);
+        if (!ch || ch === '\u0000') return '';
+        t += ch;
+      }
+      return t.replace(/\u3000/g, ' ').trim();
+    };
+    if ((code === 'IPK' || code === 'IPG') && sav.length >= 0x80000) {
+      var f0 = 0xF628 - 0x14, f1 = f0 + 0x40000, a = u32(f0), b = u32(f1);
+      var p = b !== 0xFFFFFFFF && (a === 0xFFFFFFFF || b > a || (b === a && u32(f1 + 4) > u32(f0 + 4))) ? 0x40000 : 0;
+      out.push({ name: str(p + 0x64, 8, true), who: 'you' }, { name: str(p + 0x22D4, 7, true), who: 'rival' });
+    } else if ((code === 'IRA' || code === 'IRB') && sav.length >= 0x19420) {
+      out.push({ name: str(0x19404, 8, false), who: 'you' });
+    }
+    return out.filter(function (x) { return x.name; });
+  }
+  function sendNames(sav) { if (window.KRSetGameNames) KRSetGameNames(saveNames(sav)); }
   function startGame(blob, name, libId, retried) {
     unlockAudio();
     if (!ready) { pendingStart = [blob, name, libId, retried]; loader(0, name, null); return; }
@@ -536,7 +567,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
       }
       gameID = h.code[0] === '#' ? name : h.id;
       gameTitle = h.title; gameBanner = h.banner || '';
-      gameRegion = (h.code || '').charAt(3);
+      gameRegion = (h.code || '').charAt(3); gameCode = h.code || '';
       loader(0, h.banner || h.title || name, h.icon);
       if (libId) {
         library.forEach(function (e) { if (e.id === libId) { e.played = Date.now(); delete e.unplayed; } });
@@ -567,6 +598,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
         // The study overlay reads Japanese for Japanese games and Korean otherwise.
         if (window.KRSetLang) KRSetLang(gameRegion === 'J' ? 'ja' : 'ko');
         if (window.KRSetGame) KRSetGame(gameID, gameBanner || gameTitle);
+        sendNames(sav);   // you and your rival are names in the subtitles
         var ret = Module._loadROM(romSize);
         if (ret !== 0) {
           loader(false);
@@ -664,6 +696,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     // Persist once the game has stopped writing (flag went 1 -> 0), or when forced.
     if (saveDirty && (force || (flag === 0 && prevSaveFlag === 1))) {
       var data = copySave();
+      if (data) sendNames(data);   // a new save may hold a name you just chose
       if (data) KV.set('sav-' + gameID, data).then(function () { KV.set('savt-' + gameID, Date.now()).catch(function () {}); }, function () { toast('Couldn\'t back up your in-game save', { icon: 'warn' }); });
       saveDirty = false;
     }
