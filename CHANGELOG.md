@@ -2,6 +2,10 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.29.1
+- The game menu is titled Settings instead of the game's name; Help and Backup opened from it go back to "Settings".
+- The Study screen and Study settings have the Resume button at the top right, like Settings, instead of "Back to game" at the bottom.
+
 ## 0.29.0
 - New: Offset for the controls (Menu > Controls). Moves the on-screen controls up from the bottom edge without making them smaller, in portrait. While you drag it the menu fades so you can see them move.
 - The Study tab no longer has a separate Dialogue history row; the dialogue history is the first tab of the Study screen.
