@@ -49,7 +49,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   window.APP_VERSION = APP_VERSION;   // written into backups
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
     var hadController = !!navigator.serviceWorker.controller;
-    var updating = false;   // set by Update now (Advanced menu)
+    var updating = false;   // set by Check for updates (Menu > App)
     // Reuse the existing registration (Update now may have registered it as sw.js?fresh=...);
     // registering under another URL would reinstall everything on every start.
     navigator.serviceWorker.getRegistration().then(function (r) {
@@ -304,12 +304,14 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   }
   function closeFaq() { var pg = $('page-faq'); pg.classList.add('off'); setTimeout(function () { pg.hidden = true; }, 300); }
   $('btn-faq').onclick = function () { openFaq(false); };
-  // Backup: the same kind of page (backup.js fills it).
-  $('btn-backup').onclick = function () {
+  // Backup: the same kind of page (backup.js fills it), from the home screen and the game menu (App tab).
+  function openBackup(fromMenu) {
+    $('backup-back-label').textContent = fromMenu ? 'Menu' : 'CramBoy';
     var pg = $('page-backup'); pg.scrollTop = 0; pg.hidden = false; pg.classList.add('off');
     if (window.CBBackup) { CBBackup.render(); CBBackup.prepare(); }
     requestAnimationFrame(function () { requestAnimationFrame(function () { pg.classList.remove('off'); }); });
-  };
+  }
+  $('btn-backup').onclick = function () { openBackup(false); };
   // After a restore the app restarts to load everything; come back on the Backup page, not the home screen.
   try {
     if (sessionStorage.getItem('cb-reopen') === 'backup') {
@@ -590,7 +592,12 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     var p = Module._savGetPointer(0);
     return Module.HEAPU8.slice(p, p + n);
   }
+  // Restoring a backup from the game menu: the open game must not write its save or a snapshot over
+  // the restored ones while the app restarts.
+  var restoring = false;
+  window.cbBeforeRestore = function () { restoring = true; emuIsRunning = false; wasRunning = false; };
   function checkSave(force) {
+    if (restoring) return;
     var flag = Module._savUpdateChangeFlag();
     if (flag) saveDirty = true;
     // Persist once the game has stopped writing (flag went 1 -> 0), or when forced.
@@ -614,7 +621,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   // force: always take one (closing the game). Otherwise skip if one was taken in the last 3 seconds
   // (leaving the app fires both visibilitychange and pagehide).
   function takeSnapshot(force) {
-    if (!settings.resume || !emuIsGameLoaded || !gameID || (!force && Date.now() - lastSnapAt < 3000)) return Promise.resolve();
+    if (restoring || !settings.resume || !emuIsGameLoaded || !gameID || (!force && Date.now() - lastSnapAt < 3000)) return Promise.resolve();
     var n;
     try { n = Module._stateSave(1); } catch (e) { n = -1; }
     if (!(n > 0)) return Promise.resolve();
@@ -951,7 +958,8 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   }
   function onTouch(e) {
     if (uiCurrentMode !== 'player') return;
-    if (e.target.closest && e.target.closest('#menu')) return;
+    // The menu and the pages over it (Help, Backup) take their own taps.
+    if (e.target.closest && e.target.closest('#menu,.sub-page')) return;
     e.preventDefault();
     unlockAudio();
     var keys = 0, td = 0, bottom = screenCanvas[1].getBoundingClientRect();
@@ -1035,7 +1043,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   // Mouse (desktop testing): bottom screen + buttons.
   var mouseDown = false;
   function onMouse(e) {
-    if (uiCurrentMode !== 'player' || (e.target.closest && e.target.closest('#menu,#kr-panel,#kr-pill,#kr-sheet'))) return;
+    if (uiCurrentMode !== 'player' || (e.target.closest && e.target.closest('#menu,.sub-page,#kr-panel,#kr-pill,#kr-sheet'))) return;
     if (e.type === 'mousedown') { mouseDown = true; unlockAudio(); if (hit($('btn-menu'), e.clientX, e.clientY)) openMenu(); }
     if (e.type === 'mouseup') mouseDown = false;
     onTouch({ type: e.type === 'mousedown' ? 'touchstart' : 'touchmove', target: e.target, preventDefault: function () {},
@@ -1058,7 +1066,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
 
   // ---------- menu ----------
   var wasRunning = false;
-  window.emuOpenMenu = function () { openMenu(); };   // the Study screen's gear (kr/ui.js)
+  window.emuOpenMenu = function () { menuTab = 'study'; openMenu(); };   // the Study screen's gear (kr/ui.js): opens on the Study tab
   function openMenu() {
     $('btn-menu').classList.add('active');
     wasRunning = emuIsRunning; emuIsRunning = false;
@@ -1066,9 +1074,10 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     checkSave(true);
     // The game's own title from its banner (as on the DS menu); the short header name as a fallback.
     $('menu-title').textContent = gameBanner || gameTitle || 'Menu';
-    $('m-advanced').hidden = true; $('m-adv-chev').style.transform = '';
+    showMenuTab(menuTab);
     $('m-about').hidden = true; $('m-about-chev').style.transform = '';
     menuLabels();
+    if (window.CBBackup) CBBackup.render();   // App > Backup: when you last backed up
     $('menu').hidden = false;
   }
   // The controls' transparency (the translate button keeps its own 75% / 90% active, see kr/ui.css).
@@ -1076,11 +1085,20 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     $('controls').style.opacity = v;
     document.documentElement.style.setProperty('--ctl-opacity', String(v));
   }
+  // Tabs (Game / Study / Controls / App); the last one used comes back next time.
+  var menuTab = 'game';
+  try { menuTab = localStorage.getItem('cb-menu-tab') || 'game'; } catch (e) {}
+  function showMenuTab(t) {
+    if (!document.querySelector('[data-mpanel="' + t + '"]')) t = 'game';
+    menuTab = t;
+    document.querySelectorAll('[data-mtab]').forEach(function (b) { b.setAttribute('aria-selected', String(b.dataset.mtab === t)); });
+    document.querySelectorAll('[data-mpanel]').forEach(function (p) { p.hidden = p.dataset.mpanel !== t; });
+    try { localStorage.setItem('cb-menu-tab', t); } catch (e) {}
+  }
   function menuLabels() {
     $('m-opacity').value = Math.round(settings.ctlOpacity * 100);
     $('m-opacity-val').textContent = Math.round(settings.ctlOpacity * 100) + '%';
-    var snd = document.querySelector('[data-m=sound]');
-    snd.innerHTML = HI(settings.sound ? 'speaker-wave' : 'speaker-x-mark', 'size-5'); snd.classList.toggle('opacity-60', !settings.sound);
+    $('m-sound').setAttribute('aria-checked', String(!!settings.sound));
     $('m-resume').setAttribute('aria-checked', String(!!settings.resume));
     $('m-fps').setAttribute('aria-checked', String(!!settings.fps));
     var study = !window.KRSettings || KRSettings.getStudy();
@@ -1107,7 +1125,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     }).join('');
   }
 
-  // Menu > Advanced > Update now: drop the offline copy of the app and load the newest one.
+  // Menu > App > Check for updates: drop the offline copy of the app and load the newest one.
   // Games, saves and words live in IndexedDB (kv.js), not in this cache, so they stay.
   // Installs a fresh offline copy and reloads from it. The worker is registered under a new script URL,
   // which makes the browser install it again even if sw.js hasn't changed; its install downloads every
@@ -1160,18 +1178,25 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   });
   $('menu').addEventListener('click', function (e) {
     if (e.target === $('menu')) return closeMenu();
+    var tab = e.target.closest('[data-mtab]');
+    if (tab) { showMenuTab(tab.dataset.mtab); $('menu').querySelector('.menu-card').scrollTop = 0; return; }
     var el = e.target.closest('[data-m]'), m = el && el.dataset.m;
     if (m === 'resume') closeMenu();
     if (m === 'sound') { settings.sound = !settings.sound; saveSettings(); menuLabels(); }
     if (m === 'export') exportSave();
     if (m === 'import') $('file-save').click();
-    // Study: the Study screen (its settings when study mode is off).
-    if (m === 'study' && window.KRUI) { closeMenu(); KRUI.open('now'); }
+    // Study: Review when words are due, otherwise the saved words; Dialogue history: what was said.
+    if (m === 'study' && window.KRUI) {
+      var due = window.KRSettings && KRSettings.getStudy() && KRSettings.dueCount ? KRSettings.dueCount() : 0;
+      closeMenu(); KRUI.open(due ? 'review' : 'words');
+    }
+    if (m === 'dialogue' && window.KRUI) { closeMenu(); KRUI.open('now'); }
     if (m === 'update') return checkUpdate();
     if (m === 'faq') return openFaq(true);
-    if (m === 'advanced' || m === 'about') {
-      var sec = $(m === 'advanced' ? 'm-advanced' : 'm-about'), open = sec.hidden; sec.hidden = !open;
-      $(m === 'advanced' ? 'm-adv-chev' : 'm-about-chev').style.transform = open ? 'rotate(90deg)' : '';
+    if (m === 'backup') return openBackup(true);
+    if (m === 'about') {
+      var sec = $('m-about'), open = sec.hidden; sec.hidden = !open;
+      $('m-about-chev').style.transform = open ? 'rotate(90deg)' : '';
       if (open) setTimeout(function () { sec.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }, 0);
     }
     if (m === 'snapshot') exportSnapshot();

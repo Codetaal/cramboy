@@ -50,9 +50,15 @@
       return j;
     });
   }
+  // A game's resume snapshots belong to its old save: drop them for every game whose save comes back,
+  // so starting it doesn't jump to a moment that doesn't match the restored save.
   function apply(j) {
     var keys = Object.keys(j.data);
-    return Promise.all(keys.map(function (k) { return SKIP.test(k) ? null : KV.set(k, dec(j.data[k])); }))
+    if (window.cbBeforeRestore) window.cbBeforeRestore();   // a game that's open stops saving (emu.js)
+    var snaps = [];
+    keys.forEach(function (k) { var m = /^sav-(.+)$/.exec(k); if (m) snaps.push('snap:' + m[1], 'snap-prev:' + m[1]); });
+    return Promise.all(keys.map(function (k) { return SKIP.test(k) ? null : KV.set(k, dec(j.data[k])); })
+      .concat(snaps.map(function (k) { return KV.del(k).catch(function () {}); })))
       .then(function () { try { sessionStorage.setItem('cb-restored', summary(j)); sessionStorage.setItem('cb-reopen', 'backup'); } catch (e) {} });
   }
   function summary(j) {
@@ -75,9 +81,11 @@
     }).then(function () { toast('Backup ready', { icon: 'ok' }); })
       .catch(function (e) { if (!e || e.name !== 'AbortError') toast('Backup failed: ' + (e && e.message || e), { icon: 'info' }); });
   }
+  // Restoring from the game menu: the game closes, since the app restarts to load everything.
+  function restartNote() { return window.emuIsGameLoaded ? '\n\nThe game you’re playing closes and the app restarts.' : ''; }
   function fromFile(f) {
     readBackup(f).then(function (j) {
-      if (!confirm('Restore this backup?\n\n' + summary(j) + '\n\nIt replaces the saved words, progress and game saves on this device.')) return;
+      if (!confirm('Restore this backup?\n\n' + summary(j) + '\n\nIt replaces the saved words, progress and game saves on this device.' + restartNote())) return;
       return apply(j).then(function () { location.reload(); });
     }).catch(function (e) { toast('Restore failed: ' + (e && e.message || e), { icon: 'info' }); });
   }
@@ -201,7 +209,7 @@
       return api('https://www.googleapis.com/drive/v3/files/' + f.id + '?alt=media').then(function (r) { return r.blob(); });
     }).then(readBackup).then(function (j) {
       rowBusy('drive-restore');
-      if (!confirm('Restore the backup from Google Drive?\n\n' + summary(j) + '\n\nIt replaces the saved words, progress and game saves on this device.')) return;
+      if (!confirm('Restore the backup from Google Drive?\n\n' + summary(j) + '\n\nIt replaces the saved words, progress and game saves on this device.' + restartNote())) return;
       return apply(j).then(function () { location.reload(); });
     }).catch(function (e) { rowBusy('drive-restore'); toast((e && e.message) || 'Restore failed', { icon: 'info' }); });
   }
@@ -235,6 +243,9 @@
       // The Backup row on the home screen: when you last backed up (orange when it's been a while).
       var sum = document.getElementById('backup-sum');
       if (sum) { sum.textContent = last ? 'Last backup ' + ago(last.at) : saved ? 'No backup yet' : 'Words, progress and game saves'; sum.classList.toggle('text-amber-600', old && saved > 0); sum.classList.toggle('dark:text-amber-400', old && saved > 0); }
+      // The same in the game menu (App > Backup).
+      var msum = document.getElementById('m-backup-sum');
+      if (msum) { msum.textContent = sum ? sum.textContent : ''; msum.dataset.old = String(old && saved > 0); }
       document.getElementById('backup-drive').hidden = !GOOGLE_CLIENT_ID;
       document.getElementById('backup-drive-on').hidden = !drive;
       document.getElementById('backup-drive-label').textContent = drive ? 'Back up to Google Drive now' : 'Back up to Google Drive';

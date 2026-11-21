@@ -92,7 +92,7 @@
   </div>
 
   <div id="player" hidden>
-    <!-- Frames per second (Menu > Advanced > Show FPS): game frames run in the last second; 60 is full speed. -->
+    <!-- Frames per second (Menu > Controls > Show FPS): game frames run in the last second; 60 is full speed. -->
     <div id="fps" class="pointer-events-none fixed left-[calc(6px+env(safe-area-inset-left))] top-[calc(6px+env(safe-area-inset-top))] z-30 rounded-md bg-black/60 px-1.5 py-0.5 font-mono text-[11px] font-semibold leading-4 text-white tabular-nums" hidden></div>
     <canvas id="top" width="256" height="192"></canvas>
     <canvas id="bottom" width="256" height="192"></canvas>
@@ -115,55 +115,71 @@
   </div>
 
   <div id="menu" class="fixed inset-0 z-20 flex items-end bg-black/40" hidden>
-    <div class="menu-card h-[var(--sheet-h,auto)] max-h-[var(--sheet-max,92vh)] w-full overflow-y-auto rounded-t-3xl bg-zinc-50 px-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-2 shadow-2xl dark:bg-zinc-950">
+    <div class="menu-card flex h-[var(--sheet-h,auto)] max-h-[var(--sheet-max,92vh)] w-full flex-col overflow-y-auto rounded-t-3xl bg-zinc-50 px-4 pt-2 shadow-2xl dark:bg-zinc-950">
       <div class="mx-auto mb-3 h-1.5 w-10 rounded-full bg-zinc-300 dark:bg-zinc-700"></div>
-      <div id="m-main">
+      <div id="m-main" class="flex flex-1 flex-col">
       <div class="flex items-center gap-2">
         <div id="menu-title" class="min-w-0 flex-1 truncate text-lg font-bold">Menu</div>
-        <button class="grid size-10 place-items-center rounded-full bg-white text-zinc-700 shadow-sm ring-1 ring-zinc-900/5 active:scale-95 dark:bg-zinc-800 dark:text-zinc-200 dark:ring-white/10" data-m="sound" aria-label="Sound"></button>
         <button class="flex items-center gap-1.5 rounded-full bg-violet-600 px-4 py-2.5 font-semibold text-white shadow-sm active:scale-95 active:bg-violet-500" data-m="resume">
           <span data-hi="play" data-hi-class="size-4"></span>Resume</button>
       </div>
-      <!-- Study: the Study screen (also opened by the translate button), then the study settings (kr/ui.js fills them). -->
-      <div class="mt-4 divide-y divide-zinc-100 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-zinc-900/5 dark:divide-white/5 dark:bg-zinc-900 dark:ring-white/10">
-        <button id="m-study-row" class="flex w-full items-center gap-3 px-4 py-3 text-left active:bg-zinc-50 dark:active:bg-zinc-800" data-m="study">
-          <span id="m-study-icon" class="grid size-9 shrink-0 place-items-center rounded-xl bg-zinc-100 text-zinc-600 dark:bg-white/10 dark:text-zinc-300"><span data-hi="academic-cap" data-hi-class="size-5"></span></span>
-          <span class="min-w-0 flex-1"><span class="block font-semibold">Study</span><span id="m-study-sum" class="block truncate text-sm text-zinc-500 dark:text-zinc-400"></span></span>
-          <span data-hi="chevron-right" data-hi-class="size-5 shrink-0 text-zinc-300 dark:text-zinc-600"></span></button>
-      </div>
-      <h3 class="mt-4 px-1 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Study</h3>
-      <div id="m-study-settings" class="mt-2"></div>
-      <h3 class="mt-4 px-1 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Controls</h3>
-      <div class="mt-2 rounded-2xl bg-white px-4 py-3 shadow-sm ring-1 ring-zinc-900/5 dark:bg-zinc-900 dark:ring-white/10">
-        <label for="m-opacity" class="flex items-center"><span class="flex-1">Opacity</span><span id="m-opacity-val" class="text-sm tabular-nums text-zinc-500 dark:text-zinc-400"></span></label>
-        <!-- While you drag, the menu fades so you can see the controls behind it. -->
-        <input id="m-opacity" type="range" min="15" max="100" step="5" class="mt-2 w-full accent-violet-600 dark:accent-violet-400" aria-describedby="m-opacity-val">
-      </div>
-      <h3 class="mt-4 px-1 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Saves</h3>
-      <div class="mt-2 divide-y divide-zinc-100 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-zinc-900/5 dark:divide-white/5 dark:bg-zinc-900 dark:ring-white/10">
-        <button class="flex w-full items-center gap-2 px-4 py-3 text-left active:bg-zinc-50 dark:active:bg-zinc-800" data-m="export"><span class="flex-1">Export save</span><span class="text-sm text-zinc-500 dark:text-zinc-400">.dsz</span><span data-hi="chevron-right" data-hi-class="size-5 shrink-0 text-zinc-300 dark:text-zinc-600"></span></button>
-        <button class="flex w-full items-center gap-2 px-4 py-3 text-left active:bg-zinc-50 dark:active:bg-zinc-800" data-m="import"><span class="flex-1">Import save</span><span class="text-sm text-zinc-500 dark:text-zinc-400">.dsz .sav .dsv</span><span data-hi="chevron-right" data-hi-class="size-5 shrink-0 text-zinc-300 dark:text-zinc-600"></span></button>
+      <!-- Game: sound, resume, saves, close. -->
+      <div data-mpanel="game" role="tabpanel">
+      <div class="mt-3 divide-y divide-zinc-100 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-zinc-900/5 dark:divide-white/5 dark:bg-zinc-900 dark:ring-white/10">
+        <button id="m-sound" class="group flex w-full items-center gap-3 px-4 py-3 text-left active:bg-zinc-50 dark:active:bg-zinc-800" data-m="sound" role="switch" aria-checked="false"><span class="flex-1">Sound</span><span class="relative h-[31px] w-[51px] shrink-0 rounded-full bg-zinc-200 transition-colors group-aria-checked:bg-violet-600 dark:bg-zinc-700 dark:group-aria-checked:bg-violet-500"><span class="absolute left-0.5 top-0.5 size-[27px] rounded-full bg-white shadow transition-transform group-aria-checked:translate-x-5"></span></span></button>
         <button id="m-resume" class="group flex w-full items-center gap-3 px-4 py-3 text-left active:bg-zinc-50 dark:active:bg-zinc-800" data-m="resume-toggle" role="switch" aria-checked="false">
             <span class="min-w-0 flex-1"><span class="block">Resume where you left off</span>
               <span class="mt-1 block text-xs leading-snug text-zinc-500 dark:text-zinc-400"><span class="mr-1 inline-block rounded-full bg-zinc-100 px-1.5 py-px align-[1px] text-[10px] font-semibold uppercase tracking-wide text-zinc-500 dark:bg-white/10 dark:text-zinc-400">Experimental</span>Takes a snapshot every 2 minutes and when you leave. Keep saving in the game too.</span></span>
             <span class="relative h-[31px] w-[51px] shrink-0 rounded-full bg-zinc-200 transition-colors group-aria-checked:bg-violet-600 dark:bg-zinc-700 dark:group-aria-checked:bg-violet-500"><span class="absolute left-0.5 top-0.5 size-[27px] rounded-full bg-white shadow transition-transform group-aria-checked:translate-x-5"></span></span>
           </button>
       </div>
+      <h3 class="mt-4 px-1 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Saves</h3>
+      <div class="mt-2 divide-y divide-zinc-100 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-zinc-900/5 dark:divide-white/5 dark:bg-zinc-900 dark:ring-white/10">
+        <button class="flex w-full items-center gap-2 px-4 py-3 text-left active:bg-zinc-50 dark:active:bg-zinc-800" data-m="export"><span class="flex-1">Export save</span><span class="text-sm text-zinc-500 dark:text-zinc-400">.dsz</span><span data-hi="chevron-right" data-hi-class="size-5 shrink-0 text-zinc-300 dark:text-zinc-600"></span></button>
+        <button class="flex w-full items-center gap-2 px-4 py-3 text-left active:bg-zinc-50 dark:active:bg-zinc-800" data-m="import"><span class="flex-1">Import save</span><span class="text-sm text-zinc-500 dark:text-zinc-400">.dsz .sav .dsv</span><span data-hi="chevron-right" data-hi-class="size-5 shrink-0 text-zinc-300 dark:text-zinc-600"></span></button>
+      </div>
       <p class="mt-1.5 px-1 text-xs leading-snug text-zinc-500 dark:text-zinc-400">The game saves automatically a few seconds after you save in the game.</p>
       <input id="file-save" type="file" hidden>
-      <h3 class="mt-4 px-1 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">More</h3>
-      <div class="mt-2 divide-y divide-zinc-100 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-zinc-900/5 dark:divide-white/5 dark:bg-zinc-900 dark:ring-white/10">
+      <div class="mt-4 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-zinc-900/5 dark:bg-zinc-900 dark:ring-white/10">
+        <button class="flex w-full items-center justify-center px-4 py-3 font-semibold text-red-500 active:bg-zinc-50 dark:active:bg-zinc-800" data-m="home">Close game</button>
+      </div>
+      </div>
+      <!-- Study: the Study screen (also opened by the translate button), the dialogue history, then the study settings (kr/ui.js fills them). -->
+      <div data-mpanel="study" role="tabpanel" hidden>
+      <div class="mt-3 divide-y divide-zinc-100 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-zinc-900/5 dark:divide-white/5 dark:bg-zinc-900 dark:ring-white/10">
+        <button id="m-study-row" class="flex w-full items-center gap-3 px-4 py-3 text-left active:bg-zinc-50 dark:active:bg-zinc-800" data-m="study">
+          <span id="m-study-icon" class="grid size-9 shrink-0 place-items-center rounded-xl bg-zinc-100 text-zinc-600 dark:bg-white/10 dark:text-zinc-300"><span data-hi="academic-cap" data-hi-class="size-5"></span></span>
+          <span class="min-w-0 flex-1"><span class="block font-semibold">Study</span><span id="m-study-sum" class="block truncate text-sm text-zinc-500 dark:text-zinc-400"></span></span>
+          <span data-hi="chevron-right" data-hi-class="size-5 shrink-0 text-zinc-300 dark:text-zinc-600"></span></button>
+        <button class="flex w-full items-center gap-3 px-4 py-3 text-left active:bg-zinc-50 dark:active:bg-zinc-800" data-m="dialogue">
+          <span class="grid size-9 shrink-0 place-items-center rounded-xl bg-zinc-100 text-zinc-600 dark:bg-white/10 dark:text-zinc-300"><span data-hi="chat-bubble-bottom-center-text" data-hi-class="size-5"></span></span>
+          <span class="min-w-0 flex-1"><span class="block font-semibold">Dialogue history</span><span id="m-dialogue-sum" class="block truncate text-sm text-zinc-500 dark:text-zinc-400">Read back what was said</span></span>
+          <span data-hi="chevron-right" data-hi-class="size-5 shrink-0 text-zinc-300 dark:text-zinc-600"></span></button>
+      </div>
+      <div id="m-study-settings" class="mt-4"></div>
+      </div>
+      <!-- Controls: the on-screen controls and the FPS counter. -->
+      <div data-mpanel="controls" role="tabpanel" hidden>
+      <div class="mt-3 rounded-2xl bg-white px-4 py-3 shadow-sm ring-1 ring-zinc-900/5 dark:bg-zinc-900 dark:ring-white/10">
+        <label for="m-opacity" class="flex items-center"><span class="flex-1">Opacity</span><span id="m-opacity-val" class="text-sm tabular-nums text-zinc-500 dark:text-zinc-400"></span></label>
+        <!-- While you drag, the menu fades so you can see the controls behind it. -->
+        <input id="m-opacity" type="range" min="15" max="100" step="5" class="mt-2 w-full accent-violet-600 dark:accent-violet-400" aria-describedby="m-opacity-val">
+      </div>
+      <div class="mt-4 divide-y divide-zinc-100 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-zinc-900/5 dark:divide-white/5 dark:bg-zinc-900 dark:ring-white/10">
+        <button id="m-fps" class="group flex w-full items-center gap-3 px-4 py-3 text-left active:bg-zinc-50 dark:active:bg-zinc-800" data-m="fps-toggle" role="switch" aria-checked="false"><span class="flex-1">Show FPS</span><span class="relative h-[31px] w-[51px] shrink-0 rounded-full bg-zinc-200 transition-colors group-aria-checked:bg-violet-600 dark:bg-zinc-700 dark:group-aria-checked:bg-violet-500"><span class="absolute left-0.5 top-0.5 size-[27px] rounded-full bg-white shadow transition-transform group-aria-checked:translate-x-5"></span></span></button>
+      </div>
+      </div>
+      <!-- App: updates, backup (the home screen's Backup page), help, about and the memory dump. -->
+      <div data-mpanel="app" role="tabpanel" hidden>
+      <div class="mt-3 divide-y divide-zinc-100 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-zinc-900/5 dark:divide-white/5 dark:bg-zinc-900 dark:ring-white/10">
         <button id="m-update" class="flex w-full items-center gap-2 px-4 py-3 text-left active:bg-zinc-50 dark:active:bg-zinc-800" data-m="update">
           <span class="min-w-0 flex-1"><span id="m-update-title" class="block">Check for updates</span><span id="m-update-sub" class="block text-sm text-zinc-500 dark:text-zinc-400">Keeps your games and saves</span></span>
           <span id="m-update-ver" class="text-sm tabular-nums text-zinc-500 dark:text-zinc-400"></span>
           <span id="m-update-badge" class="rounded-full bg-violet-600 px-2 py-0.5 text-xs font-semibold text-white" hidden>New</span></button>
+        <button class="flex w-full items-center gap-2 px-4 py-3 text-left active:bg-zinc-50 dark:active:bg-zinc-800" data-m="backup">
+          <span class="min-w-0 flex-1"><span class="block">Backup</span><span id="m-backup-sum" class="block text-sm text-zinc-500 data-[old=true]:text-amber-600 dark:text-zinc-400 dark:data-[old=true]:text-amber-400">Words, progress and game saves</span></span>
+          <span data-hi="chevron-right" data-hi-class="size-5 shrink-0 text-zinc-300 dark:text-zinc-600"></span></button>
         <button class="flex w-full items-center gap-2 px-4 py-3 text-left active:bg-zinc-50 dark:active:bg-zinc-800" data-m="faq"><span class="flex-1">Help &amp; FAQ</span><span data-hi="chevron-right" data-hi-class="size-5 shrink-0 text-zinc-300 dark:text-zinc-600"></span></button>
-        <button class="flex w-full items-center gap-2 px-4 py-3 text-left active:bg-zinc-50 dark:active:bg-zinc-800" data-m="advanced"><span class="flex-1">Advanced</span><span class="text-sm text-zinc-500 dark:text-zinc-400">FPS, memory dump</span>
-          <span id="m-adv-chev" class="inline-flex transition-transform duration-150"><span data-hi="chevron-right" data-hi-class="size-5 shrink-0 text-zinc-300 dark:text-zinc-600"></span></span></button>
-        <div id="m-advanced" class="bg-zinc-50/60 dark:bg-white/[0.02]" hidden>
-          <button class="flex w-full items-center gap-2 px-4 py-3 text-left active:bg-zinc-50 dark:active:bg-zinc-800 pl-7 text-[15px]" data-m="snapshot"><span class="flex-1">Export memory dump</span><span data-hi="chevron-right" data-hi-class="size-5 shrink-0 text-zinc-300 dark:text-zinc-600"></span></button>
-          <button id="m-fps" class="group flex w-full items-center gap-3 py-2.5 pl-7 pr-4 text-left text-[15px] active:bg-zinc-50 dark:active:bg-zinc-800" data-m="fps-toggle" role="switch" aria-checked="false"><span class="flex-1">Show FPS</span><span class="relative h-[31px] w-[51px] shrink-0 rounded-full bg-zinc-200 transition-colors group-aria-checked:bg-violet-600 dark:bg-zinc-700 dark:group-aria-checked:bg-violet-500"><span class="absolute left-0.5 top-0.5 size-[27px] rounded-full bg-white shadow transition-transform group-aria-checked:translate-x-5"></span></span></button>
-        </div>
         <button class="flex w-full items-center gap-2 px-4 py-3 text-left active:bg-zinc-50 dark:active:bg-zinc-800" data-m="about"><span class="flex-1">About</span><span id="m-about-sum" class="text-sm text-zinc-500 dark:text-zinc-400">Version, voice, credits</span>
           <span id="m-about-chev" class="inline-flex transition-transform duration-150"><span data-hi="chevron-right" data-hi-class="size-5 shrink-0 text-zinc-300 dark:text-zinc-600"></span></span></button>
         <div id="m-about" class="bg-zinc-50/60 px-4 py-3 pl-7 text-sm dark:bg-white/[0.02]" hidden>
@@ -175,7 +191,15 @@
             <p>“Nintendo DS” is a trademark of Nintendo Co., Ltd. This app is not affiliated with Nintendo in any way.</p>
           </div>
         </div>
-        <button class="flex w-full items-center gap-2 px-4 py-3 text-left active:bg-zinc-50 dark:active:bg-zinc-800 text-red-500" data-m="home">Close game</button>
+        <button class="flex w-full items-center gap-2 px-4 py-3 text-left active:bg-zinc-50 dark:active:bg-zinc-800" data-m="snapshot"><span class="flex-1">Export memory dump</span><span data-hi="chevron-right" data-hi-class="size-5 shrink-0 text-zinc-300 dark:text-zinc-600"></span></button>
+      </div>
+      </div>
+      <!-- Tabs at the bottom, under the thumbs (emu.js remembers the last one). The spacer keeps the bar
+           at the bottom of a short tab; the fade lets the content scroll away under it. -->
+      <div class="min-h-6 flex-1"></div>
+      <div id="m-tabs" class="sticky bottom-0 z-10 -mx-4 flex bg-zinc-50 px-2 pb-[calc(0.375rem+env(safe-area-inset-bottom))] pt-1 dark:bg-zinc-950" role="tablist">
+        <div class="pointer-events-none absolute inset-x-0 bottom-full h-10 bg-gradient-to-t from-zinc-50 to-transparent dark:from-zinc-950" aria-hidden="true"></div>
+        <button class="flex flex-1 flex-col items-center gap-0.5 rounded-xl py-1 text-[11px] font-semibold text-zinc-500 aria-selected:text-violet-600 dark:text-zinc-400 dark:aria-selected:text-violet-400" role="tab" data-mtab="game" aria-selected="true"><span data-hi="puzzle-piece" data-hi-class="size-6"></span>Game</button><button class="flex flex-1 flex-col items-center gap-0.5 rounded-xl py-1 text-[11px] font-semibold text-zinc-500 aria-selected:text-violet-600 dark:text-zinc-400 dark:aria-selected:text-violet-400" role="tab" data-mtab="study" aria-selected="false"><span data-hi="academic-cap" data-hi-class="size-6"></span>Study</button><button class="flex flex-1 flex-col items-center gap-0.5 rounded-xl py-1 text-[11px] font-semibold text-zinc-500 aria-selected:text-violet-600 dark:text-zinc-400 dark:aria-selected:text-violet-400" role="tab" data-mtab="controls" aria-selected="false"><span data-hi="adjustments-horizontal" data-hi-class="size-6"></span>Controls</button><button class="flex flex-1 flex-col items-center gap-0.5 rounded-xl py-1 text-[11px] font-semibold text-zinc-500 aria-selected:text-violet-600 dark:text-zinc-400 dark:aria-selected:text-violet-400" role="tab" data-mtab="app" aria-selected="false"><span data-hi="cog-6-tooth" data-hi-class="size-6"></span>App</button>
       </div>
       </div>
     </div>
@@ -186,7 +210,7 @@
     <div class="mx-auto max-w-xl px-4 pb-[calc(2rem+env(safe-area-inset-bottom))] pt-[env(safe-area-inset-top)]">
       <div class="flex h-11 items-center">
         <button id="backup-back" data-swipe-back class="-ml-2 flex items-center gap-0.5 rounded-lg px-1 py-1 text-[17px] text-violet-600 active:opacity-60 dark:text-violet-400">
-          <span data-hi="chevron-left" data-hi-class="size-6"></span>CramBoy</button>
+          <span data-hi="chevron-left" data-hi-class="size-6"></span><span id="backup-back-label">CramBoy</span></button>
       </div>
       <h1 class="mt-1 text-[34px] font-bold tracking-tight">Backup</h1>
       <p class="mt-0.5 text-[15px] leading-snug text-zinc-500 dark:text-zinc-400">Your saved words, progress, settings and game saves. The games themselves are not included.</p>
