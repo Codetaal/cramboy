@@ -2,6 +2,10 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.29.0
+- New: Offset for the controls (Menu > Controls). Moves the on-screen controls up from the bottom edge without making them smaller, in portrait. While you drag it the menu fades so you can see them move.
+- The Study tab no longer has a separate Dialogue history row; the dialogue history is the first tab of the Study screen.
+
 ## 0.28.0
 - New: the game menu has tabs at the bottom, like an app: Game (sound, resume, saves, close game), Study (Study, Dialogue history and the study settings), Controls (opacity, FPS) and App (updates, backup, help, about, memory dump). The menu remembers the last tab. The Advanced section is gone; its options moved to Controls and App.
 - Sound is now a switch in the Game tab instead of the round button next to Resume.
