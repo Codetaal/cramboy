@@ -2,6 +2,10 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.34.0
+- New: names. Korean names with a title (공박사님, 우박사님, ○○관장, ○○씨…) are recognised: no underline, and the popup says "공 a name + 박사님 Professor (polite)" instead of a wrong meaning.
+- New: a Name button in the word popup marks any word as a name (also with particles: 지겸이, 지겸을). "Not a name" undoes it. Names are kept in backups.
+
 ## 0.33.5
 - Closing a game is easier: a round home button next to Resume in Settings, on every tab. It replaces the Close game button at the bottom of the Game tab.
 
