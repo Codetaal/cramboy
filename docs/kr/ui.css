@@ -4,6 +4,9 @@
   font-family: 'Apple SD Gothic Neo', -apple-system, 'Noto Sans KR', sans-serif;
   -webkit-tap-highlight-color: transparent;
 }
+/* The Study screen uses the app's own font (as in Settings, tailwind.config.js): the system font for Latin
+   text; iOS still draws Korean in Apple SD Gothic Neo and Japanese in Hiragino. */
+#kr-sheet { font-family: -apple-system, 'Apple SD Gothic Neo', system-ui, 'Noto Sans KR', sans-serif; }
 #kr-panel {
   position: fixed; z-index: 5; box-sizing: border-box;
   /* See-through but readable: the blur and text shadow keep busy game graphics from
