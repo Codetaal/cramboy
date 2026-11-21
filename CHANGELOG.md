@@ -2,6 +2,10 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.33.2
+- Fix: the Continue playing card said "Nothing read in this game yet" even after reading; it now shows the game's progress and the last line you read.
+- Privacy and Terms use the same layout as the app's other pages (back link, title and text sizes).
+
 ## 0.33.1
 - The Continue playing card is calmer and matches the rest of the home screen: a white (or dark grey) card with a soft wash of the game icon's colour, a green progress bar and the usual purple Continue button.
 
