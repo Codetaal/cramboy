@@ -167,7 +167,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   function sizeText(n) { return n >= 1048576 ? Math.round(n / 1048576) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB'; }
 
   var RECENT = 3;
-  function showHome() { $('home').classList.remove('home-wait'); }
+  function showHome() { $('home').classList.remove('home-wait'); if (window.cbHomeStudy) cbHomeStudy(); }
   setTimeout(showHome, 1500);   // never keep it hidden if storage is slow
   function renderLibrary() {
     library.sort(function (a, b) { return b.played - a.played; });
@@ -305,6 +305,20 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   }
   function closeFaq() { var pg = $('page-faq'); pg.classList.add('off'); setTimeout(function () { pg.hidden = true; }, 300); }
   $('btn-faq').onclick = function () { openFaq(false); };
+  // Study without a game: the Study page (Words and Review) from the home screen.
+  $('btn-study').onclick = function () {
+    if (!window.KRUI) return;
+    var due = window.KRSettings && KRSettings.getStudy() && KRSettings.dueCount ? KRSettings.dueCount() : 0;
+    KRUI.open(due ? 'review' : 'words', 'home');
+  };
+  // Its summary: words to review (purple), otherwise how many words are saved.
+  window.cbHomeStudy = function () {
+    if (!window.KRSettings) return;
+    var study = KRSettings.getStudy(), due = study && KRSettings.dueCount ? KRSettings.dueCount() : 0, n = KRSettings.savedCount();
+    var sum = $('home-study-sum');
+    sum.textContent = !study ? 'Study mode is off' : due ? due + ' to review' : n ? n + ' saved word' + (n === 1 ? '' : 's') : 'Review your saved words';
+    sum.dataset.due = $('home-study-icon').dataset.due = String(!!due);
+  };
   // Backup: the same kind of page (backup.js fills it), from the home screen and the game menu (App tab).
   function openBackup(fromMenu) {
     $('backup-back-label').textContent = fromMenu ? 'Settings' : 'CramBoy';

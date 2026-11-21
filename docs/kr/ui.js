@@ -151,7 +151,7 @@
 
   function loadSaved() {
     if (!store) return;
-    store.getItem('saved').then(function (v) { if (Array.isArray(v)) saved = v; updatePill(); }).catch(function () {});
+    store.getItem('saved').then(function (v) { if (Array.isArray(v)) saved = v; updatePill(); if (window.cbHomeStudy) cbHomeStudy(); }).catch(function () {});
     store.getItem('settings').then(function (v) {
       if (!v) return;
       // Older versions stored {subs: true/false} for the bar.
@@ -830,7 +830,7 @@
     // Still sliding out: finish that at once and open afresh.
     if (pageTimer) { clearTimeout(pageTimer); pageTimer = null; sheet.hidden = true; sheet.classList.remove('kr-page', 'kr-off', 'kr-full'); }
     if (sheet.hidden) {
-      pageMode = true; pageFrom = from === 'settings' ? 'settings' : 'game';
+      pageMode = true; pageFrom = from === 'settings' || from === 'home' ? from : 'game';
       card.style.transition = card.style.transform = '';   // left over from a swipe back
       sheet.classList.add('kr-page', 'kr-off');
       openingPage = true; openMenu(tab); openingPage = false;
@@ -846,7 +846,7 @@
   // the top, the large title, and what belongs under it (Study's tabs), which stays pinned under the bar.
   function PAGE_HEAD(back, title, below) {
     return '<div class="sticky top-0 z-20 -mx-4 flex h-[60px] items-center gap-1 bg-zinc-50 px-4 dark:bg-zinc-950">' + (back || '') + '<div class="flex-1"></div>' +
-      (pageFrom === 'game' ? GEAR : '') + RESUME + '</div>' +
+      (pageFrom === 'game' ? GEAR : '') + (pageFrom === 'home' ? '' : RESUME) + '</div>' +
       '<h1 class="text-[34px] font-bold leading-tight tracking-tight">' + title + '</h1>' +
       (below ? '<div class="sticky top-[60px] z-10 -mx-4 bg-zinc-50 px-4 pb-1 pt-2 dark:bg-zinc-950" data-sheet-head>' + below + FADE_DOWN + '</div>' : '<div data-sheet-head></div>');
   }
@@ -862,7 +862,7 @@
     swipePrev = sheet.hidden ? null : { html: card.innerHTML, y: card.scrollTop, full: sheet.classList.contains('kr-full') };
     sheet.classList.toggle('kr-full', !!full);
     // The handle on a bottom sheet; on the Study page a page without its own header (a word) starts a bit lower.
-    card.innerHTML = (full || html.indexOf('data-sheet-head') >= 0 ? '' : pageMode ? '<div class="h-4"></div>' : GRAB) + html + (withBack ? BACK : '<div class="pb-[calc(1.5rem+env(safe-area-inset-bottom))]"></div>');
+    card.innerHTML = (full || html.indexOf('data-sheet-head') >= 0 ? '' : pageMode ? '<div class="h-4"></div>' : GRAB) + html + (withBack && !(pageMode && pageFrom === 'home') ? BACK : '<div class="pb-[calc(1.5rem+env(safe-area-inset-bottom))]"></div>');
     var newBack = card.querySelector('[data-swipe-back]');
     if (!sheet.hidden && oldBack && newBack && oldBack.outerHTML === newBack.outerHTML) swipePrev = keep;
     if (swipePrev && /data-loading/.test(swipePrev.html)) swipePrev = keep;   // not the "Looking up…" placeholder
@@ -882,6 +882,7 @@
     } else { sheet.hidden = true; sheet.classList.remove('kr-full'); }
     resume(); menuTab = null; review = null;
     if (fromSettings && toSettings !== true && window.emuCloseMenu) window.emuCloseMenu();
+    if (window.cbHomeStudy) window.cbHomeStudy();   // the home screen's Study row: what's left to review
     Array.prototype.forEach.call(document.querySelectorAll('.kr-sel'), function (n) { n.classList.remove('kr-sel'); });
     if (current) renderPanel();
   }
@@ -1102,7 +1103,7 @@
       '</div>';
     card.onclick = null;
     openSheet(h, true);
-    card.querySelector('[data-act=close]').onclick = closeSheet;
+    var cl = card.querySelector('[data-act=close]'); if (cl) cl.onclick = function () { closeSheet(); };   // no Back to game on the Study page from home
     card.querySelector('[data-act=back]').onclick = function () { goBack(wordBack); };
     card.querySelector('[data-act=say-word]').onclick = function () { speak(word, wlang); };
     if (sentence) card.querySelector('[data-act=say-sentence]').onclick = function () { speak(sentence, wlang); };
@@ -1206,7 +1207,7 @@
     }
     card.onclick = null;
     openSheet(h, true);
-    card.querySelector('[data-act=close]').onclick = closeSheet;
+    var cl = card.querySelector('[data-act=close]'); if (cl) cl.onclick = function () { closeSheet(); };   // no Back to game on the Study page from home
     card.querySelector('[data-act=back]').onclick = function () { goBack(wordBack); };
     card.querySelector('[data-act=say-chunk]').onclick = function () { speak(chunk || title, wlang); };
     if (sentence) card.querySelector('[data-act=say-sentence]').onclick = function () { speak(sentence, wlang); };
@@ -1358,7 +1359,7 @@
         '<p class="mt-2 text-xl font-bold">' + (review.done ? 'All done for now' : 'Nothing to review') + '</p>' +
         (review.done ? '<p class="' + C.muted + '">' + review.done + (review.done === 1 ? ' review' : ' reviews') + ' this session.</p>' : '') +
         '<p class="mt-1 px-6 ' + C.muted + '">' + msg + '</p></div>' +
-        '<div class="pb-[calc(1.5rem+env(safe-area-inset-bottom))]"><button class="' + C.primary + '" data-act="done">' + HI('play', 'size-5') + 'Back to game</button></div>';
+        '<div class="pb-[calc(1.5rem+env(safe-area-inset-bottom))]"><button class="' + C.primary + '" data-act="done">' + (pageMode && pageFrom === 'home' ? 'Done' : HI('play', 'size-5') + 'Back to game') + '</button></div>';
     }
     var w = x.w || x.base, s1 = pickSentence(x.s || '', w, '');
     var sentence = s1 && s1.indexOf(w) >= 0 ? esc(s1).split(esc(w)).join('<mark class="' + C.mark + '">' + esc(w) + '</mark>') : '';
@@ -1482,6 +1483,8 @@
   function openMenu(tab) {
     tab = OLD_TABS[tab] || tab || 'now';
     if (!settings.study) tab = 'settings';   // study mode off: only the settings (to turn it back on)
+    // From the home screen (no game open): only Words and Review; Dialogue and Progress belong to a game.
+    if (pageMode && pageFrom === 'home' && (tab === 'now' || tab === 'progress')) tab = 'words';
     if (tab !== 'session') review = null;    // a review session starts fresh each time
     if (tab === 'settings' && menuTab !== 'settings') settingsBack = menuTab && menuTab !== 'session' ? menuTab : 'now';
     menuTab = tab;
@@ -1491,10 +1494,11 @@
     else {
       var due = dueCount();
       var tb = function (id, label) { return '<button class="' + C.tab + '" data-tab="' + id + '" aria-pressed="' + (tab === id) + '">' + label + '</button>'; };
-      var tabs = '<div class="flex rounded-xl bg-zinc-100 p-1 dark:bg-zinc-800">' + tb('now', 'Dialogue') + tb('words', 'Words') +
+      var home = pageMode && pageFrom === 'home';
+      var tabs = '<div class="flex rounded-xl bg-zinc-100 p-1 dark:bg-zinc-800">' + (home ? '' : tb('now', 'Dialogue')) + tb('words', 'Words') +
         // Review: a floating badge on the corner of the word, like an app icon with notifications.
-        tb('review', '<span class="relative">Review' + (due ? '<span class="absolute -right-[19px] -top-3 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-[#ff3b30] px-1 text-[11px] font-semibold leading-none text-white ring-2 ring-zinc-100 dark:ring-zinc-800">' + (due > 99 ? '99+' : due) + '</span>' : '') + '</span>') + tb('progress', 'Progress') + '</div>';
-      h = pageMode ? PAGE_HEAD(pageFrom === 'settings' ? backLink('Settings', 'data-act="to-settings"') : '', 'Study', tabs)
+        tb('review', '<span class="relative">Review' + (due ? '<span class="absolute -right-[19px] -top-3 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-[#ff3b30] px-1 text-[11px] font-semibold leading-none text-white ring-2 ring-zinc-100 dark:ring-zinc-800">' + (due > 99 ? '99+' : due) + '</span>' : '') + '</span>') + (home ? '' : tb('progress', 'Progress')) + '</div>';
+      h = pageMode ? PAGE_HEAD(pageFrom === 'settings' ? backLink('Settings', 'data-act="to-settings"') : home ? backLink('CramBoy', 'data-act="to-settings"') : '', 'Study', tabs)
         : SHEET_HEAD('', 'Study', GEAR + RESUME, '<div class="mt-3">' + tabs + '</div>');
       if (tab === 'now') h += nowHTML();
       else if (tab === 'words') h += wordsTabHTML();
@@ -1685,7 +1689,7 @@
     // Back to the Study screen: a chevron before the title (swipe back works too).
     var back = settings.study ? '<button class="-ml-2 grid size-10 shrink-0 place-items-center rounded-full text-zinc-500 active:bg-zinc-200 dark:text-zinc-400 dark:active:bg-zinc-800" data-tab="' + settingsBack + '" data-swipe-back aria-label="Back to Study">' + HI('chevron-left', 'size-6') + '</button>' : '';
     // On the Study page: Study settings is a page too, back to Study (or to Settings when study mode is off).
-    if (pageMode) back = settings.study ? backLink('Study', 'data-tab="' + settingsBack + '"') : pageFrom === 'settings' ? backLink('Settings', 'data-act="to-settings"') : '';
+    if (pageMode) back = settings.study ? backLink('Study', 'data-tab="' + settingsBack + '"') : pageFrom === 'settings' ? backLink('Settings', 'data-act="to-settings"') : pageFrom === 'home' ? backLink('CramBoy', 'data-act="to-settings"') : '';
     var h = (pageMode ? PAGE_HEAD(back, 'Study settings') : SHEET_HEAD(back, 'Study settings', RESUME)) +
       '<div class="mt-3 ' + C.list + '">' + p.study + '</div>';
     if (!settings.study) return h;

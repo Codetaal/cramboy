@@ -44,9 +44,13 @@
       <p id="empty-note" class="mt-3 rounded-2xl border border-dashed border-zinc-300 px-4 py-5 text-center text-sm leading-relaxed text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">Add a DS game you own (.nds). It stays on this device.</p>
       <input id="file-rom" type="file" multiple hidden>
       <p id="recent-f" class="mt-2 px-1 text-sm text-zinc-500 dark:text-zinc-400">Swipe left on a game to remove it. Its save stays on this device.</p>
-      <!-- More: Backup and Help (each opening its own page) and the maker, linking to donations. -->
+      <!-- More: Study (the Study page, without a game), Backup and Help (each opening its own page) and the maker, linking to donations. -->
       <h2 class="mt-6 px-1 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">More</h2>
       <div class="mt-2 divide-y divide-zinc-100 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-zinc-900/5 dark:divide-white/5 dark:bg-zinc-900 dark:ring-white/10">
+        <button id="btn-study" class="flex w-full items-center gap-3 px-4 py-3 text-left active:bg-zinc-50 dark:active:bg-zinc-800">
+          <span id="home-study-icon" class="grid size-9 shrink-0 place-items-center rounded-xl bg-zinc-100 text-zinc-600 data-[due=true]:bg-violet-100 data-[due=true]:text-violet-700 dark:bg-white/10 dark:text-zinc-300 dark:data-[due=true]:bg-violet-600/15 dark:data-[due=true]:text-violet-400"><span data-hi="academic-cap" data-hi-class="size-5"></span></span>
+          <span class="min-w-0 flex-1"><span class="block font-semibold">Study</span><span id="home-study-sum" class="block truncate text-sm text-zinc-500 data-[due=true]:font-semibold data-[due=true]:text-violet-700 dark:text-zinc-400 dark:data-[due=true]:text-violet-400">Review your saved words</span></span>
+          <span data-hi="chevron-right" data-hi-class="size-5 shrink-0 text-zinc-300 dark:text-zinc-600"></span></button>
         <button id="btn-backup" class="flex w-full items-center gap-3 px-4 py-3 text-left active:bg-zinc-50 dark:active:bg-zinc-800">
           <span class="grid size-9 shrink-0 place-items-center rounded-xl bg-zinc-100 text-zinc-600 dark:bg-white/10 dark:text-zinc-300"><span data-hi="arrow-up-tray" data-hi-class="size-5"></span></span>
           <span class="min-w-0 flex-1"><span class="block font-semibold">Backup</span><span id="backup-sum" class="block text-sm text-zinc-500 dark:text-zinc-400">Words, progress and game saves</span></span>
