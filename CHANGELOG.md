@@ -2,6 +2,11 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.29.2
+- Settings and Study share one header: the same title size, row height and Resume button, with the handle and title (and Study's tabs) staying at the top while the page scrolls under a short fade.
+- Study settings: the back button is a chevron in front of the title.
+- The same spacing everywhere: 12 px under the header, and the same gaps around section headings. The Study tab in Settings groups its options under Subtitles and Review, like the Study settings page.
+
 ## 0.29.1
 - The game menu is titled Settings instead of the game's name; Help and Backup opened from it go back to "Settings".
 - The Study screen and Study settings have the Resume button at the top right, like Settings, instead of "Back to game" at the bottom.
