@@ -2,6 +2,10 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.41.9
+- D-pad: a press just beside or below it counts as that direction instead of moving the pad under your thumb; the pad only follows once your thumb slides well past it.
+- Settings: the Study tab uses the graduation cap icon again.
+
 ## 0.41.8
 - Fix: flashcard pictures of 3D scenes (most of HeartGold's world) were saved black except the dialogue box. They're now made from the game's frame with every pixel solid. Pictures saved before stay as they are.
 
