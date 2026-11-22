@@ -223,3 +223,9 @@
 }
 /* The same 12 px between a sheet's pinned header and its content on every Study page (as in Settings). */
 #kr-sheet [data-sheet-head] + * { margin-top: 0.75rem !important; }
+
+/* Study as a page from a game: the pinned bars are see-through at the top, so the faint mascot behind the
+   title shows as on the other full-screen pages; once you scroll they turn solid. */
+#kr-sheet.kr-page .kr-card [data-pin] { transition: background-color .15s; }
+#kr-sheet.kr-page .kr-card:not(.kr-scrolled) [data-pin] { background-color: transparent; }
+#kr-sheet.kr-page .kr-card:not(.kr-scrolled) [data-pin] > [aria-hidden] { opacity: 0; }

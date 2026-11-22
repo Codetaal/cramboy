@@ -958,9 +958,10 @@
     if (pageFrom === 'home') return '<div class="flex h-11 items-center">' + (back || '') + '</div>' +
       '<h1 class="mt-1 text-[34px] font-bold leading-tight tracking-tight">' + title + '</h1>' +
       (below ? '<div class="pt-3" data-sheet-head>' + below + '</div>' : '<div data-sheet-head></div>');
-    return '<div class="sticky top-0 z-20 -mx-4 flex h-[60px] items-center gap-1 bg-zinc-50 px-4 dark:bg-zinc-950">' + (back || '') + '<div class="flex-1"></div>' + RESUME + '</div>' +
+    // data-pin: these bars are see-through until you scroll, so the mascot behind the title shows (ui.css).
+    return '<div class="sticky top-0 z-20 -mx-4 flex h-[60px] items-center gap-1 bg-zinc-50 px-4 dark:bg-zinc-950" data-pin>' + (back || '') + '<div class="flex-1"></div>' + RESUME + '</div>' +
       '<h1 class="text-[34px] font-bold leading-tight tracking-tight">' + title + '</h1>' +
-      (below ? '<div class="sticky top-[60px] z-10 -mx-4 bg-zinc-50 px-4 pb-1 pt-2 dark:bg-zinc-950" data-sheet-head>' + below + FADE_DOWN + '</div>' : '<div data-sheet-head></div>');
+      (below ? '<div class="sticky top-[60px] z-10 -mx-4 bg-zinc-50 px-4 pb-1 pt-2 dark:bg-zinc-950" data-sheet-head data-pin>' + below + FADE_DOWN + '</div>' : '<div data-sheet-head></div>');
   }
   var RESUME = '<button class="flex shrink-0 items-center gap-1.5 rounded-full bg-violet-600 px-4 py-2.5 font-semibold text-white shadow-sm active:scale-95 active:bg-violet-500" data-act="close">' + HI('play', 'size-4') + 'Resume</button>';
   // Back to game is the secondary button everywhere else (soft lilac); solid purple is kept for real actions
@@ -981,6 +982,7 @@
     sheet.hidden = false; card.scrollTop = 0;
   }
   // Redraw the open tab after a change made on it (Know, a setting) without jumping back to the top.
+  card.addEventListener('scroll', function () { card.classList.toggle('kr-scrolled', card.scrollTop > 2); }, { passive: true });
   function stay(tab) { var y = card.scrollTop; openMenu(tab); card.scrollTop = y; }
   // toSettings: the Study page's back button (or study mode turned off) when it came from Settings: Settings
   // stays open under it. Otherwise closing goes back to the game, closing Settings too.
