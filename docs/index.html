@@ -37,6 +37,24 @@
       <h1 class="text-[34px] font-bold tracking-tight">CramBoy</h1>
       <p class="mt-0.5 text-[15px] text-zinc-500 dark:text-zinc-400">Learn Korean &amp; Japanese from your DS games</p>
       <div id="status" class="mt-1 text-[15px] text-zinc-500 dark:text-zinc-400 empty:hidden"></div>
+      <!-- Today: studying first. Words to review (or all caught up), your streak, words known / learning /
+           read, and the words you saved last session. emu.js cbHomeStudy fills it; app.css .td-*. -->
+      <section id="today" class="td" aria-labelledby="td-title">
+        <div class="td-h"><h2 id="td-title">Today</h2><span id="td-streak" class="td-streak" hidden><span data-hi="fire" data-hi-class="size-4"></span><span id="td-streak-n"></span></span></div>
+        <div id="td-due" hidden>
+          <p class="td-due"><b id="td-due-n"></b><span id="td-due-lbl">words to review</span></p><p id="td-due-sub" class="td-sub"></p>
+          <button id="td-go" class="td-go"><span data-hi="academic-cap" data-hi-class="size-5"></span>Start review</button>
+        </div>
+        <div id="td-done" class="td-done" hidden><span class="td-ok"><span id="td-done-ic" data-hi="check" data-hi-class="size-6"></span></span>
+          <span class="min-w-0 flex-1"><b id="td-done-t">All caught up</b><span id="td-done-s"></span></span>
+          <button id="td-words" class="td-link">Words</button></div>
+        <div class="td-stats">
+          <button class="td-st k" data-td="words"><b id="td-known">0</b><span>known</span></button>
+          <button class="td-st l" data-td="words"><b id="td-learning">0</b><span>learning</span></button>
+          <div class="td-st"><b id="td-read">0</b><span>words read</span></div>
+        </div>
+        <div id="td-rec" hidden><p class="td-rec">From your last session</p><div id="td-chips" class="td-chips"></div></div>
+      </section>
       <!-- Continue playing: the game you played last, with its icon and progress (emu.js renderNow, app.css .np-*). -->
       <button id="now-card" class="np" hidden>
         <span class="np-bg" aria-hidden="true"><img id="np-bg-img" alt=""></span>
@@ -58,10 +76,6 @@
       <!-- More: Study (the Study page, without a game), Backup and Help (each opening its own page) and the maker, linking to donations. -->
       <h2 class="mt-6 px-1 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">More</h2>
       <div class="mt-2 divide-y divide-zinc-100 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-zinc-900/5 dark:divide-white/5 dark:bg-zinc-900 dark:ring-white/10">
-        <button id="btn-study" class="flex w-full items-center gap-3 px-4 py-3 text-left active:bg-zinc-50 dark:active:bg-zinc-800">
-          <span id="home-study-icon" class="grid size-9 shrink-0 place-items-center rounded-xl bg-zinc-100 text-zinc-600 data-[due=true]:bg-violet-100 data-[due=true]:text-violet-700 dark:bg-white/10 dark:text-zinc-300 dark:data-[due=true]:bg-violet-600/15 dark:data-[due=true]:text-violet-400"><span data-hi="academic-cap" data-hi-class="size-5"></span></span>
-          <span class="min-w-0 flex-1"><span class="block font-semibold">Study</span><span id="home-study-sum" class="block truncate text-sm text-zinc-500 data-[due=true]:font-semibold data-[due=true]:text-violet-700 dark:text-zinc-400 dark:data-[due=true]:text-violet-400">Review your saved words</span></span>
-          <span data-hi="chevron-right" data-hi-class="size-5 shrink-0 text-zinc-300 dark:text-zinc-600"></span></button>
         <button id="btn-backup" class="flex w-full items-center gap-3 px-4 py-3 text-left active:bg-zinc-50 dark:active:bg-zinc-800">
           <span class="grid size-9 shrink-0 place-items-center rounded-xl bg-zinc-100 text-zinc-600 dark:bg-white/10 dark:text-zinc-300"><span data-hi="arrow-up-tray" data-hi-class="size-5"></span></span>
           <span class="min-w-0 flex-1"><span class="block font-semibold">Backup</span><span id="backup-sum" class="block text-sm text-zinc-500 dark:text-zinc-400">Words, progress and game saves</span></span>

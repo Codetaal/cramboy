@@ -196,6 +196,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     $('btn-open').hidden = $('empty-note').hidden = has;
     if (!all.children.length && !$('page-all').hidden) closeAllGames();
     renderNow();
+    if (window.cbHomeStudy) cbHomeStudy();
   }
 
   // Continue playing: the game you played last as a card on the home screen: its icon (faint in the corner,
@@ -351,18 +352,41 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   function closeFaq() { var pg = $('page-faq'); pg.classList.add('off'); setTimeout(function () { pg.hidden = true; }, 300); }
   $('btn-faq').onclick = function () { openFaq(false); };
   // Study without a game: the Study page (Words and Review) from the home screen.
-  $('btn-study').onclick = function () {
-    if (!window.KRUI) return;
-    var due = window.KRSettings && KRSettings.getStudy() && KRSettings.dueCount ? KRSettings.dueCount() : 0;
-    KRUI.open(due ? 'review' : 'words', 'home');
+  // Today: studying first (index.html #today). Words to review with Start review, or all caught up; your
+  // streak; words known, learning and read; and the words you saved last session (tap one for its page).
+  $('td-go').onclick = function () { if (window.KRUI) KRUI.open('review', 'home'); };
+  $('td-words').onclick = function () { if (!window.KRUI) return; KRUI.open(window.KRSettings && !KRSettings.getStudy() ? 'settings' : 'words', 'home'); };
+  Array.prototype.forEach.call(document.querySelectorAll('[data-td=words]'), function (b) { b.onclick = function () { if (window.KRUI) KRUI.open('words', 'home'); }; });
+  $('td-chips').onclick = function (e) {
+    var b = e.target.closest('button'); if (!b || !window.KRSettings) return;
+    if (b.dataset.t) KRSettings.openSaved(b.dataset.t); else KRUI.open('words', 'home');
   };
-  // Its summary: words to review (purple), otherwise how many words are saved.
+  var short = function (n) { return n >= 10000 ? Math.round(n / 1000) + 'k' : n >= 1000 ? (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k' : String(n); };
   window.cbHomeStudy = function () {
     if (!window.KRSettings) return;
-    var study = KRSettings.getStudy(), due = study && KRSettings.dueCount ? KRSettings.dueCount() : 0, n = KRSettings.savedCount();
-    var sum = $('home-study-sum');
-    sum.textContent = !study ? 'Study mode is off' : due ? due + ' to review' : n ? n + ' saved word' + (n === 1 ? '' : 's') : 'Review your saved words';
-    sum.dataset.due = $('home-study-icon').dataset.due = String(!!due);
+    var K = KRSettings, study = K.getStudy(), due = study && K.dueCount ? K.dueCount() : 0, learning = K.learningCount ? K.learningCount() : K.savedCount();
+    $('td-due').hidden = !due; $('td-done').hidden = !!due;
+    if (due) {
+      $('td-due-n').textContent = due; $('td-due-lbl').textContent = due === 1 ? 'word to review' : 'words to review';
+      var min = Math.max(1, Math.round(due * 10 / 60));
+      $('td-due-sub').textContent = 'About ' + min + (min === 1 ? ' minute' : ' minutes');
+    } else {
+      $('td-done-t').textContent = !study ? 'Study mode is off' : learning ? 'All caught up' : 'Nothing to review yet';
+      $('td-done-s').textContent = !study ? 'Turn it on for subtitles, word lookup and reviews' : learning ? 'New reviews show up here when they\'re due' : 'Tap words while you play and save them to learn';
+      $('td-words').textContent = !study ? 'Turn on' : 'Words';
+      $('td-words').hidden = study && !learning;
+    }
+    // A first visit (no games, nothing saved yet) starts with Add a game, not an empty study card.
+    $('today').hidden = !library.length && !learning && !(K.knownCount && K.knownCount());
+    var sk = K.streak ? K.streak() : 0;
+    $('td-streak').hidden = !sk; $('td-streak-n').textContent = sk + '-day streak';
+    $('td-known').textContent = short(K.knownCount ? K.knownCount() : 0);
+    $('td-learning').textContent = short(learning);
+    $('td-read').textContent = short(K.wordsRead ? K.wordsRead() : 0);
+    var rec = K.recentSaved ? K.recentSaved() : [], chips = $('td-chips');
+    $('td-rec').hidden = !rec.length; chips.textContent = '';
+    rec.slice(0, 4).forEach(function (x) { var c = document.createElement('button'); c.textContent = x.base || x.w; c.dataset.t = x.t; chips.appendChild(c); });
+    if (rec.length > 4) { var m = document.createElement('button'); m.className = 'more'; m.textContent = '+' + (rec.length - 4) + ' more'; chips.appendChild(m); }
     renderNow();   // the game's progress, once the words read are loaded
   };
   // Backup: the same kind of page (backup.js fills it), from the home screen and the game menu (App tab).

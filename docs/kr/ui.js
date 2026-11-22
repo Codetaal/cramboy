@@ -149,6 +149,20 @@
   window.KRReaderStats = function () { return reader.stats; };
   window.KRSettings = { getMode: function () { return settings.mode; }, setMode: setMode, savedCount: function () { return saved.length; }, voiceName: function () { var v = bestVoice(lang); return v ? v.name + (/premium/i.test(v.name + v.voiceURI) ? ' (Premium)' : /enhanced/i.test(v.name + v.voiceURI) ? ' (Enhanced)' : '') : ''; }, knownPct: function () { var p = gameProgress(); return p.n ? pct(p.known, p.n) : null; }, gameStats: function (id) { return gameStats(id); }, dueCount: function () { return dueCount(); },
     getStudy: function () { return settings.study; }, setStudy: setStudy,
+    // For the home screen's Today card (emu.js cbHomeStudy):
+    knownCount: function () { var n = 0; ['ko', 'ja'].forEach(function (l) { for (var k in known[l]) if (k.slice(0, 2) !== 'g:') n++; }); return n; },
+    learningCount: function () { return saved.filter(function (x) { return x.kind !== 'g'; }).length; },
+    wordsRead: function () { var n = 0; ['ko', 'ja'].forEach(function (l) { for (var w in seen[l].w) { var e = seen[l].w[w]; n += Array.isArray(e) ? e[0] : +e || 0; } }); return n; },
+    streak: function () { return streak(); },
+    // The words saved in your last session: the newest saved word and the ones saved within 6 hours before it.
+    recentSaved: function () {
+      var ws = saved.filter(function (x) { return x.kind !== 'g'; }).sort(function (a, b) { return b.t - a.t; });
+      return ws.length ? ws.filter(function (x) { return ws[0].t - x.t < 6 * 3600e3; }) : [];
+    },
+    openSaved: function (t) {
+      var x = saved.filter(function (y) { return String(y.t) === String(t); })[0];
+      if (x) asPage('home', function () { menuTab = 'words'; openWord(x.w, x.s || '', null, x.lang); });   // back goes to Words
+    },
     getFrame: function () { return settings.frame; }, setFrame: setFrame, frames: FRAMES };
   // open(tab, from): the Study page; from 'settings' (the Study row in Settings) its back button returns there.
   window.KRUI = { open: function (tab, from) { openPage(tab || 'now', from || 'game'); }, resetBox: resetBox, fillMenuSettings: fillMenuSettings };
@@ -200,6 +214,7 @@
     logTimer = setTimeout(function () { logTimer = null; store.setItem(key, data).catch(function () {}); }, 1500);
   }
   function logLine(t) {
+    markDay();
     if (!liveConv) { liveConv = { l: [], t: Date.now(), at: [] }; log.unshift(liveConv); if (log.length > LOG_MAX) log.length = LOG_MAX; }
     if (liveConv.l[liveConv.l.length - 1] !== t) liveConv.l.push(t);
     liveConv.t = Date.now();
@@ -245,6 +260,7 @@
     store.getItem('known').then(function (v) {
       if (v && typeof v === 'object') ['ko', 'ja'].forEach(function (l) { (v[l] || []).forEach(function (w) { known[l][w] = 1; }); });
       if (current) renderPanel();
+      if (window.cbHomeStudy) cbHomeStudy();
     }).catch(function () {});
   }
   function persistKnown() {
@@ -989,6 +1005,24 @@
   //   seen[lang] = { w: { base: [times read, times looked up, last sentence] }, g: { gameId: { name, n: words read, w: { base: times } } } }
   var seen = { ko: { w: {}, g: {} }, ja: { w: {}, g: {} } }, seenTimer = null, seenPending = [];
   if (store) store.getItem('seen').then(function (v) { if (v && v.ko && v.ja) { mergeSeen(v); } if (window.cbHomeStudy) cbHomeStudy(); }).catch(function () {});
+  // Study days, for the streak on the home screen: a day counts when you read dialogue or review words.
+  var days = [];
+  if (store) store.getItem('days').then(function (v) { if (Array.isArray(v)) days = v.concat(days.filter(function (d) { return v.indexOf(d) < 0; })); if (window.cbHomeStudy) cbHomeStudy(); }).catch(function () {});
+  function dayKey(t) { var d = new Date(t); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
+  function markDay() {
+    var k = dayKey(Date.now());
+    if (days[days.length - 1] === k) return;
+    days.push(k); if (days.length > 400) days = days.slice(-400);
+    if (store) store.setItem('days', days).catch(function () {});
+  }
+  // Days in a row up to today (or up to yesterday, until you study today).
+  function streak() {
+    var set = {}; days.forEach(function (d) { set[d] = 1; });
+    var t = Date.now(), n = 0;
+    if (!set[dayKey(t)]) t -= 86400000;
+    while (set[dayKey(t)]) { n++; t -= 86400000; }
+    return n;
+  }
   // A game's progress for the home screen, without opening it: the language it was read in and the share
   // of the words read in it that you know (as the Progress tab counts it). null before anything is read.
   function gameStats(id) {
@@ -1555,6 +1589,7 @@
     });
   }
   function reviewAnswer(how) {
+    markDay();
     var x = reviewWord(); if (!x) return;
     review.queue.shift(); review.open = false; review.done++;
     var n = Date.now();
