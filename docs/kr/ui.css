@@ -223,3 +223,6 @@
 }
 /* The same 12 px between a sheet's pinned header and its content on every Study page (as in Settings). */
 #kr-sheet [data-sheet-head] + * { margin-top: 0.75rem !important; }
+
+/* Swipe-to-select in the subtitle box (ui.js dragSelect). */
+::highlight(kr-drag) { background-color: rgba(167, 139, 250, .55); }
