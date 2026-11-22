@@ -193,7 +193,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     var box = $('hm-game'), recent = library.slice(0, 3);
     box.hidden = !recent.length; box.textContent = '';
     recent.forEach(function (e, i) {
-      var hr = document.createElement('div'); hr.className = 'hm-hr'; box.appendChild(hr);
+      if (i) { var hr = document.createElement('div'); hr.className = 'hm-hr'; box.appendChild(hr); }
       box.appendChild(gameCell(e, function (cell) {
         if (!i) cell.id = 'np-play';
         // Study data is kept under the game's own id (the header's, or the file name for homebrew), not the
