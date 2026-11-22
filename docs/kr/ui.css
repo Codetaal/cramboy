@@ -229,3 +229,7 @@
 #kr-sheet.kr-page .kr-card [data-pin] { transition: background-color .15s; }
 #kr-sheet.kr-page .kr-card:not(.kr-scrolled) [data-pin] { background-color: transparent; }
 #kr-sheet.kr-page .kr-card:not(.kr-scrolled) [data-pin] > [aria-hidden] { opacity: 0; }
+
+/* The word popover's text can be selected and copied (press and hold); its buttons can't. */
+#kr-pop { -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
+#kr-pop button { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
