@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.37.0
+- Home: when words are due, the review row stands out as a purple banner with a white Start button and a badge with the number to review. When nothing is due it stays calm and white.
+
 ## 0.36.0
 - New: a calmer, study-first home. One card shows what to review today (with a Start button), your streak and how many words you know and are learning, plus the game you last played with a Play button.
 - Backup and Help are now round buttons next to the title; a dot on Backup means your last backup is getting old.
