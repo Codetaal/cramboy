@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.41.1
+- Removed swipe-to-select in the subtitles again.
+
 ## 0.41.0
 - Subtitles: swipe sideways over the words to select them (whole words, across both lines); letting go opens the share sheet with that text, or copies it where sharing isn't available. Tapping a word and scrolling work as before.
 
