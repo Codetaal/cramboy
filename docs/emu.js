@@ -685,6 +685,18 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   // while playing and whenever the app is left or the game is closed. Per game we keep the latest
   // ('snap:<id>') and the one before it ('snap-prev:<id>') as a spare.
   var SNAP_EVERY = 2 * 60 * 1000, lastSnap = null, lastSnapAt = 0;
+  // offeredT: the time of the snapshot the Resume card showed this session (0 = none shown). Before the
+  // first snapshot of a session overwrites 'snap:<id>', an older one the card never offered (for example
+  // because reading it failed) is moved to 'snap-kept:<id>', so it is offered as "Earlier" next time.
+  var offeredT = 0, snapChecked = false;
+  function keepUnofferedSnapshot(id) {
+    if (snapChecked || lastSnap) return Promise.resolve(true);
+    return KV.get('snap:' + id).then(function (old) {
+      snapChecked = true;
+      if (!old || !old.data || old.t === offeredT) return true;
+      return KV.set('snap-kept:' + id, old).then(function () { return true; });
+    }, function () { return false; });   // can't read it: don't overwrite it either
+  }
   // force: always take one (closing the game). Otherwise skip if one was taken in the last 3 seconds
   // (leaving the app fires both visibilitychange and pagehide).
   function takeSnapshot(force) {
@@ -695,11 +707,14 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     var p = Module._stateGetPointer();
     var snap = { t: Date.now(), app: APP_VERSION, data: Module.HEAPU8.slice(p, p + n) };
     var id = gameID, old = lastSnap;
-    lastSnap = snap; lastSnapAt = snap.t;
-    return KV.set('snap:' + id, snap)
+    lastSnapAt = snap.t;
+    return keepUnofferedSnapshot(id).then(function (ok) {
+      if (!ok) return;
+      lastSnap = snap;
+      return KV.set('snap:' + id, snap)
       .then(function () { snapFlash(); return old ? KV.set('snap-prev:' + id, old) : null; })
-      .then(function () { return remember(id); })
-      .catch(function () { toast('Couldn\'t store a snapshot', { icon: 'warn' }); });
+      .then(function () { return remember(id); });
+    }).catch(function () { toast('Couldn\'t store a snapshot', { icon: 'warn' }); });
   }
   setInterval(function () { if (emuIsRunning) takeSnapshot(); }, SNAP_EVERY);
   // Games that have snapshots, so turning Resume off can delete them all.
@@ -734,12 +749,16 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   function offerResume() {
     if (!settings.resume) return Promise.resolve();
     var id = gameID;
-    return Promise.all([KV.get('snap:' + id), KV.get('savt-' + id), KV.get('snap-kept:' + id)]).catch(function () { return []; }).then(function (r) {
+    offeredT = 0; snapChecked = false;
+    function read() { return Promise.all([KV.get('snap:' + id), KV.get('savt-' + id), KV.get('snap-kept:' + id)]); }
+    // A big snapshot can fail to load now and then (low memory): try once more before starting without it.
+    return read().catch(function () { return new Promise(function (r) { setTimeout(r, 400); }).then(read); }).catch(function () { return []; }).then(function (r) {
       var snap = r[0], savT = r[1] || 0, kept = r[2];
       if (kept && (!kept.data || (snap && kept.t === snap.t))) kept = null;
       if (!snap || !snap.data) { if (!kept) return; snap = kept; kept = null; }
       $('resume-icon').innerHTML = $('loader-icon').innerHTML;
       $('resume-title').textContent = $('loader-title').textContent;
+      offeredT = snap.t;
       $('resume-when').textContent = 'Snapshot from ' + whenText(snap.t);
       $('resume-warn').hidden = !(savT > snap.t + 5000);
       $('resume-kept').hidden = !kept;
