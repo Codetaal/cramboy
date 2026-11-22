@@ -1466,7 +1466,7 @@
     try {
       var c = window.screenCanvas && screenCanvas[0];
       if (!c || !window.emuIsGameLoaded) return;
-      pageShots.push({ key: key, text: pg.replace(/\s+/g, ''), url: c.toDataURL('image/jpeg', 0.75) });
+      pageShots.push({ key: key, text: pg.replace(/\s+/g, ''), url: (window.emuShot && emuShot()) || c.toDataURL('image/jpeg', 0.75) });
       if (pageShots.length > 30) pageShots.shift();
     } catch (e) {}
   }
@@ -1479,7 +1479,7 @@
       }
       // The page on screen now, if it shows the sentence (or nothing better is known).
       if (current && q && currentPage().replace(/\s+/g, '').indexOf(q.slice(0, Math.min(6, q.length))) >= 0) url = null;
-      if (!url && c && window.emuIsGameLoaded) url = c.toDataURL('image/jpeg', 0.75);
+      if (!url && c && window.emuIsGameLoaded) url = (window.emuShot && emuShot()) || c.toDataURL('image/jpeg', 0.75);
       if (url && store) store.setItem('shot:' + t, url).catch(function () {});
     } catch (e) {}
   }

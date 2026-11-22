@@ -642,6 +642,18 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   var fpsFrames = 0, fpsT = 0;
   requestAnimationFrame(loop);
 
+  // A picture of the top screen for flashcards, made from the emulator's frame with every pixel made opaque:
+  // 3D scenes (most of HeartGold's world) come out with see-through pixels, which a JPEG turns black.
+  window.emuShot = function () {
+    try {
+      var fb = Module._getSymbol(4), px = new Uint8ClampedArray(Module.HEAPU8.buffer.slice(fb, fb + 196608));
+      for (var i = 3; i < px.length; i += 4) px[i] = 255;
+      var c = document.createElement('canvas'); c.width = 256; c.height = 192;
+      c.getContext('2d').putImageData(new ImageData(px, 256, 192), 0, 0);
+      return c.toDataURL('image/jpeg', 0.75);
+    } catch (e) { return null; }
+  };
+
   function runFrame(draw) {
     var keys = touchKeys | keyboardKeys;
     if (keys || touchDown) window.krInputAt = performance.now();   // the subtitle overlay uses this (held messages)
