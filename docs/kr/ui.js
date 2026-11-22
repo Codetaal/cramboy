@@ -79,7 +79,6 @@
     textBox.addEventListener('click', onWordTap);
     boxText.addEventListener('click', onWordTap);
     dragBox(boxGrip, 'move'); dragBox(boxSize, 'size');
-    dragSelect(boxText);
     pill.addEventListener('click', function () { openPage('now', 'game'); });
     // Press feedback like the other controls: quick shrink and purple tint, springing back on release.
     // (While it is purple because text is on screen it keeps its own look.)
@@ -486,58 +485,6 @@
     handle.addEventListener('pointerup', end); handle.addEventListener('pointercancel', end);
   }
 
-  // Swipe sideways over the subtitles to select words (whole words, across lines); letting go opens the
-  // share sheet with that text (or copies it where sharing isn't available). A tap still looks a word up,
-  // and up/down still scrolls.
-  var dragTapBlock = 0;
-  function dragSelect(area) {
-    var x0 = 0, y0 = 0, from = null, range = null, on = false;
-    var caret = function (x, y) {
-      var r = document.caretRangeFromPoint ? document.caretRangeFromPoint(x, y) : null;
-      return r && area.contains(r.startContainer) ? r : null;
-    };
-    var word = function (n) { n = n && (n.nodeType === 1 ? n : n.parentNode); return n && n.closest ? n.closest('.kr-w') : null; };
-    var paint = function (r) {
-      if (window.CSS && CSS.highlights && window.Highlight) { if (r) CSS.highlights.set('kr-drag', new Highlight(r)); else CSS.highlights.delete('kr-drag'); }
-    };
-    area.addEventListener('touchstart', function (e) {
-      on = false; range = null; from = null;
-      if (e.touches.length !== 1) return;
-      x0 = e.touches[0].clientX; y0 = e.touches[0].clientY;
-    }, { passive: true });
-    area.addEventListener('touchmove', function (e) {
-      if (e.touches.length !== 1) return;
-      var t = e.touches[0], dx = t.clientX - x0, dy = t.clientY - y0;
-      if (!on) {
-        if (Math.abs(dx) < 12 || Math.abs(dx) < Math.abs(dy) * 1.5) return;   // a tap or a scroll
-        from = caret(x0, y0);
-        if (!from) return;
-        on = true;
-      }
-      e.preventDefault();
-      var to = caret(t.clientX, t.clientY);
-      if (!to) return;
-      var r = document.createRange(), a = from, b = to;
-      if (a.compareBoundaryPoints(Range.START_TO_START, b) > 0) { a = to; b = from; }
-      r.setStart(a.startContainer, a.startOffset); r.setEnd(b.startContainer, b.startOffset);
-      var wa = word(a.startContainer), wb = word(b.startContainer);
-      if (wa) r.setStartBefore(wa);
-      if (wb) r.setEndAfter(wb);
-      range = r; paint(r);
-    }, { passive: false });
-    var end = function (e) {
-      if (!on) return;
-      on = false; dragTapBlock = performance.now();
-      var text = range ? range.toString().replace(/\s+/g, ' ').trim() : '';
-      var done = function () { paint(null); };
-      if (!text || (e && e.type === 'touchcancel')) return done();
-      if (navigator.share) navigator.share({ text: text }).then(done, done);
-      else if (navigator.clipboard) navigator.clipboard.writeText(text).then(function () { toast('Copied', 'ok'); done(); }, done);
-      else done();
-    };
-    area.addEventListener('touchend', end); area.addEventListener('touchcancel', end);
-  }
-
   window.krLayout = function () {
     var c = window.screenCanvas && screenCanvas[0];
     if (!c) return;
@@ -726,7 +673,6 @@
   boxText.addEventListener('scroll', function () { boxHints(); }, { passive: true });
 
   function onWordTap(e) {
-    if (performance.now() - dragTapBlock < 500) return;   // the end of a swipe-to-select, not a tap
     var t = e.target.closest ? e.target.closest('.kr-w') : null;
     if (!t) return;
     var holder = t.closest('[data-s]'), raw = t.getAttribute('data-w');
