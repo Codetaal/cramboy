@@ -33,62 +33,42 @@
 </head>
 <body class="bg-zinc-50 font-sans text-zinc-900 antialiased dark:bg-zinc-950 dark:text-white">
   <div id="home" class="home-wait min-h-full overflow-x-hidden">
-    <div id="page-home" class="mx-auto max-w-xl px-4 pb-[calc(2rem+env(safe-area-inset-bottom))] pt-[calc(env(safe-area-inset-top)+3.5rem)]">
-      <h1 class="text-[34px] font-bold tracking-tight">CramBoy</h1>
-      <p class="mt-0.5 text-[15px] text-zinc-500 dark:text-zinc-400">Learn Korean &amp; Japanese from your DS games</p>
+    <div id="page-home" class="mx-auto max-w-xl px-4 pb-[calc(2rem+env(safe-area-inset-bottom))] pt-[calc(env(safe-area-inset-top)+1.5rem)]">
+      <!-- Compact home: the title with Backup and Help as icons, one card with your two main actions (study,
+           and the game you played last), links to all games and adding one, and the maker. emu.js fills it
+           (cbHomeStudy, renderNow); app.css .hm-*. -->
+      <div class="flex items-center gap-1.5">
+        <h1 class="flex-1 text-[28px] font-bold tracking-tight">CramBoy</h1>
+        <button id="btn-backup" class="hm-ib" aria-label="Backup"><span data-hi="arrow-up-tray" data-hi-class="size-5"></span><span id="backup-sum" class="sr-only"></span><i class="hm-dot" aria-hidden="true"></i></button>
+        <button id="btn-faq" class="hm-ib" aria-label="Help and FAQ"><span data-hi="question-mark-circle" data-hi-class="size-5"></span></button>
+      </div>
       <div id="status" class="mt-1 text-[15px] text-zinc-500 dark:text-zinc-400 empty:hidden"></div>
-      <!-- Today: studying first. Words to review (or all caught up), your streak, words known / learning /
-           read, and the words you saved last session. emu.js cbHomeStudy fills it; app.css .td-*. -->
-      <section id="today" class="td" aria-labelledby="td-title">
-        <div class="td-h"><h2 id="td-title">Today</h2><span id="td-streak" class="td-streak" hidden><span data-hi="fire" data-hi-class="size-4"></span><span id="td-streak-n"></span></span></div>
-        <div id="td-due" hidden>
-          <p class="td-due"><b id="td-due-n"></b><span id="td-due-lbl">words to review</span></p><p id="td-due-sub" class="td-sub"></p>
-          <button id="td-go" class="td-go"><span data-hi="academic-cap" data-hi-class="size-5"></span>Start review</button>
+      <section id="home-card" class="hm-card" hidden>
+        <div id="hm-study" class="hm-row">
+          <span class="hm-tile"><span data-hi="academic-cap" data-hi-class="size-6"></span></span>
+          <span class="min-w-0 flex-1"><span id="hm-study-t" class="hm-t"></span><span id="hm-study-s" class="hm-s"></span></span>
+          <button id="hm-study-go" class="hm-go"></button>
         </div>
-        <div id="td-done" class="td-done" hidden><span class="td-ok"><span id="td-done-ic" data-hi="check" data-hi-class="size-6"></span></span>
-          <span class="min-w-0 flex-1"><b id="td-done-t">All caught up</b><span id="td-done-s"></span></span>
-          <button id="td-words" class="td-link">Words</button></div>
-        <div class="td-stats">
-          <button class="td-st k" data-td="words"><b id="td-known">0</b><span>known</span></button>
-          <button class="td-st l" data-td="words"><b id="td-learning">0</b><span>learning</span></button>
-          <div class="td-st"><b id="td-read">0</b><span>words read</span></div>
+        <p id="hm-stats" class="hm-line"><span id="hm-streak" class="hm-fire" hidden><span data-hi="fire" data-hi-class="size-[13px]"></span><span><b id="hm-streak-n"></b>-day streak</span></span><span><b id="hm-known">0</b> known</span><span><b id="hm-learning">0</b> learning</span></p>
+        <div id="hm-game">
+          <div class="hm-hr"></div>
+          <div class="hm-row">
+            <span id="np-icon" class="hm-gi">DS</span>
+            <span class="min-w-0 flex-1"><span id="np-title" class="hm-t truncate"></span><span id="np-meta" class="hm-s"></span></span>
+            <button id="np-play" class="hm-go soft"><span data-hi="play" data-hi-class="size-3.5"></span>Play</button>
+          </div>
         </div>
-        <div id="td-rec" hidden><p class="td-rec">From your last session</p><div id="td-chips" class="td-chips"></div></div>
       </section>
-      <!-- Continue playing: the game you played last, with its icon and progress (emu.js renderNow, app.css .np-*). -->
-      <button id="now-card" class="np" hidden>
-        <span class="np-bg" aria-hidden="true"><img id="np-bg-img" alt=""></span>
-        <span class="np-shade" aria-hidden="true"></span>
-        <span class="np-body">
-          <span class="np-top"><span class="np-chip"><span data-hi="play" data-hi-class="size-3.5"></span>Continue playing</span><span id="np-lang" class="np-lang"></span></span>
-          <span class="np-game"><span id="np-icon" class="np-icon">DS</span><span class="min-w-0"><span id="np-title" class="np-title"></span><span id="np-meta" class="np-meta"></span></span></span>
-          <span class="np-foot"><span id="np-prog" class="np-prog"><span id="np-pct" class="np-pct"></span><span class="np-track"><span id="np-fill"></span></span></span>
-            <span class="np-go">Continue<span data-hi="play" data-hi-class="size-4"></span></span></span>
-        </span>
-      </button>
-      <h2 id="recent-h" class="mt-6 px-1 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400" hidden>Games</h2>
-      <div id="recent" class="mt-2 divide-y divide-zinc-100 dark:divide-white/5 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-zinc-900/5 dark:bg-zinc-900 dark:ring-white/10" hidden></div>
+      <p id="hm-links" class="hm-links" hidden><button id="btn-all"></button><button id="btn-add"><span data-hi="plus" data-hi-class="size-4"></span>Add a game</button></p>
       <button id="btn-open" class="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-violet-600 px-4 py-3.5 font-semibold text-white shadow-sm ring-1 ring-inset ring-violet-500/20 transition active:scale-[0.98] active:bg-violet-500 disabled:opacity-50" disabled>
         <span data-hi="plus" data-hi-class="size-5"></span>Add a game</button>
       <p id="empty-note" class="mt-3 rounded-2xl border border-dashed border-zinc-300 px-4 py-5 text-center text-sm leading-relaxed text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">Add a DS game you own (.nds). It stays on this device.</p>
-      <input id="file-rom" type="file" multiple hidden>
-      <p id="recent-f" class="mt-2 px-1 text-sm text-zinc-500 dark:text-zinc-400">Swipe left on a game to remove it. Its save stays on this device.</p>
-      <!-- More: Study (the Study page, without a game), Backup and Help (each opening its own page) and the maker, linking to donations. -->
-      <h2 class="mt-6 px-1 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">More</h2>
-      <div class="mt-2 divide-y divide-zinc-100 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-zinc-900/5 dark:divide-white/5 dark:bg-zinc-900 dark:ring-white/10">
-        <button id="btn-backup" class="flex w-full items-center gap-3 px-4 py-3 text-left active:bg-zinc-50 dark:active:bg-zinc-800">
-          <span class="grid size-9 shrink-0 place-items-center rounded-xl bg-zinc-100 text-zinc-600 dark:bg-white/10 dark:text-zinc-300"><span data-hi="arrow-up-tray" data-hi-class="size-5"></span></span>
-          <span class="min-w-0 flex-1"><span class="block font-semibold">Backup</span><span id="backup-sum" class="block text-sm text-zinc-500 dark:text-zinc-400">Words, progress and game saves</span></span>
-          <span data-hi="chevron-right" data-hi-class="size-5 shrink-0 text-zinc-300 dark:text-zinc-600"></span></button>
-        <button id="btn-faq" class="flex w-full items-center gap-3 px-4 py-3 text-left active:bg-zinc-50 dark:active:bg-zinc-800">
-          <span class="grid size-9 shrink-0 place-items-center rounded-xl bg-zinc-100 text-zinc-600 dark:bg-white/10 dark:text-zinc-300"><span data-hi="question-mark-circle" data-hi-class="size-5"></span></span>
-          <span class="min-w-0 flex-1"><span class="block font-semibold">Help &amp; FAQ</span><span class="block text-sm text-zinc-500 dark:text-zinc-400">Games, saves, subtitles, reviews</span></span>
-          <span data-hi="chevron-right" data-hi-class="size-5 shrink-0 text-zinc-300 dark:text-zinc-600"></span></button>
-        <a id="maker" class="flex w-full items-start gap-3 px-4 py-3 text-left active:bg-zinc-50 dark:active:bg-zinc-800" href="https://buymeacoffee.com/cramlab" target="_blank" rel="noopener">
-          <img src="icons/cramlab-logo-512.png" class="size-9 shrink-0 rounded-xl" alt="" width="36" height="36">
-          <span class="min-w-0 flex-1"><span class="block font-semibold">Made by CramLab</span><span class="mt-0.5 block text-sm leading-snug text-zinc-500 dark:text-zinc-400">If you like using this app, consider donating this Dutchie some cheese to keep the updates rolling.</span></span>
-          <span data-hi="arrow-top-right-on-square" data-hi-class="mt-2 size-[18px] shrink-0 text-zinc-300 dark:text-zinc-600"></span></a>
-      </div>
+            <input id="file-rom" type="file" multiple hidden>
+      <!-- The maker, linking to donations. -->
+      <a id="maker" class="mt-6 flex w-full items-start gap-3 rounded-2xl bg-white px-4 py-3 text-left shadow-sm ring-1 ring-zinc-900/5 active:bg-zinc-50 dark:bg-zinc-900 dark:ring-white/10 dark:active:bg-zinc-800" href="https://buymeacoffee.com/cramlab" target="_blank" rel="noopener">
+        <img src="icons/cramlab-logo-512.png" class="size-9 shrink-0 rounded-xl" alt="" width="36" height="36">
+        <span class="min-w-0 flex-1"><span class="block font-semibold">Made by CramLab</span><span class="mt-0.5 block text-sm leading-snug text-zinc-500 dark:text-zinc-400">If you like using this app, consider donating this Dutchie some cheese to keep the updates rolling.</span></span>
+        <span data-hi="arrow-top-right-on-square" data-hi-class="mt-2 size-[18px] shrink-0 text-zinc-300 dark:text-zinc-600"></span></a>
       <div id="ios-hint" class="mt-4 rounded-2xl bg-violet-50 p-4 text-sm leading-relaxed text-violet-900 ring-1 ring-violet-200 dark:bg-violet-600/10 dark:text-violet-100 dark:ring-violet-400/20" hidden>
         In Safari, tap <b>Share → Add to Home Screen</b> and open it from there. Saves are only kept reliably in the Home Screen app.</div>
       <div class="mt-8 space-y-2.5 text-balance text-center text-xs leading-relaxed text-zinc-400 dark:text-zinc-500">
@@ -103,7 +83,7 @@
       <div class="mx-auto max-w-xl px-4 pb-[calc(2rem+env(safe-area-inset-bottom))] pt-[env(safe-area-inset-top)]">
         <div class="flex h-11 items-center">
           <button id="nav-back" data-swipe-back class="-ml-2 flex items-center gap-0.5 rounded-lg px-1 py-1 text-[17px] text-violet-600 active:opacity-60 dark:text-violet-400">
-            <span data-hi="chevron-left" data-hi-class="size-6"></span>Games</button>
+            <span data-hi="chevron-left" data-hi-class="size-6"></span>CramBoy</button>
         </div>
         <h1 class="mt-1 text-[34px] font-bold tracking-tight">All Games</h1>
         <div id="all-list" class="mt-4 divide-y divide-zinc-100 dark:divide-white/5 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-zinc-900/5 dark:bg-zinc-900 dark:ring-white/10"></div>

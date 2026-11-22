@@ -171,45 +171,30 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   setTimeout(showHome, 1500);   // never keep it hidden if storage is slow
   function renderLibrary() {
     library.sort(function (a, b) { return b.played - a.played; });
-    var recent = $('recent'), all = $('all-list');
-    recent.innerHTML = ''; all.innerHTML = '';
-    library.slice(0, RECENT).forEach(function (e) { recent.appendChild(gameRow(e)); });
-    if (library.length > RECENT) {
-      var more = document.createElement('button');
-      more.className = 'all-cell flex w-full items-center gap-2 px-4 py-3.5 text-left active:bg-zinc-50 dark:active:bg-zinc-800';
-      more.innerHTML = '<span class="flex-1">All Games</span>' +
-        '<span class="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">' + library.length + '</span>' + HI('chevron-right', 'size-5 shrink-0 text-zinc-300 dark:text-zinc-600');
-      more.onclick = openAllGames;
-      recent.appendChild(more);
-    }
+    var all = $('all-list');
+    all.innerHTML = '';
     library.forEach(function (e) { all.appendChild(gameRow(e)); });
     var has = library.length > 0;
-    // With games, "Add a game" is the last row of the list; the big button and its note are for the first visit.
-    if (has) {
-      var add = document.createElement('button');
-      add.className = 'flex w-full items-center gap-3 px-4 py-3 text-left font-semibold text-violet-600 active:bg-zinc-50 dark:text-violet-400 dark:active:bg-zinc-800';
-      add.innerHTML = '<span class="grid size-11 shrink-0 place-items-center rounded-xl bg-violet-100 dark:bg-violet-500/15">' + HI('plus', 'size-5') + '</span>Add a game';
-      add.onclick = function () { $('btn-open').click(); };
-      recent.appendChild(add);
-    }
-    $('recent').hidden = $('recent-h').hidden = $('recent-f').hidden = !has;
+    // The big Add a game button and its note are for the first visit; with games it's a link under the card.
     $('btn-open').hidden = $('empty-note').hidden = has;
+    $('hm-links').hidden = !has;
+    $('btn-all').textContent = library.length > 1 ? 'All games (' + library.length + ')' : '';
     if (!all.children.length && !$('page-all').hidden) closeAllGames();
     renderNow();
     if (window.cbHomeStudy) cbHomeStudy();
   }
+  $('btn-all').onclick = function () { openAllGames(); };
+  $('btn-add').onclick = function () { $('btn-open').click(); };
 
-  // Continue playing: the game you played last as a card on the home screen: its icon (faint in the corner,
-  // with a wash of its main colour) and how many of its words you know.
+  // The game you played last, under studying in the home card: its icon, when you played and how many of
+  // its words you know, and Play.
   var npTint = {};
   function renderNow() {
-    var e = library[0], card = $('now-card');
-    card.hidden = !e;
+    var e = library[0];
+    $('hm-game').hidden = !e;
     if (!e) return;
-    card.onclick = function () { unlockAudio(); playFromLibrary(e.id); };
+    $('np-play').onclick = function () { unlockAudio(); playFromLibrary(e.id); };
     $('np-title').textContent = e.title;
-    $('np-meta').textContent = (e.unplayed ? 'Added ' : 'Played ') + ago(e.played);
-    $('np-bg-img').src = e.icon || '';
     var icon = $('np-icon'); icon.textContent = 'DS';
     if (e.icon) { icon.textContent = ''; var img = document.createElement('img'); img.alt = ''; img.src = e.icon; icon.appendChild(img); }
     // Study data is kept under the game's own id (the header's, or the file name for homebrew), not the
@@ -217,31 +202,9 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     var ids = [e.id.replace(/-\d+$/, ''), String(e.name || '').trim()].filter(Boolean);
     var st = null;
     if (window.KRSettings && KRSettings.gameStats) ids.some(function (id) { return (st = KRSettings.gameStats(id)); });
-    $('np-lang').textContent = st ? (st.lang === 'ja' ? '日本語' : '한국어') : '';
-    $('np-pct').textContent = st ? st.pct + '% of the words you read are known' : 'Nothing read in this game yet';
-    requestAnimationFrame(function () { $('np-fill').style.width = (st ? st.pct : 0) + '%'; });
-    tint(e, function (rgb) { card.style.setProperty('--np', rgb); });
+    $('np-meta').textContent = (e.unplayed ? 'Added ' : 'Played ') + ago(e.played) + (st ? ' · ' + st.pct + '% known' : '');
   }
-  // The icon's main colour (the average of its colourful pixels), as "r g b".
-  function tint(e, done) {
-    if (npTint[e.id]) return done(npTint[e.id]);
-    if (!e.icon) return done('124 58 237');
-    var img = new Image();
-    img.onload = function () {
-      var c = document.createElement('canvas'); c.width = c.height = 32;
-      var x = c.getContext('2d'); x.drawImage(img, 0, 0, 32, 32);
-      var d = x.getImageData(0, 0, 32, 32).data, r = 0, g = 0, b = 0, n = 0;
-      for (var i = 0; i < d.length; i += 4) {
-        var mx = Math.max(d[i], d[i + 1], d[i + 2]), mn = Math.min(d[i], d[i + 1], d[i + 2]);
-        if (d[i + 3] < 128 || mx - mn < 40 || mx < 60) continue;   // skip see-through, grey and dark pixels
-        r += d[i]; g += d[i + 1]; b += d[i + 2]; n++;
-      }
-      npTint[e.id] = n > 8 ? Math.round(r / n) + ' ' + Math.round(g / n) + ' ' + Math.round(b / n) : '124 58 237';
-      done(npTint[e.id]);
-    };
-    img.onerror = function () { done('124 58 237'); };
-    img.src = e.icon;
-  }
+
 
   function gameRow(e) {
     // Hook classes (swipe, swipe-del, cell) drive the swipe behaviour; the rest is Tailwind styling.
@@ -352,41 +315,26 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   function closeFaq() { var pg = $('page-faq'); pg.classList.add('off'); setTimeout(function () { pg.hidden = true; }, 300); }
   $('btn-faq').onclick = function () { openFaq(false); };
   // Study without a game: the Study page (Words and Review) from the home screen.
-  // Today: studying first (index.html #today). Words to review with Start review, or all caught up; your
-  // streak; words known, learning and read; and the words you saved last session (tap one for its page).
-  $('td-go').onclick = function () { if (window.KRUI) KRUI.open('review', 'home'); };
-  $('td-words').onclick = function () { if (!window.KRUI) return; KRUI.open(window.KRSettings && !KRSettings.getStudy() ? 'settings' : 'words', 'home'); };
-  Array.prototype.forEach.call(document.querySelectorAll('[data-td=words]'), function (b) { b.onclick = function () { if (window.KRUI) KRUI.open('words', 'home'); }; });
-  $('td-chips').onclick = function (e) {
-    var b = e.target.closest('button'); if (!b || !window.KRSettings) return;
-    if (b.dataset.t) KRSettings.openSaved(b.dataset.t); else KRUI.open('words', 'home');
-  };
-  var short = function (n) { return n >= 10000 ? Math.round(n / 1000) + 'k' : n >= 1000 ? (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k' : String(n); };
+  // Studying, at the top of the home card: words to review (Start), all caught up (Words), nothing saved
+  // yet, or study mode off (Turn on); and one line with your streak and words known and learning.
+  var hmAct = 'review';
+  $('hm-study-go').onclick = function () { if (window.KRUI) KRUI.open(hmAct, 'home'); };
   window.cbHomeStudy = function () {
     if (!window.KRSettings) return;
-    var K = KRSettings, study = K.getStudy(), due = study && K.dueCount ? K.dueCount() : 0, learning = K.learningCount ? K.learningCount() : K.savedCount();
-    $('td-due').hidden = !due; $('td-done').hidden = !!due;
-    if (due) {
-      $('td-due-n').textContent = due; $('td-due-lbl').textContent = due === 1 ? 'word to review' : 'words to review';
-      var min = Math.max(1, Math.round(due * 10 / 60));
-      $('td-due-sub').textContent = 'About ' + min + (min === 1 ? ' minute' : ' minutes');
-    } else {
-      $('td-done-t').textContent = !study ? 'Study mode is off' : learning ? 'All caught up' : 'Nothing to review yet';
-      $('td-done-s').textContent = !study ? 'Turn it on for subtitles, word lookup and reviews' : learning ? 'New reviews show up here when they\'re due' : 'Tap words while you play and save them to learn';
-      $('td-words').textContent = !study ? 'Turn on' : 'Words';
-      $('td-words').hidden = study && !learning;
-    }
-    // A first visit (no games, nothing saved yet) starts with Add a game, not an empty study card.
-    $('today').hidden = !library.length && !learning && !(K.knownCount && K.knownCount());
-    var sk = K.streak ? K.streak() : 0;
-    $('td-streak').hidden = !sk; $('td-streak-n').textContent = sk + '-day streak';
-    $('td-known').textContent = short(K.knownCount ? K.knownCount() : 0);
-    $('td-learning').textContent = short(learning);
-    $('td-read').textContent = short(K.wordsRead ? K.wordsRead() : 0);
-    var rec = K.recentSaved ? K.recentSaved() : [], chips = $('td-chips');
-    $('td-rec').hidden = !rec.length; chips.textContent = '';
-    rec.slice(0, 4).forEach(function (x) { var c = document.createElement('button'); c.textContent = x.base || x.w; c.dataset.t = x.t; chips.appendChild(c); });
-    if (rec.length > 4) { var m = document.createElement('button'); m.className = 'more'; m.textContent = '+' + (rec.length - 4) + ' more'; chips.appendChild(m); }
+    var K = KRSettings, study = K.getStudy(), due = study && K.dueCount ? K.dueCount() : 0;
+    var learning = K.learningCount ? K.learningCount() : K.savedCount(), known = K.knownCount ? K.knownCount() : 0, sk = K.streak ? K.streak() : 0;
+    // A first visit (no games, nothing saved yet) starts with Add a game, not an empty card.
+    $('home-card').hidden = !library.length && !learning && !known;
+    var min = Math.max(1, Math.round(due * 10 / 60));
+    $('hm-study-t').textContent = !study ? 'Study mode is off' : due ? due + (due === 1 ? ' word' : ' words') + ' to review' : learning ? 'All caught up' : 'Nothing to review yet';
+    $('hm-study-s').textContent = !study ? 'Subtitles, word lookup and reviews' : due ? 'About ' + min + (min === 1 ? ' minute' : ' minutes') : learning ? 'New reviews show up here when they\'re due' : 'Tap words while you play to save them';
+    hmAct = !study ? 'settings' : due ? 'review' : 'words';
+    var go = $('hm-study-go');
+    go.textContent = !study ? 'Turn on' : due ? 'Start' : learning ? 'Words' : '';
+    go.classList.toggle('soft', !due);
+    $('hm-stats').hidden = !sk && !known && !learning;
+    $('hm-streak').hidden = !sk; $('hm-streak-n').textContent = sk;
+    $('hm-known').textContent = known; $('hm-learning').textContent = learning;
     renderNow();   // the game's progress, once the words read are loaded
   };
   // Backup: the same kind of page (backup.js fills it), from the home screen and the game menu (App tab).
