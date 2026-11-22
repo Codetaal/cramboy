@@ -2,6 +2,11 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.38.0
+- Help & FAQ: new "Which games work?" with the Pokémon games that have subtitles (Korean, Japanese) and whose names are read from the save.
+- Help & FAQ: answers use the app's current names (Settings › Game, Study and App; Backup at the top of the home screen).
+- Privacy and Terms show the faint mascot in the top right, like the other full-screen pages.
+
 ## 0.37.3
 - Home: the review banner fits on small phones ("19 words", "To review · about 3 min").
 
