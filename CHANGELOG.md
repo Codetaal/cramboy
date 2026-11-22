@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.37.1
+- Home: the review banner uses a calmer, deeper purple.
+
 ## 0.37.0
 - Home: when words are due, the review row stands out as a purple banner with a white Start button and a badge with the number to review. When nothing is due it stays calm and white.
 
