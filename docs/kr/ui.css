@@ -112,8 +112,11 @@
 #kr-box[data-font="serif"], .kr-font-sample[data-font="serif"] { font-family: 'Nanum Myeongjo', 'Hiragino Mincho ProN', 'Yu Mincho', serif; font-weight: 700; }
 #kr-box[data-font="cute"], .kr-font-sample[data-font="cute"] { font-family: 'Jua', 'Kosugi Maru', 'Apple SD Gothic Neo', sans-serif; font-weight: 400; letter-spacing: 0; }
 .kr-font-sample[data-font="gothic"] { font-family: 'Apple SD Gothic Neo', -apple-system, 'Noto Sans KR', sans-serif; font-weight: 700; }
-#kr-box .kr-w { border-bottom: 2px dotted var(--f-line); border-radius: 2px; }
-#kr-box .kr-w.kr-saved { color: var(--f-saved); border-bottom-color: var(--f-saved); }
+/* A thin dotted underline drawn as text decoration (inside the line), so it never reaches into the line below. */
+#kr-box .kr-w { border-bottom: 0; border-radius: 2px; text-decoration: underline dotted var(--f-line); text-decoration-thickness: 1px;
+  text-underline-offset: calc(2.5px * var(--k, 1.46)); text-decoration-skip-ink: none; -webkit-text-decoration-skip: none; }
+#kr-box .kr-w.kr-saved { color: var(--f-saved); text-decoration-color: var(--f-saved); }
+#kr-box .kr-w.kr-known, #kr-box .kr-w.kr-name { text-decoration-color: transparent; }
 #kr-box .kr-w:active, #kr-box .kr-w.kr-sel { background: rgba(167, 139, 250, 0.55); }
 .kr-box-arrow {
   position: absolute; right: calc(12px * var(--k, 1.46) + 14px); bottom: calc(7px * var(--k, 1.46));
