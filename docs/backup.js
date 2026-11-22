@@ -7,8 +7,9 @@
   // Google OAuth client id for codetaal.github.io (Google Cloud console > APIs & Services > Credentials).
   // Empty: the Google Drive option is hidden.
   var GOOGLE_CLIENT_ID = '524828905859-b17dphmp7rl9dgv8onpjtsbddn5gldh6.apps.googleusercontent.com';
-  // One file per day you back up ('cramboy-backup-2026-11-22.json.gz'); the newest KEEP are kept, so Restore
-  // can go back a few days. Older versions used a single 'cramboy-backup.json.gz', which counts as one of them.
+  // Each tap on "Back up to Google Drive" makes a new backup; the quiet backup when you leave the app updates
+  // the day's automatic one instead (so it doesn't push your own backups out). The newest KEEP are kept, so
+  // Restore can go back. Older versions used a single 'cramboy-backup.json.gz', which counts as one of them.
   var DRIVE_PREFIX = 'cramboy-backup', KEEP = 5;
   // Not backed up: the games (and the list of them, which would point at games a new device doesn't have),
   // resume snapshots, and the backup's own bookkeeping.
@@ -166,7 +167,7 @@
     var url = existing ? 'https://www.googleapis.com/upload/drive/v3/files/' + existing.id + '?uploadType=resumable'
                        : 'https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable';
     // appProperties: what's in it, so Restore can list the backups without downloading them.
-    var meta = existing ? { appProperties: props } : { name: DRIVE_PREFIX + '-' + dayKey(Date.now()) + '.json.gz', parents: ['appDataFolder'], appProperties: props };
+    var meta = existing ? { appProperties: props } : { name: DRIVE_PREFIX + '-' + new Date().toISOString().replace(/[:.]/g, '-') + '.json.gz', parents: ['appDataFolder'], appProperties: props };
     return api(url, { method: existing ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json; charset=UTF-8', 'X-Upload-Content-Type': 'application/gzip' }, body: JSON.stringify(meta) })
       .then(function (r) {
         var loc = r.headers.get('Location');
@@ -200,10 +201,10 @@
       return Promise.all([collect(), listFiles()]);
     }).then(function (r) {
       var j = r[0], d = j.data;
-      var props = { saved: String((d['kr-saved'] || []).length), games: String(Object.keys(d).filter(function (k) { return /^sav-/.test(k); }).length) };
-      // Today's backup is updated, so Drive keeps one per day. The first time on this device (another
-      // phone, or after a reinstall) always makes a new one, so nothing from the other device is replaced.
-      var today = !firstHere && r[1].filter(function (f) { return dayKey(f.modifiedTime) === dayKey(Date.now()); })[0];
+      var props = { saved: String((d['kr-saved'] || []).length), games: String(Object.keys(d).filter(function (k) { return /^sav-/.test(k); }).length), auto: interactive ? '0' : '1' };
+      // Your own backups are always new files; the automatic one updates today's automatic backup. The first
+      // time on this device (another phone, or after a reinstall) always makes a new one.
+      var today = !interactive && !firstHere && r[1].filter(function (f) { return f.appProperties && f.appProperties.auto === '1' && dayKey(f.modifiedTime) === dayKey(Date.now()); })[0];
       return gzip(JSON.stringify(j)).then(function (blob) { return upload(blob, today || null, props); });
     })
       .then(prune)
@@ -240,6 +241,7 @@
     files.forEach(function (f) {
       var p = f.appProperties || {}, n = +p.saved, g = +p.games;
       var sub = p.saved != null ? (n === 1 ? '1 saved word' : n + ' saved words') + ' · ' + (g === 1 ? '1 game save' : g + ' game saves') : Math.max(1, Math.round((+f.size || 0) / 1024)) + ' KB';
+      if (p.auto === '1') sub += ' · automatic';
       var b = document.createElement('button');
       b.className = 'flex w-full items-center gap-2 py-2.5 pr-4 text-left active:bg-zinc-100 dark:active:bg-zinc-800'; b.style.paddingLeft = '44px';   // lines up with the row's label
       b.innerHTML = '<span class="min-w-0 flex-1"><span class="block"></span><span class="block text-sm text-zinc-500 dark:text-zinc-400"></span></span>' +
