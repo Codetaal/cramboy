@@ -2,6 +2,10 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.39.2
+- Google Drive: every tap on "Back up to Google Drive" makes a new backup (the last 5 are kept). The automatic backup when you leave the app updates one automatic backup per day, marked "automatic" in the restore list.
+- Fix: notifications no longer slide in from the side before settling in the middle.
+
 ## 0.39.1
 - Backup: the Google Drive backups open right under "Restore from Google Drive" (tap again to close), like About in the menu.
 
