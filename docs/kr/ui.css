@@ -229,16 +229,11 @@
 
 /* Study as a page from a game: the pinned bars are see-through at the top, so the faint mascot behind the
    title shows as on the other full-screen pages; once you scroll they turn solid. */
-/* Once you scroll they become frosted glass, as in iOS: see-through and blurred, not a solid colour. */
-#kr-sheet.kr-page .kr-card [data-pin] { transition: background-color .15s, box-shadow .15s; }
+/* Once you scroll they fade in to the page colour (and the soft fade under the tabs comes back). */
+#kr-sheet.kr-page .kr-card [data-pin] { transition: background-color .3s ease; }
 #kr-sheet.kr-page .kr-card:not(.kr-scrolled) [data-pin] { background-color: transparent; }
-#kr-sheet.kr-page .kr-card [data-pin] > [aria-hidden] { display: none; }   /* the fade under the tabs: not needed with glass */
-#kr-sheet.kr-page .kr-card.kr-scrolled [data-pin] { background-color: rgba(250, 250, 250, .6); -webkit-backdrop-filter: saturate(200%) blur(24px); backdrop-filter: saturate(200%) blur(24px); }
-#kr-sheet.kr-page .kr-card.kr-scrolled [data-pin][data-sheet-head] { box-shadow: 0 1px 0 rgba(0, 0, 0, .08); }
-@media (prefers-color-scheme: dark) {
-  #kr-sheet.kr-page .kr-card.kr-scrolled [data-pin] { background-color: rgba(9, 9, 11, .6); }
-  #kr-sheet.kr-page .kr-card.kr-scrolled [data-pin][data-sheet-head] { box-shadow: 0 1px 0 rgba(255, 255, 255, .08); }
-}
+#kr-sheet.kr-page .kr-card [data-pin] > [aria-hidden] { transition: opacity .3s ease; }
+#kr-sheet.kr-page .kr-card:not(.kr-scrolled) [data-pin] > [aria-hidden] { opacity: 0; }
 
 /* The word popover's text can be selected and copied (press and hold); its buttons can't. */
 #kr-pop { -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
