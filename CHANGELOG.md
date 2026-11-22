@@ -2,6 +2,11 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.40.0
+- Home: your three most recently played games, in the same list style as All Games (tap a game to play).
+- Home: the review banner's icon is our mascot in a graduation cap.
+- Game icons have rounded corners (home and All Games).
+
 ## 0.39.2
 - Google Drive: every tap on "Back up to Google Drive" makes a new backup (the last 5 are kept). The automatic backup when you leave the app updates one automatic backup per day, marked "automatic" in the restore list.
 - Fix: notifications no longer slide in from the side before settling in the middle.
