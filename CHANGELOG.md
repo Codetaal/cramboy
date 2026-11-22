@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.38.1
+- The mascot in the review banner and on full-screen pages now matches the app icon exactly (same eye spacing).
+
 ## 0.38.0
 - Help & FAQ: new "Which games work?" with the Pokémon games that have subtitles (Korean, Japanese) and whose names are read from the save.
 - Help & FAQ: answers use the app's current names (Settings › Game, Study and App; Backup at the top of the home screen).
