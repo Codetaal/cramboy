@@ -322,7 +322,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   function closeFaq() { var pg = $('page-faq'); pg.classList.add('off'); setTimeout(function () { pg.hidden = true; }, 300); }
   $('btn-faq').onclick = function () { openFaq(false); };
   // Study without a game: the Study page (Words and Review) from the home screen.
-  // Studying, at the top of the home card: words to review (Start), all caught up (Words), nothing saved
+  // Studying, at the top of the home card: words to review or all caught up (Study: to Review or Words), nothing saved
   // yet, or study mode off (Turn on); and one line with your streak and words known and learning.
   var hmAct = 'review';
   $('hm-study-go').onclick = function () { if (window.KRUI) KRUI.open(hmAct, 'home'); };
@@ -334,10 +334,10 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     $('home-card').hidden = !library.length && !learning && !known;
     var min = Math.max(1, Math.round(due * 10 / 60));
     $('hm-study-t').textContent = !study ? 'Study mode is off' : due ? due + (due === 1 ? ' word' : ' words') : learning ? 'All caught up' : 'Nothing to review yet';
-    $('hm-study-s').textContent = !study ? 'Subtitles, word lookup and reviews' : due ? 'To review · about ' + min + ' min' : learning ? 'New reviews show up here when they\'re due' : 'Tap words while you play to save them';
+    $('hm-study-s').textContent = !study ? 'Subtitles, word lookup and reviews' : due ? 'To review · ' + min + ' min' : learning ? 'New reviews show up here when they\'re due' : 'Tap words while you play to save them';
     hmAct = !study ? 'settings' : due ? 'review' : 'words';
     var go = $('hm-study-go');
-    go.textContent = !study ? 'Turn on' : due ? 'Start' : learning ? 'Words' : '';
+    go.textContent = !study ? 'Turn on' : due || learning ? 'Study' : '';
     go.classList.toggle('soft', !due);
     $('hm-study').classList.toggle('due', !!due);
     $('hm-stats').hidden = !sk && !known && !learning;
