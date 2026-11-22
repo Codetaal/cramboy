@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.39.1
+- Backup: the Google Drive backups open right under "Restore from Google Drive" (tap again to close), like About in the menu.
+
 ## 0.39.0
 - Google Drive keeps one backup per day for the last 5 days you backed up. Restore from Google Drive lists them (date, saved words, game saves) so you can pick which one to restore.
 - The first backup from a new phone (or after a reinstall) adds a backup instead of replacing the one already in Drive.
