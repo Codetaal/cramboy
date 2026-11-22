@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.41.5
+- Study page in a game: when you scroll, the pinned bars turn to frosted glass (blurred, as in iOS) instead of a solid colour.
+
 ## 0.41.4
 - Word popover: its text can be selected and copied (press and hold).
 - Live subtitles: thinner dotted underline, drawn inside the line, so the line above no longer peeks in at the top of the box.
