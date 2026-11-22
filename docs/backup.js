@@ -212,7 +212,12 @@
       .catch(function (e) { busy = false; rowBusy('drive'); render(); if (interactive && !(e && e.quiet)) toast((e && e.message) || 'Backup failed', { icon: 'info' }); });
   }
   // Restore: list the backups in Drive and let the user pick one (newest first).
+  function setPick(open) {
+    document.getElementById('drive-pick').hidden = !open;
+    document.getElementById('drive-pick-chev').style.transform = open ? 'rotate(90deg)' : '';
+  }
   function fromDrive() {
+    if (!document.getElementById('drive-pick').hidden) return setPick(false);   // tap again: close the list
     var signedIn = token && Date.now() < tokenExp - 60000;
     var tp = getToken(true);
     rowBusy('drive-restore', signedIn ? 'Getting your backups…' : 'Signing in with Google…');
@@ -236,7 +241,7 @@
       var p = f.appProperties || {}, n = +p.saved, g = +p.games;
       var sub = p.saved != null ? (n === 1 ? '1 saved word' : n + ' saved words') + ' · ' + (g === 1 ? '1 game save' : g + ' game saves') : Math.max(1, Math.round((+f.size || 0) / 1024)) + ' KB';
       var b = document.createElement('button');
-      b.className = 'flex w-full items-center gap-2 px-4 py-3 text-left active:bg-zinc-50 dark:active:bg-zinc-800';
+      b.className = 'flex w-full items-center gap-2 py-2.5 pr-4 text-left active:bg-zinc-100 dark:active:bg-zinc-800'; b.style.paddingLeft = '44px';   // lines up with the row's label
       b.innerHTML = '<span class="min-w-0 flex-1"><span class="block"></span><span class="block text-sm text-zinc-500 dark:text-zinc-400"></span></span>' +
         '<span class="hi-chev text-zinc-300 dark:text-zinc-600"></span>';
       b.querySelector('.block').textContent = whenText(f.modifiedTime);
@@ -245,7 +250,7 @@
       b.onclick = function () { restoreFile(f, b); };
       list.appendChild(b);
     });
-    box.hidden = false;
+    setPick(true);
     box.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }
   function restoreFile(f, row) {
@@ -305,7 +310,6 @@
       if (a === 'drive') toDrive(true);
       if (a === 'drive-restore') fromDrive();
       if (a === 'drive-off') disconnect();
-      if (a === 'drive-pick-close') document.getElementById('drive-pick').hidden = true;
     });
     document.getElementById('file-backup').addEventListener('change', function () { if (this.files[0]) fromFile(this.files[0]); this.value = ''; });
     render();
