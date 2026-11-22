@@ -2,6 +2,10 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.42.0
+- Review gives fewer hints as you learn a word (by how often you got it right in a row): first the picture and sentence, then the sentence only, then the word in another line from your dialogue history, and finally just the word. The answer side always shows the picture and your saved sentence. Again sends a word back to the start.
+- Korean words in review sentences are no longer broken in the middle at a line end.
+
 ## 0.41.9
 - D-pad: a press just beside or below it counts as that direction instead of moving the pad under your thumb; the pad only follows once your thumb slides well past it.
 - Settings: the Study tab uses the graduation cap icon again.
