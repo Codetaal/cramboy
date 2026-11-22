@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.40.1
+- Home: a "Recent games" heading with All games next to it, and Add a game as the last row of the list, all inside the home card.
+
 ## 0.40.0
 - Home: your three most recently played games, in the same list style as All Games (tap a game to play).
 - Home: the review banner's icon is our mascot in a graduation cap.
