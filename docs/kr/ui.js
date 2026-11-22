@@ -1513,7 +1513,10 @@
     }
     var w = x.w || x.base, s1 = pickSentence(x.s || '', w, '');
     var sentence = s1 && s1.indexOf(w) >= 0 ? esc(s1).split(esc(w)).join('<mark class="' + C.mark + '">' + esc(w) + '</mark>') : '';
-    h += '<img data-shot="' + x.t + '" alt="" class="kr-shot mx-auto mt-4 hidden ' + (review.open ? 'kr-shot-back h-32' : 'h-44') + ' w-auto rounded-xl ring-1 ring-zinc-900/10 dark:ring-white/10">' +
+    // Fewer hints as you learn a word: once you've got it right twice in a row, the picture from the game
+    // only comes with the answer, so the sentence is your only help.
+    var noPic = !review.open && (x.streak >= 2 || (x.streak == null && x.iv >= 3));
+    h += (noPic ? '' : '<img data-shot="' + x.t + '" alt="" class="kr-shot mx-auto mt-4 hidden ' + (review.open ? 'kr-shot-back h-32' : 'h-44') + ' w-auto rounded-xl ring-1 ring-zinc-900/10 dark:ring-white/10">') +
       (sentence ? '<div class="mt-5 flex items-start gap-1"><p class="kr-selectable flex-1 text-xl leading-relaxed">' + sentence + '</p>' +
         '<button class="' + SPEAK_BTN + ' -my-1 -mr-2" data-act="rv-say-s" aria-label="Hear the sentence">' + HI('speaker-wave', 'size-5') + '</button></div>'
         : '<p class="mt-6 text-center text-[34px] font-bold">' + esc(w) + '</p>') +
@@ -1602,6 +1605,8 @@
     if (store) store.setItem('review-day', newToday).catch(function () {});
     var iv = nextIv(x);
     x.reps++;
+    // Right in a row (the picture goes after 2). Words saved before this was counted start from their interval.
+    x.streak = how === 'again' ? 0 : (x.streak == null ? (x.iv >= 3 ? 2 : 0) : x.streak) + 1;
     if (how === 'again') { x.ease = Math.max(MIN_EASE, x.ease - 0.2); x.iv = 0; x.due = n + 10 * 60000; review.queue.push(x.t); }
     else if (how === 'good' && iv < KNOWN_DAYS) { x.iv = iv; x.due = n + iv * DAY; }
     else {
