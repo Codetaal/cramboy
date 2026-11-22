@@ -126,14 +126,14 @@ body.touch-mode #controls, body.touch-mode #kr-pill { visibility: hidden; }
 .hm-gi img { width: 34px; height: 34px; image-rendering: pixelated; }
 /* Reviews due: the study row becomes a purple banner, the one thing on home that asks for a tap. */
 .hm-row.due { position: relative; overflow: hidden; margin: 8px 8px 0; padding: 18px 16px 18px 18px; border-radius: 16px; color: #fff;
-  background: radial-gradient(120px 90px at 88% 0%, rgba(255, 255, 255, .22), transparent 70%), radial-gradient(160px 110px at 0% 100%, rgba(236, 72, 153, .35), transparent 70%), linear-gradient(135deg, #6d28d9, #8b5cf6 60%, #a855f7);
-  box-shadow: 0 10px 24px -12px rgba(109, 40, 217, .7), inset 0 1px 0 rgba(255, 255, 255, .25); }
+  background: radial-gradient(140px 90px at 90% 0%, rgba(255, 255, 255, .1), transparent 70%), linear-gradient(135deg, #4c1d95, #5b21b6 55%, #6d28d9);
+  box-shadow: 0 8px 20px -12px rgba(76, 29, 149, .6), inset 0 1px 0 rgba(255, 255, 255, .12); }
 .hm-row.due .hm-tile { position: relative; width: 48px; height: 48px; color: #fff; background: rgba(255, 255, 255, .18); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .25); }
 .hm-row.due .hm-t { font-size: 19px; font-weight: 700; }
 .hm-row.due .hm-s { color: rgba(255, 255, 255, .82); }
-.hm-row.due .hm-go { padding: 11px 18px; color: #6d28d9; background: #fff; box-shadow: 0 4px 12px -4px rgba(40, 0, 90, .45); }
+.hm-row.due .hm-go { padding: 11px 18px; color: #5b21b6; background: #fff; box-shadow: 0 4px 12px -4px rgba(40, 0, 90, .45); }
 .hm-row.due .hm-go:active { background: #ede9fe; }
-.hm-cnt { position: absolute; top: -6px; right: -6px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 999px; font-size: 11.5px; font-weight: 700; line-height: 20px; text-align: center; color: #6d28d9; background: #fde68a; box-shadow: 0 0 0 2px #7c3aed; }
+.hm-cnt { position: absolute; top: -6px; right: -6px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 999px; font-size: 11.5px; font-weight: 700; line-height: 20px; text-align: center; color: #4c1d95; background: #fde68a; box-shadow: 0 0 0 2px #5b21b6; }
 .hm-row:not(.due) .hm-cnt { display: none; }
 .hm-row.due + .hm-line { margin-top: 0; padding-top: 12px; padding-left: 18px; }
 .hm-links { display: flex; justify-content: center; gap: 20px; margin-top: 14px; font-size: 15px; font-weight: 600; color: #7c3aed; }
