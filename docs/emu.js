@@ -332,6 +332,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     var go = $('hm-study-go');
     go.textContent = !study ? 'Turn on' : due ? 'Start' : learning ? 'Words' : '';
     go.classList.toggle('soft', !due);
+    $('hm-study').classList.toggle('due', !!due); $('hm-cnt').textContent = due > 99 ? '99+' : due;
     $('hm-stats').hidden = !sk && !known && !learning;
     $('hm-streak').hidden = !sk; $('hm-streak-n').textContent = sk;
     $('hm-known').textContent = known; $('hm-learning').textContent = learning;
