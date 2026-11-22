@@ -214,9 +214,9 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     del.textContent = 'Remove';
     var cell = document.createElement('div');
     cell.className = 'cell relative flex items-center gap-3 bg-white px-4 py-3 active:bg-zinc-50 dark:bg-zinc-900 dark:active:bg-zinc-800';
-    // The DS icon keeps square corners inside a rounded tile, so no pixels get cut off
+    // The DS icon gets rounded corners too, inside its rounded tile
     var tile = 'grid size-11 shrink-0 place-items-center rounded-xl bg-zinc-100 ring-1 ring-inset ring-zinc-900/5 dark:bg-zinc-800 dark:ring-white/10';
-    cell.innerHTML = (e.icon ? '<span class="' + tile + '"><img class="size-9 [image-rendering:pixelated]" alt="" src="' + e.icon + '"></span>'
+    cell.innerHTML = (e.icon ? '<span class="' + tile + '"><img class="size-9 rounded-lg [image-rendering:pixelated]" alt="" src="' + e.icon + '"></span>'
                              : '<span class="' + tile + ' text-xs font-medium text-zinc-400 dark:text-zinc-500">DS</span>') +
       '<div class="min-w-0 flex-1"><p class="g-title truncate font-semibold"></p><p class="g-sub truncate text-sm text-zinc-500 dark:text-zinc-400"></p></div>' + HI('chevron-right', 'size-5 shrink-0 text-zinc-300 dark:text-zinc-600');
     cell.querySelector('.g-title').textContent = e.title;
