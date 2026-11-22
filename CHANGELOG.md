@@ -2,6 +2,10 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.41.3
+- The translate button in the game shows the graduation cap icon again.
+- Study page in a game: the mascot shows behind the title too (the pinned bars are see-through until you scroll).
+
 ## 0.41.2
 - Our mascot in a graduation cap replaces the cap icon everywhere: the home card, the Study row and tab in Settings, the translate button in the game and the Review page.
 - Home: the study button says Study (it opens Review when words are due, your words when you're caught up).
