@@ -190,21 +190,36 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   // its words you know, and Play.
   var npTint = {};
   function renderNow() {
-    var e = library[0];
-    $('hm-game').hidden = !e;
-    if (!e) return;
-    $('np-play').onclick = function () { unlockAudio(); playFromLibrary(e.id); };
-    $('np-title').textContent = e.title;
-    var icon = $('np-icon'); icon.textContent = 'DS';
-    if (e.icon) { icon.textContent = ''; var img = document.createElement('img'); img.alt = ''; img.src = e.icon; icon.appendChild(img); }
-    // Study data is kept under the game's own id (the header's, or the file name for homebrew), not the
-    // library's (which adds the file size).
-    var ids = [e.id.replace(/-\d+$/, ''), String(e.name || '').trim()].filter(Boolean);
-    var st = null;
-    if (window.KRSettings && KRSettings.gameStats) ids.some(function (id) { return (st = KRSettings.gameStats(id)); });
-    $('np-meta').textContent = (e.unplayed ? 'Added ' : 'Played ') + ago(e.played) + (st ? ' · ' + st.pct + '% known' : '');
+    var box = $('hm-game'), recent = library.slice(0, 3);
+    box.hidden = !recent.length; box.textContent = '';
+    recent.forEach(function (e, i) {
+      var hr = document.createElement('div'); hr.className = 'hm-hr'; box.appendChild(hr);
+      box.appendChild(gameCell(e, function (cell) {
+        if (!i) cell.id = 'np-play';
+        // Study data is kept under the game's own id (the header's, or the file name for homebrew), not the
+        // library's (which adds the file size).
+        var ids = [e.id.replace(/-\d+$/, ''), String(e.name || '').trim()].filter(Boolean), st = null;
+        if (window.KRSettings && KRSettings.gameStats) ids.some(function (id) { return (st = KRSettings.gameStats(id)); });
+        return (e.unplayed ? 'Added ' : 'Played ') + ago(e.played) + (st ? ' · ' + st.pct + '% known' : '');
+      }, 'button'));
+    });
   }
 
+  // One game in the list style of All Games: icon tile, title, a line below, chevron. sub(cell) returns the
+  // line below; tag is the element to use (a button on the home screen, a div in All Games where it swipes).
+  function gameCell(e, sub, tag) {
+    var cell = document.createElement(tag || 'div');
+    cell.className = 'cell relative flex w-full items-center gap-3 bg-white px-4 py-3 text-left active:bg-zinc-50 dark:bg-zinc-900 dark:active:bg-zinc-800';
+    // The DS icon gets rounded corners too, inside its rounded tile
+    var tile = 'grid size-11 shrink-0 place-items-center rounded-xl bg-zinc-100 ring-1 ring-inset ring-zinc-900/5 dark:bg-zinc-800 dark:ring-white/10';
+    cell.innerHTML = (e.icon ? '<span class="' + tile + '"><img class="size-9 rounded-lg [image-rendering:pixelated]" alt="" src="' + e.icon + '"></span>'
+                             : '<span class="' + tile + ' text-xs font-medium text-zinc-400 dark:text-zinc-500">DS</span>') +
+      '<span class="min-w-0 flex-1"><span class="g-title block truncate font-semibold"></span><span class="g-sub block truncate text-sm text-zinc-500 dark:text-zinc-400"></span></span>' + HI('chevron-right', 'size-5 shrink-0 text-zinc-300 dark:text-zinc-600');
+    cell.querySelector('.g-title').textContent = e.title;
+    cell.querySelector('.g-sub').textContent = sub(cell);
+    if (tag === 'button') cell.onclick = function () { unlockAudio(); playFromLibrary(e.id); };
+    return cell;
+  }
 
   function gameRow(e) {
     // Hook classes (swipe, swipe-del, cell) drive the swipe behaviour; the rest is Tailwind styling.
@@ -212,15 +227,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     var del = document.createElement('button');
     del.className = 'swipe-del absolute inset-y-0 right-0 w-full bg-red-500 pr-5 text-right font-medium text-white';
     del.textContent = 'Remove';
-    var cell = document.createElement('div');
-    cell.className = 'cell relative flex items-center gap-3 bg-white px-4 py-3 active:bg-zinc-50 dark:bg-zinc-900 dark:active:bg-zinc-800';
-    // The DS icon gets rounded corners too, inside its rounded tile
-    var tile = 'grid size-11 shrink-0 place-items-center rounded-xl bg-zinc-100 ring-1 ring-inset ring-zinc-900/5 dark:bg-zinc-800 dark:ring-white/10';
-    cell.innerHTML = (e.icon ? '<span class="' + tile + '"><img class="size-9 rounded-lg [image-rendering:pixelated]" alt="" src="' + e.icon + '"></span>'
-                             : '<span class="' + tile + ' text-xs font-medium text-zinc-400 dark:text-zinc-500">DS</span>') +
-      '<div class="min-w-0 flex-1"><p class="g-title truncate font-semibold"></p><p class="g-sub truncate text-sm text-zinc-500 dark:text-zinc-400"></p></div>' + HI('chevron-right', 'size-5 shrink-0 text-zinc-300 dark:text-zinc-600');
-    cell.querySelector('.g-title').textContent = e.title;
-    cell.querySelector('.g-sub').textContent = (e.unplayed ? 'Added ' : 'Played ') + ago(e.played) + ' · ' + sizeText(e.size);
+    var cell = gameCell(e, function () { return (e.unplayed ? 'Added ' : 'Played ') + ago(e.played) + ' · ' + sizeText(e.size); });
     wrap.appendChild(del); wrap.appendChild(cell);
     attachSwipe(wrap, cell, function () { unlockAudio(); playFromLibrary(e.id); }, function () { removeWithUndo(e); });
     del.onclick = function () { collapse(wrap, function () { removeWithUndo(e); }); };
