@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.41.8
+- Fix: flashcard pictures of 3D scenes (most of HeartGold's world) were saved black except the dialogue box. They're now made from the game's frame with every pixel solid. Pictures saved before stay as they are.
+
 ## 0.41.7
 - Study page in a game: the pinned bars are back to the solid page colour (no frosted glass), fading in softly when you scroll.
 
