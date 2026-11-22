@@ -2,6 +2,11 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.36.0
+- New: a calmer, study-first home. One card shows what to review today (with a Start button), your streak and how many words you know and are learning, plus the game you last played with a Play button.
+- Backup and Help are now round buttons next to the title; a dot on Backup means your last backup is getting old.
+- "All games" and "Add a game" are small links under the card. On a first visit only the big Add a game button shows.
+
 ## 0.35.0
 - New: your name (and in HeartGold/SoulSilver your rival's) is read from the game's save and treated as a name in the subtitles: no underline, and the popup says "your name in this game" or "your rival's name". Updated whenever the game saves.
 
