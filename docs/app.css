@@ -129,12 +129,11 @@ body.touch-mode #controls, body.touch-mode #kr-pill { visibility: hidden; }
   background: radial-gradient(120px 90px at 88% 0%, rgba(255, 255, 255, .22), transparent 70%), radial-gradient(160px 110px at 0% 100%, rgba(236, 72, 153, .35), transparent 70%), linear-gradient(135deg, #6d28d9, #8b5cf6 60%, #a855f7);
   box-shadow: 0 10px 24px -12px rgba(109, 40, 217, .7), inset 0 1px 0 rgba(255, 255, 255, .25); }
 .hm-row.due .hm-tile { position: relative; width: 48px; height: 48px; color: #fff; background: rgba(255, 255, 255, .18); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .25); }
-.hm-row.due .hm-t { font-size: 19px; font-weight: 700; }
+.hm-row.due .hm-t { font-size: 20px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hm-row.due .hm-s { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .hm-row.due .hm-s { color: rgba(255, 255, 255, .82); }
 .hm-row.due .hm-go { padding: 11px 18px; color: #6d28d9; background: #fff; box-shadow: 0 4px 12px -4px rgba(40, 0, 90, .45); }
 .hm-row.due .hm-go:active { background: #ede9fe; }
-.hm-cnt { position: absolute; top: -6px; right: -6px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 999px; font-size: 11.5px; font-weight: 700; line-height: 20px; text-align: center; color: #6d28d9; background: #fde68a; box-shadow: 0 0 0 2px #7c3aed; }
-.hm-row:not(.due) .hm-cnt { display: none; }
 .hm-row.due > * { position: relative; z-index: 1; }
 /* Our mascot (the app icon's controller), faint in the banner. */
 .hm-row.due::after { content: ""; position: absolute; right: 74px; bottom: -14px; width: 96px; height: 103px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 15' shape-rendering='crispEdges'%3E%3Cpath fill='%23fff' d='M1 6h1v1h-1zM2 6h1v1h-1zM11 6h1v1h-1zM12 6h1v1h-1zM2 7h1v1h-1zM3 7h1v1h-1zM4 7h1v1h-1zM9 7h1v1h-1zM10 7h1v1h-1zM11 7h1v1h-1zM2 8h1v1h-1zM3 8h1v1h-1zM4 8h1v1h-1zM5 8h1v1h-1zM6 8h1v1h-1zM7 8h1v1h-1zM8 8h1v1h-1zM9 8h1v1h-1zM10 8h1v1h-1zM11 8h1v1h-1zM12 8h1v1h-1zM2 9h1v1h-1zM3 9h1v1h-1zM4 9h1v1h-1zM5 9h1v1h-1zM6 9h1v1h-1zM7 9h1v1h-1zM8 9h1v1h-1zM9 9h1v1h-1zM10 9h1v1h-1zM11 9h1v1h-1zM12 9h1v1h-1zM2 10h1v1h-1zM3 10h1v1h-1zM5 10h1v1h-1zM6 10h1v1h-1zM7 10h1v1h-1zM8 10h1v1h-1zM10 10h1v1h-1zM11 10h1v1h-1zM12 10h1v1h-1zM2 11h1v1h-1zM6 11h1v1h-1zM7 11h1v1h-1zM9 11h1v1h-1zM11 11h1v1h-1zM12 11h1v1h-1zM2 12h1v1h-1zM3 12h1v1h-1zM5 12h1v1h-1zM6 12h1v1h-1zM7 12h1v1h-1zM8 12h1v1h-1zM10 12h1v1h-1zM11 12h1v1h-1zM12 12h1v1h-1zM2 13h1v1h-1zM3 13h1v1h-1zM4 13h1v1h-1zM5 13h1v1h-1zM6 13h1v1h-1zM7 13h1v1h-1zM8 13h1v1h-1zM9 13h1v1h-1zM10 13h1v1h-1zM11 13h1v1h-1zM12 13h1v1h-1zM3 1h1v1h-1zM4 2h1v1h-1zM10 1h1v1h-1zM9 2h1v1h-1zM6.5 0h1v2h-1z'/%3E%3C/svg%3E") center / contain no-repeat; opacity: .2; transform: rotate(-12deg); pointer-events: none; }

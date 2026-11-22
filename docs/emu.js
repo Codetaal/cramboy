@@ -326,13 +326,13 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     // A first visit (no games, nothing saved yet) starts with Add a game, not an empty card.
     $('home-card').hidden = !library.length && !learning && !known;
     var min = Math.max(1, Math.round(due * 10 / 60));
-    $('hm-study-t').textContent = !study ? 'Study mode is off' : due ? due + (due === 1 ? ' word' : ' words') + ' to review' : learning ? 'All caught up' : 'Nothing to review yet';
-    $('hm-study-s').textContent = !study ? 'Subtitles, word lookup and reviews' : due ? 'About ' + min + (min === 1 ? ' minute' : ' minutes') : learning ? 'New reviews show up here when they\'re due' : 'Tap words while you play to save them';
+    $('hm-study-t').textContent = !study ? 'Study mode is off' : due ? due + (due === 1 ? ' word' : ' words') : learning ? 'All caught up' : 'Nothing to review yet';
+    $('hm-study-s').textContent = !study ? 'Subtitles, word lookup and reviews' : due ? 'To review · about ' + min + ' min' : learning ? 'New reviews show up here when they\'re due' : 'Tap words while you play to save them';
     hmAct = !study ? 'settings' : due ? 'review' : 'words';
     var go = $('hm-study-go');
     go.textContent = !study ? 'Turn on' : due ? 'Start' : learning ? 'Words' : '';
     go.classList.toggle('soft', !due);
-    $('hm-study').classList.toggle('due', !!due); $('hm-cnt').textContent = due > 99 ? '99+' : due;
+    $('hm-study').classList.toggle('due', !!due);
     $('hm-stats').hidden = !sk && !known && !learning;
     $('hm-streak').hidden = !sk; $('hm-streak-n').textContent = sk;
     $('hm-known').textContent = known; $('hm-learning').textContent = learning;
