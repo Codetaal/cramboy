@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.38.2
+- Home: the "Made by CramLab" donation box is quieter (outline only, smaller logo, softer text).
+
 ## 0.38.1
 - The mascot in the review banner and on full-screen pages now matches the app icon exactly (same eye spacing).
 
