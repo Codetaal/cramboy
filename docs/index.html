@@ -242,7 +242,13 @@
           <button class="flex w-full items-center gap-2 px-4 py-3 text-left active:bg-zinc-50 dark:active:bg-zinc-800" data-bk="drive-restore"><span data-hi="arrow-down-tray" data-hi-class="size-5 shrink-0 text-violet-600 dark:text-violet-400"></span><span class="flex-1">Restore from Google Drive</span><span data-hi="chevron-right" data-hi-class="size-5 shrink-0 text-zinc-300 dark:text-zinc-600"></span></button>
           <button id="backup-drive-on" class="flex w-full items-center gap-2 px-4 py-3 text-left active:bg-zinc-50 dark:active:bg-zinc-800 text-red-500" data-bk="drive-off" hidden><span class="flex-1">Disconnect Google Drive</span></button>
         </div>
-        <p class="mt-2 px-1 text-sm leading-snug text-zinc-500 dark:text-zinc-400">Goes to a hidden CramBoy folder in your own Google Drive that only CramBoy can see. While you’re signed in, it also backs up when you leave the app.</p>
+        <!-- Restore from Google Drive: pick one of the backups (backup.js fills the list). -->
+        <div id="drive-pick" hidden>
+          <div class="mt-5 flex items-center px-1"><h3 class="flex-1 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Choose a backup to restore</h3>
+            <button class="text-[15px] font-medium text-violet-600 active:opacity-60 dark:text-violet-400" data-bk="drive-pick-close">Cancel</button></div>
+          <div id="drive-pick-list" class="mt-2 divide-y divide-zinc-100 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-zinc-900/5 dark:divide-white/5 dark:bg-zinc-900 dark:ring-white/10"></div>
+        </div>
+        <p class="mt-2 px-1 text-sm leading-snug text-zinc-500 dark:text-zinc-400">Goes to a hidden CramBoy folder in your own Google Drive that only CramBoy can see. While you’re signed in, it also backs up when you leave the app. Drive keeps one backup per day for the last 5 days you backed up.</p>
       </div>
     </div>
   </div>

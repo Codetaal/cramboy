@@ -7,7 +7,9 @@
   // Google OAuth client id for codetaal.github.io (Google Cloud console > APIs & Services > Credentials).
   // Empty: the Google Drive option is hidden.
   var GOOGLE_CLIENT_ID = '524828905859-b17dphmp7rl9dgv8onpjtsbddn5gldh6.apps.googleusercontent.com';
-  var DRIVE_FILE = 'cramboy-backup.json.gz';
+  // One file per day you back up ('cramboy-backup-2026-11-22.json.gz'); the newest KEEP are kept, so Restore
+  // can go back a few days. Older versions used a single 'cramboy-backup.json.gz', which counts as one of them.
+  var DRIVE_PREFIX = 'cramboy-backup', KEEP = 5;
   // Not backed up: the games (and the list of them, which would point at games a new device doesn't have),
   // resume snapshots, and the backup's own bookkeeping.
   var SKIP = /^(rom($|:)|library$|snap|backup-)/;
@@ -146,16 +148,25 @@
       return r;
     });
   }
-  function findFile() {
-    return api('https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&fields=files(id,modifiedTime,size)&q=' +
-      encodeURIComponent("name='" + DRIVE_FILE + "'")).then(function (r) { return r.json(); })
-      .then(function (j) { return j.files && j.files[0] || null; });
+  // All CramBoy backups in the app folder, newest first.
+  function listFiles() {
+    return api('https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&orderBy=modifiedTime%20desc&pageSize=50&fields=files(id,name,modifiedTime,size,appProperties)&q=' +
+      encodeURIComponent("name contains '" + DRIVE_PREFIX + "'")).then(function (r) { return r.json(); })
+      .then(function (j) { return (j.files || []).filter(function (f) { return f.name.indexOf(DRIVE_PREFIX) === 0; }); });
+  }
+  function dayKey(d) { d = new Date(d); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  // Remove all but the newest KEEP backups.
+  function prune() {
+    return listFiles().then(function (files) {
+      return Promise.all(files.slice(KEEP).map(function (f) { return api('https://www.googleapis.com/drive/v3/files/' + f.id, { method: 'DELETE' }).catch(function () {}); }));
+    });
   }
   // Resumable upload: works for any size (simple uploads stop at 5 MB).
-  function upload(blob, existing) {
+  function upload(blob, existing, props) {
     var url = existing ? 'https://www.googleapis.com/upload/drive/v3/files/' + existing.id + '?uploadType=resumable'
                        : 'https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable';
-    var meta = existing ? {} : { name: DRIVE_FILE, parents: ['appDataFolder'] };
+    // appProperties: what's in it, so Restore can list the backups without downloading them.
+    var meta = existing ? { appProperties: props } : { name: DRIVE_PREFIX + '-' + dayKey(Date.now()) + '.json.gz', parents: ['appDataFolder'], appProperties: props };
     return api(url, { method: existing ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json; charset=UTF-8', 'X-Upload-Content-Type': 'application/gzip' }, body: JSON.stringify(meta) })
       .then(function (r) {
         var loc = r.headers.get('Location');
@@ -186,32 +197,65 @@
     return Promise.all([KV.get('backup-drive'), tp]).then(function (r0) {
       firstHere = !r0[0];
       if (interactive) rowBusy('drive', 'Backing up…');
-      return Promise.all([collect().then(function (j) { return gzip(JSON.stringify(j)); }), findFile()]);
+      return Promise.all([collect(), listFiles()]);
     }).then(function (r) {
-      // First time on this device and Drive already has a backup (another phone, or before a reinstall):
-      // don't overwrite it without asking.
-      if (firstHere && r[1] && !confirm('Your Google Drive already has a CramBoy backup from ' + new Date(r[1].modifiedTime).toLocaleString() +
-        '.\n\nReplace it with what’s on this device? To get that backup back instead, choose Cancel and then Restore from Google Drive.')) {
-        var e = new Error('Nothing replaced'); e.quiet = true; throw e;
-      }
-      return upload(r[0], r[1]);
+      var j = r[0], d = j.data;
+      var props = { saved: String((d['kr-saved'] || []).length), games: String(Object.keys(d).filter(function (k) { return /^sav-/.test(k); }).length) };
+      // Today's backup is updated, so Drive keeps one per day. The first time on this device (another
+      // phone, or after a reinstall) always makes a new one, so nothing from the other device is replaced.
+      var today = !firstHere && r[1].filter(function (f) { return dayKey(f.modifiedTime) === dayKey(Date.now()); })[0];
+      return gzip(JSON.stringify(j)).then(function (blob) { return upload(blob, today || null, props); });
     })
+      .then(prune)
       .then(function () { busy = false; rowBusy('drive'); return markDone('drive'); })
       .then(function () { if (interactive) toast('Backed up to Google Drive', { icon: 'ok' }); })
       .catch(function (e) { busy = false; rowBusy('drive'); render(); if (interactive && !(e && e.quiet)) toast((e && e.message) || 'Backup failed', { icon: 'info' }); });
   }
+  // Restore: list the backups in Drive and let the user pick one (newest first).
   function fromDrive() {
     var signedIn = token && Date.now() < tokenExp - 60000;
     var tp = getToken(true);
-    rowBusy('drive-restore', signedIn ? 'Getting your backup…' : 'Signing in with Google…');
-    tp.then(function () { rowBusy('drive-restore', 'Getting your backup…'); render(); return findFile(); }).then(function (f) {
-      if (!f) throw new Error('No CramBoy backup in this Google Drive yet.');
-      return api('https://www.googleapis.com/drive/v3/files/' + f.id + '?alt=media').then(function (r) { return r.blob(); });
-    }).then(readBackup).then(function (j) {
+    rowBusy('drive-restore', signedIn ? 'Getting your backups…' : 'Signing in with Google…');
+    tp.then(function () { rowBusy('drive-restore', 'Getting your backups…'); render(); return listFiles(); }).then(function (files) {
       rowBusy('drive-restore');
-      if (!confirm('Restore the backup from Google Drive?\n\n' + summary(j) + '\n\nIt replaces the saved words, progress and game saves on this device.' + restartNote())) return;
-      return apply(j).then(function () { location.reload(); });
+      if (!files.length) throw new Error('No CramBoy backup in this Google Drive yet.');
+      showPicker(files.slice(0, KEEP));
     }).catch(function (e) { rowBusy('drive-restore'); toast((e && e.message) || 'Restore failed', { icon: 'info' }); });
+  }
+  function whenText(t) {
+    var d = new Date(t), now = new Date(), hm = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    if (dayKey(d) === dayKey(now)) return 'Today ' + hm;
+    var y = new Date(now); y.setDate(now.getDate() - 1);
+    if (dayKey(d) === dayKey(y)) return 'Yesterday ' + hm;
+    return d.toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' }) + ' ' + hm;
+  }
+  function showPicker(files) {
+    var box = document.getElementById('drive-pick'), list = document.getElementById('drive-pick-list');
+    list.innerHTML = '';
+    files.forEach(function (f) {
+      var p = f.appProperties || {}, n = +p.saved, g = +p.games;
+      var sub = p.saved != null ? (n === 1 ? '1 saved word' : n + ' saved words') + ' · ' + (g === 1 ? '1 game save' : g + ' game saves') : Math.max(1, Math.round((+f.size || 0) / 1024)) + ' KB';
+      var b = document.createElement('button');
+      b.className = 'flex w-full items-center gap-2 px-4 py-3 text-left active:bg-zinc-50 dark:active:bg-zinc-800';
+      b.innerHTML = '<span class="min-w-0 flex-1"><span class="block"></span><span class="block text-sm text-zinc-500 dark:text-zinc-400"></span></span>' +
+        '<span class="hi-chev text-zinc-300 dark:text-zinc-600"></span>';
+      b.querySelector('.block').textContent = whenText(f.modifiedTime);
+      b.querySelector('.text-sm').textContent = sub;
+      if (window.HI) b.querySelector('.hi-chev').outerHTML = HI('chevron-right', 'size-5 shrink-0 text-zinc-300 dark:text-zinc-600');
+      b.onclick = function () { restoreFile(f, b); };
+      list.appendChild(b);
+    });
+    box.hidden = false;
+    box.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
+  function restoreFile(f, row) {
+    var label = row.querySelector('.text-sm'), was = label.textContent;
+    label.textContent = 'Getting this backup…';
+    api('https://www.googleapis.com/drive/v3/files/' + f.id + '?alt=media').then(function (r) { return r.blob(); }).then(readBackup).then(function (j) {
+      label.textContent = was;
+      if (!confirm('Restore the backup from ' + whenText(f.modifiedTime) + '?\n\n' + summary(j) + '\n\nIt replaces the saved words, progress and game saves on this device.' + restartNote())) return;
+      return apply(j).then(function () { location.reload(); });
+    }).catch(function (e) { label.textContent = was; toast((e && e.message) || 'Restore failed', { icon: 'info' }); });
   }
   function disconnect() {
     if (token && window.google && google.accounts) google.accounts.oauth2.revoke(token, function () {});
@@ -261,6 +305,7 @@
       if (a === 'drive') toDrive(true);
       if (a === 'drive-restore') fromDrive();
       if (a === 'drive-off') disconnect();
+      if (a === 'drive-pick-close') document.getElementById('drive-pick').hidden = true;
     });
     document.getElementById('file-backup').addEventListener('change', function () { if (this.files[0]) fromFile(this.files[0]); this.value = ''; });
     render();
