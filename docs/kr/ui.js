@@ -1513,17 +1513,31 @@
     }
     var w = x.w || x.base, s1 = pickSentence(x.s || '', w, '');
     var sentence = s1 && s1.indexOf(w) >= 0 ? esc(s1).split(esc(w)).join('<mark class="' + C.mark + '">' + esc(w) + '</mark>') : '';
-    // Fewer hints as you learn a word: once you've got it right twice in a row, the picture from the game
-    // only comes with the answer, so the sentence is your only help.
-    var noPic = !review.open && (x.streak >= 2 || (x.streak == null && x.iv >= 3));
-    h += (noPic ? '' : '<img data-shot="' + x.t + '" alt="" class="kr-shot mx-auto mt-4 hidden ' + (review.open ? 'kr-shot-back h-32' : 'h-44') + ' w-auto rounded-xl ring-1 ring-zinc-900/10 dark:ring-white/10">') +
-      (sentence ? '<div class="mt-5 flex items-start gap-1"><p class="kr-selectable flex-1 text-xl leading-relaxed">' + sentence + '</p>' +
-        '<button class="' + SPEAK_BTN + ' -my-1 -mr-2" data-act="rv-say-s" aria-label="Hear the sentence">' + HI('speaker-wave', 'size-5') + '</button></div>'
-        : '<p class="mt-6 text-center text-[34px] font-bold">' + esc(w) + '</p>') +
-      whereHTML(x.place, x.game, 'mt-1');
+    // Fewer hints as you learn a word (by how often you got it right in a row; older words by their interval):
+    // 0-1: picture and sentence · 2: the sentence only · 3: the word in another line from your games (if
+    // there is one) · 4+: just the word. The answer side always shows the picture and the saved sentence.
+    var st = x.streak != null ? x.streak : (x.iv >= 3 ? 2 : 0), stage = review.open ? 1 : st >= 4 ? 5 : st >= 2 ? st : 1;
+    if (x.kind === 'g' && stage > 2) stage = 2;
+    var other = stage === 3 ? otherLine(x, w) : '';
+    if (stage === 3 && !other) stage = 2;
+    if (stage === 5) {
+      var base = x.base || w;
+      h += '<div class="my-auto pb-10 text-center"><p class="kr-selectable text-[44px] font-bold leading-tight">' + esc(base) + '</p>' +
+        (w && w !== base ? '<p class="mt-2 ' + C.muted + '">seen as ' + esc(w) + '</p>' : '') +
+        '<div class="mt-3 flex justify-center"><button class="' + SPEAK_BTN + '" data-act="rv-say-w" aria-label="Hear the word">' + HI('speaker-wave', 'size-6') + '</button></div></div>';
+    } else if (stage === 3) {
+      h += '<p class="mt-8"><span class="rounded-full bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-700 dark:bg-violet-500/15 dark:text-violet-300">Seen in another line</span></p>' +
+        '<p class="kr-selectable mt-3 text-xl leading-relaxed [word-break:keep-all]">' + markOnce(other, w) + '</p>';
+    } else {
+      h += (stage === 2 ? '' : '<img data-shot="' + x.t + '" alt="" class="kr-shot mx-auto mt-4 hidden ' + (review.open ? 'kr-shot-back h-32' : 'h-44') + ' w-auto rounded-xl ring-1 ring-zinc-900/10 dark:ring-white/10">') +
+        (sentence ? '<div class="mt-5 flex items-start gap-1"><p class="kr-selectable flex-1 text-xl leading-relaxed [word-break:keep-all]">' + sentence + '</p>' +
+          '<button class="' + SPEAK_BTN + ' -my-1 -mr-2" data-act="rv-say-s" aria-label="Hear the sentence">' + HI('speaker-wave', 'size-5') + '</button></div>'
+          : '<p class="mt-6 text-center text-[34px] font-bold">' + esc(w) + '</p>') +
+        whereHTML(x.place, x.game, 'mt-1');
+    }
     var foot;
     if (!review.open) {
-      foot = '<p class="mb-3 text-center ' + C.muted + '">' + (x.kind === 'g' ? 'What does “' + esc(x.w || x.base) + '” mean? Think of the verb and the grammar.' : 'What does ' + (sentence ? 'the marked word' : 'this word') + ' mean?') + '</p>' +
+      foot = '<p class="mb-3 text-center ' + C.muted + '">' + (x.kind === 'g' ? 'What does “' + esc(x.w || x.base) + '” mean? Think of the verb and the grammar.' : stage === 5 ? 'What does it mean?' : stage === 3 ? 'What does the marked word mean here?' : 'What does ' + (sentence ? 'the marked word' : 'this word') + ' mean?') + '</p>' +
         '<button class="' + C.primary + '" data-act="rv-show">Show meaning</button>';
     } else {
       var gotDays = nextIv(x), becomesKnown = gotDays >= KNOWN_DAYS;
@@ -1563,7 +1577,48 @@
     return h + '</div>' + (x.ex ? '<p class="mt-2 text-sm ' + C.muted + '">Another example: ' + esc(x.ex) + '</p>' : '') +
       '<button class="mt-1 text-sm font-medium text-zinc-500 underline decoration-zinc-300 underline-offset-2 active:opacity-60 dark:text-zinc-400 dark:decoration-zinc-600" data-act="rv-more">More about this pattern</button></div>';
   }
+  // Mark the word once in a sentence: where it stands as a word (end, space, punctuation or a particle after
+  // it), not inside a longer one (포켓몬 in 포켓몬스터); else the first place it appears.
+  var PARTICLES = /^(이|가|을|를|은|는|에|의|도|만|과|와|로|으로|께|한테|에게|에서|까지|부터|이라|라|이나|나|야|아|요)/;
+  function markOnce(t, w) {
+    var at = -1, i = t.indexOf(w), first = i;
+    while (i >= 0 && at < 0) {
+      var rest = t.slice(i + w.length);
+      if (!rest || /^[\s.,!?…~'"’”)\]]/.test(rest) || PARTICLES.test(rest)) at = i;
+      i = t.indexOf(w, i + 1);
+    }
+    if (at < 0) at = first;
+    if (at < 0) return esc(t);
+    return esc(t.slice(0, at)) + '<mark class="' + C.mark + '">' + esc(w) + '</mark>' + esc(t.slice(at + w.length));
+  }
+  // Every line in your dialogue history (all games), for showing a word in another sentence (review stage 3).
+  var allLines = null;
+  function loadAllLines() {
+    if (!window.KV || !KV.keys) return;
+    KV.keys().then(function (ks) {
+      return Promise.all(ks.filter(function (k) { return /^kr-log:/.test(k); }).map(function (k) { return KV.get(k).catch(function () { return null; }); }));
+    }).then(function (logs) {
+      var out = [];
+      logs.forEach(function (lg) { (lg || []).forEach(function (c) { (c.l || []).forEach(function (t) { out.push(String(t).replace(/\s+/g, ' ').trim()); }); }); });
+      allLines = out;
+    }).catch(function () {});
+  }
+  // A line other than the saved sentence that has the word, cut down to its sentence; the same one for a
+  // word all session (picked by its review count, so it changes from session to session).
+  function otherLine(x, w) {
+    var lines = (log || []).reduce(function (a, c) { return a.concat(c.l || []); }, []).map(function (t) { return String(t).replace(/\s+/g, ' ').trim(); }).concat(allLines || []);
+    var own = String(x.s || '').replace(/\s+/g, ''), seen = {}, hits = [];
+    lines.forEach(function (t) {
+      if (!w || t.indexOf(w) < 0) return;
+      var s1 = pickSentence(t, w, ''), key = s1.replace(/\s+/g, '');
+      if (!s1 || s1.indexOf(w) < 0 || seen[key] || own.indexOf(key) >= 0 || key.indexOf(own) >= 0 && own) return;
+      seen[key] = 1; hits.push(s1);
+    });
+    return hits.length ? hits[(x.reps || 0) % hits.length] : '';
+  }
+  setTimeout(loadAllLines, 1500);   // ready before the first review card
   function openReview() {
+    if (!allLines) loadAllLines();
     menuTab = 'review';
     var rx0 = review && reviewWord();
     if (rx0 && rx0.kind === 'g' && !dicts[rx0.lang || 'ko']) { loadDict(rx0.lang || 'ko').then(function () { if (card.querySelector('[data-act=rv-show], [data-act=rv-good]')) openReview(); }).catch(function () {}); }
