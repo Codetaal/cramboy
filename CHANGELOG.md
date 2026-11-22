@@ -2,6 +2,10 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.37.2
+- Home: the review banner is bright purple again, with our mascot faint inside it.
+- Full-screen pages (Study, Backup, Help & FAQ, All games) show the mascot faintly in the top right corner.
+
 ## 0.37.1
 - Home: the review banner uses a calmer, deeper purple.
 
