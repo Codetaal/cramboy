@@ -33,7 +33,7 @@
   var panel = el('div', { id: 'kr-panel', className: 'kr-hidden' });
   var textBox = el('div', { className: 'kr-text' });
   panel.appendChild(textBox);
-  var pill = el('button', { id: 'kr-pill', ariaLabel: 'Words', innerHTML: HI('academic-cap') });
+  var pill = el('button', { id: 'kr-pill', ariaLabel: 'Words', innerHTML: HI('mascot-cap-mono') });
   var box = el('div', { id: 'kr-box', className: 'kr-hidden' });
   var boxText = el('div', { className: 'kr-box-text' });
   var boxArrow = el('div', { className: 'kr-box-arrow' });
@@ -1766,7 +1766,7 @@
     var week = later.filter(function (x) { return dueAt(x) < endWeek; }).length;
     var mins = Math.max(1, Math.round(due * 10 / 60));
     var h = '<div class="mt-4 ' + C.card + ' text-center">' +
-      '<span class="mx-auto grid size-12 place-items-center rounded-2xl ' + (due ? 'bg-violet-100 text-violet-700 dark:bg-violet-600/15 dark:text-violet-400' : 'bg-emerald-100 text-emerald-600 dark:bg-emerald-400/15 dark:text-emerald-400') + '">' + HI(due ? 'academic-cap' : 'check', 'size-6') + '</span>';
+      '<span class="mx-auto grid size-12 place-items-center rounded-2xl ' + (due ? 'bg-violet-100 text-violet-700 dark:bg-violet-600/15 dark:text-violet-400' : 'bg-emerald-100 text-emerald-600 dark:bg-emerald-400/15 dark:text-emerald-400') + '">' + HI(due ? 'mascot-cap' : 'check', due ? 'size-9' : 'size-6') + '</span>';
     if (due) h += '<p class="mt-2 text-3xl font-bold">' + due + (due === 1 ? ' word' : ' words') + '</p><p class="' + C.muted + '">ready to review · about ' + mins + (mins === 1 ? ' minute' : ' minutes') + '</p>' +
       '<button class="mt-4 ' + C.primary + '" data-act="start-review">Start review</button>';
     else h += '<p class="mt-2 text-xl font-bold">Nothing to review right now</p><p class="mt-0.5 px-2 ' + C.muted + '">' +
@@ -1851,7 +1851,7 @@
 
 
 
-  function updatePill() { if (!settings.debug) pill.innerHTML = HI('academic-cap'); }
+  function updatePill() { if (!settings.debug) pill.innerHTML = HI('mascot-cap-mono'); }
   // Uses the app-wide toast (emu.js), so every notification looks the same.
   function toast(msg, icon) { if (window.toast) window.toast(msg, { icon: icon }); }
 
