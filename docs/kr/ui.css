@@ -233,10 +233,10 @@
 #kr-sheet.kr-page .kr-card [data-pin] { transition: background-color .15s, box-shadow .15s; }
 #kr-sheet.kr-page .kr-card:not(.kr-scrolled) [data-pin] { background-color: transparent; }
 #kr-sheet.kr-page .kr-card [data-pin] > [aria-hidden] { display: none; }   /* the fade under the tabs: not needed with glass */
-#kr-sheet.kr-page .kr-card.kr-scrolled [data-pin] { background-color: rgba(250, 250, 250, .82); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); }
+#kr-sheet.kr-page .kr-card.kr-scrolled [data-pin] { background-color: rgba(250, 250, 250, .6); -webkit-backdrop-filter: saturate(200%) blur(24px); backdrop-filter: saturate(200%) blur(24px); }
 #kr-sheet.kr-page .kr-card.kr-scrolled [data-pin][data-sheet-head] { box-shadow: 0 1px 0 rgba(0, 0, 0, .08); }
 @media (prefers-color-scheme: dark) {
-  #kr-sheet.kr-page .kr-card.kr-scrolled [data-pin] { background-color: rgba(9, 9, 11, .8); }
+  #kr-sheet.kr-page .kr-card.kr-scrolled [data-pin] { background-color: rgba(9, 9, 11, .6); }
   #kr-sheet.kr-page .kr-card.kr-scrolled [data-pin][data-sheet-head] { box-shadow: 0 1px 0 rgba(255, 255, 255, .08); }
 }
 
