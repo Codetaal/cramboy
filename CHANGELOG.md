@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.41.6
+- Study page in a game: the frosted-glass bars are more see-through with a stronger blur.
+
 ## 0.41.5
 - Study page in a game: when you scroll, the pinned bars turn to frosted glass (blurred, as in iOS) instead of a solid colour.
 
