@@ -2,6 +2,11 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.39.0
+- Google Drive keeps one backup per day for the last 5 days you backed up. Restore from Google Drive lists them (date, saved words, game saves) so you can pick which one to restore.
+- The first backup from a new phone (or after a reinstall) adds a backup instead of replacing the one already in Drive.
+- Resume: a snapshot is never overwritten when a game starts without the Resume card (for example when reading it failed); it's kept and offered as "Earlier" next time. Reading a snapshot is retried once.
+
 ## 0.38.2
 - Home: the "Made by CramLab" donation box is quieter (outline only, smaller logo, softer text).
 
