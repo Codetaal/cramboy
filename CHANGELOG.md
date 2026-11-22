@@ -2,6 +2,10 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.41.4
+- Word popover: its text can be selected and copied (press and hold).
+- Live subtitles: thinner dotted underline, drawn inside the line, so the line above no longer peeks in at the top of the box.
+
 ## 0.41.3
 - The translate button in the game shows the graduation cap icon again.
 - Study page in a game: the mascot shows behind the title too (the pinned bars are see-through until you scroll).
