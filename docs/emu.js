@@ -1032,10 +1032,14 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     var o = padTouches[id];
     if (!o) {
       if (!start) return null;
-      var onPad = Math.abs(x - z.cx) <= z.D / 2 && Math.abs(y - z.cy) <= z.D / 2;
+      // On the D-pad or just beside / below it (a missed press): steer from the pad's own centre, so a
+      // touch just below it is Down. Only a touch further away moves the pad to the thumb.
+      var reach = z.D / 2 + z.D * 0.35;
+      var onPad = Math.abs(x - z.cx) <= reach && Math.abs(y - z.cy) <= reach;
       o = padTouches[id] = onPad ? { x: z.cx, y: z.cy, moved: false } : { x: x, y: y, moved: true };
     }
-    var dx = x - o.x, dy = y - o.y, r = Math.hypot(dx, dy), max = z.D * 0.45;
+    // The pad only follows the thumb once it slides well past the pad (not for a press just beside it).
+    var dx = x - o.x, dy = y - o.y, r = Math.hypot(dx, dy), max = z.D * 0.85;
     if (r > max) { o.x += dx * (1 - max / r); o.y += dy * (1 - max / r); o.moved = true; dx = x - o.x; dy = y - o.y; r = max; }
     var keys = 0, cls = '';
     if (r > z.D * 0.1) {
