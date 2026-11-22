@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.41.7
+- Study page in a game: the pinned bars are back to the solid page colour (no frosted glass), fading in softly when you scroll.
+
 ## 0.41.6
 - Study page in a game: the frosted-glass bars are more see-through with a stronger blur.
 
