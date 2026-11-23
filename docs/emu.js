@@ -18,7 +18,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   var prevSaveFlag = 0, saveDirty = false;
   // ctlOpacity: how see-through the floating controls are (the same in portrait and landscape).
   // ctlLift: how far (px) the controls sit above their lowest spot, for phones or hands that like them higher.
-  var settings = { sound: true, controls: 'floating', resume: false, ctlOpacity: 0.7, ctlLift: 0, fps: false };
+  var settings = { sound: true, controls: 'floating', resume: true, ctlOpacity: 0.7, ctlLift: 0, fps: false };
 
   var TAGLINE = '';   // no slogan; the line only shows status messages
   // ---------- startup ----------
@@ -32,7 +32,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   // is ready starts as soon as it is).
   var pendingStart = null;
   loadLibrary().then(renderLibrary).catch(function () {}).then(showHome);
-  KV.get('settings').then(function (s) { if (s) { settings.sound = s.sound !== false; settings.controls = 'floating'; /* the Below layout was removed */ settings.resume = s.resume === true; if (s.ctlOpacity >= 0.15 && s.ctlOpacity <= 1) settings.ctlOpacity = s.ctlOpacity; if (s.ctlLift >= 0 && s.ctlLift <= 120) settings.ctlLift = s.ctlLift; settings.fps = s.fps === true; $('fps').hidden = !settings.fps; } }).catch(function () {});
+  KV.get('settings').then(function (s) { if (s) { settings.sound = s.sound !== false; settings.controls = 'floating'; /* the Below layout was removed */ settings.resume = s.resume !== false;   /* on unless turned off */ if (s.ctlOpacity >= 0.15 && s.ctlOpacity <= 1) settings.ctlOpacity = s.ctlOpacity; if (s.ctlLift >= 0 && s.ctlLift <= 120) settings.ctlLift = s.ctlLift; settings.fps = s.fps === true; $('fps').hidden = !settings.fps; } }).catch(function () {});
 
   var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var standalone = window.navigator.standalone || matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches;
