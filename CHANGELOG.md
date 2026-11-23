@@ -2,6 +2,11 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.42.1
+
+- Flashcard answers lead with the meaning: big and purple, with extra senses small underneath; the word and sentence step back.
+- The app icon uses the same purples as the Study banner on the home screen.
+
 ## 0.42.0
 - Review gives fewer hints as you learn a word (by how often you got it right in a row): first the picture and sentence, then the sentence only, then the word in another line from your dialogue history, and finally just the word. The answer side always shows the picture and your saved sentence. Again sends a word back to the start.
 - Korean words in review sentences are no longer broken in the middle at a line end.
