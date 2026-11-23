@@ -301,8 +301,8 @@
     var d = Math.round(h / 24); return d + (d === 1 ? ' day ago' : ' days ago');
   }
   // A backup is due when there is something new since the last one (a game played or a word saved after
-  // it) and it's more than 3 days old, or when there has never been one and there is something to keep.
-  var DUE_AFTER = 3 * 86400000;
+  // it) and it's a day old or more, or when there has never been one and there is something to keep.
+  var DUE_AFTER = 86400000;
   function render() {
     var card = document.getElementById('backup'); if (!card) return;
     return Promise.all([KV.get('backup-last'), KV.get('backup-drive'), KV.get('kr-saved'), KV.get('library')]).then(function (r) {
@@ -310,7 +310,7 @@
       var news = 0;
       lib.forEach(function (e) { if (e && e.played > news) news = e.played; });
       words.forEach(function (x) { if (x && x.t > news) news = x.t; });
-      var due = last ? Date.now() - last.at > DUE_AFTER && news > last.at : news > 0;
+      var due = last ? Date.now() - last.at >= DUE_AFTER && news > last.at : news > 0;
       document.getElementById('backup-last').textContent = last ? 'Last backup ' + ago(last.at) + (last.where === 'drive' ? ' · Google Drive' : ' · file') : 'No backup yet';
       document.getElementById('backup-last').classList.toggle('text-amber-600', due);
       // The Backup button on the home screen: an amber chip with how long ago when a backup is due.
