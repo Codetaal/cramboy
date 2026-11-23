@@ -2,6 +2,10 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.45.1
+
+- Quitting a game no longer backs up to Google Drive (reverts 0.45.0).
+
 ## 0.45.0
 
 - Quitting a game (power button) also backs up to Google Drive when it's connected, as the day's automatic backup.
