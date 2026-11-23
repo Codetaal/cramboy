@@ -2,6 +2,10 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.44.0
+
+- Backups include each game's newest Resume snapshot, so after a restore the game picks up where you left off.
+
 ## 0.43.0
 
 - Swipe a notification away: up, left or right.
