@@ -2,6 +2,10 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.43.0
+
+- Swipe a notification away: up, left or right.
+
 ## 0.42.1
 
 - Flashcard answers lead with the meaning: big and purple, with extra senses small underneath; the word and sentence step back.
