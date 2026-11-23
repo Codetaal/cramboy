@@ -105,8 +105,12 @@ body.touch-mode #controls, body.touch-mode #kr-pill { visibility: hidden; }
 .hm-ib { position: relative; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 999px; color: #52525b; background: #fff;
   box-shadow: 0 0 0 1px rgba(24, 24, 27, .07); }
 .hm-ib:active { background: #f4f4f5; }
-.hm-dot { display: none; position: absolute; top: 7px; right: 8px; width: 8px; height: 8px; border-radius: 50%; background: #f59e0b; box-shadow: 0 0 0 2px #fff; }
-#btn-backup:has(#backup-sum[data-old=true]) .hm-dot { display: block; }   /* a backup is due */
+/* A backup is due (backup.js render): the Backup icon becomes an amber chip with how long ago, "9 days". */
+#btn-backup .hm-bk-due { display: none; }
+#btn-backup.due { display: flex; gap: 6px; width: auto; padding: 0 13px 0 11px; color: #b45309; background: #fef3c7; box-shadow: 0 0 0 1px #fde68a; }
+#btn-backup.due:active { background: #fde68a; }
+#btn-backup.due .hm-bk-idle { display: none; } #btn-backup.due .hm-bk-due { display: block; }
+#backup-chip { font-size: 14px; font-weight: 650; white-space: nowrap; }
 .hm-card { --hm-ink: #18181b; --hm-muted: #71717a; margin-top: 16px; overflow: hidden; border-radius: 22px; color: var(--hm-ink); background: #fff;
   box-shadow: 0 0 0 1px rgba(24, 24, 27, .06), 0 1px 2px rgba(0, 0, 0, .05); }
 .hm-card[hidden], .hm-card [hidden], .hm-links[hidden], .hm-line[hidden] { display: none !important; }
@@ -152,7 +156,7 @@ body.touch-mode #controls, body.touch-mode #kr-pill { visibility: hidden; }
 .hm-add:active { background: #fafafa; }
 .hm-add-tile { display: grid; place-items: center; width: 44px; height: 44px; flex: none; border-radius: 12px; border: 1.5px dashed #c4b5fd; }
 @media (prefers-color-scheme: dark) {
-  .hm-ib { color: #d4d4d8; background: #18181b; box-shadow: 0 0 0 1px rgba(255, 255, 255, .1); } .hm-ib:active { background: #27272a; } .hm-dot { box-shadow: 0 0 0 2px #18181b; }
+  .hm-ib { color: #d4d4d8; background: #18181b; box-shadow: 0 0 0 1px rgba(255, 255, 255, .1); } .hm-ib:active { background: #27272a; } #btn-backup.due { color: #fbbf24; background: rgba(245, 158, 11, .14); box-shadow: 0 0 0 1px rgba(245, 158, 11, .3); } #btn-backup.due:active { background: rgba(245, 158, 11, .24); }
   .hm-card { --hm-ink: #fff; --hm-muted: #a1a1aa; background: #18181b; box-shadow: 0 0 0 1px rgba(255, 255, 255, .1); }
   .hm-tile { color: #c4b5fd; background: rgba(124, 58, 237, .2); } .hm-go.soft { color: #c4b5fd; background: rgba(124, 58, 237, .2); }
   .hm-fire { color: #fbbf24; } .hm-hr, .hm-gi { background: rgba(255, 255, 255, .06); } .hm-head button, .hm-add { color: #a78bfa; } .hm-add-tile { border-color: rgba(167, 139, 250, .45); } .hm-add:active { background: rgba(255, 255, 255, .04); }

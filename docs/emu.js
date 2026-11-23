@@ -352,7 +352,12 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     if (window.CBBackup) { CBBackup.render(); CBBackup.prepare(); }
     requestAnimationFrame(function () { requestAnimationFrame(function () { pg.classList.remove('off'); }); });
   }
-  $('btn-backup').onclick = function () { openBackup(false); };
+  // When the amber "9 days" chip shows and Google Drive is connected, a tap backs up right away (the chip
+  // goes once it's done); otherwise it opens the Backup page.
+  $('btn-backup').onclick = function () {
+    if (this.classList.contains('due') && window.CBBackup && CBBackup.driveOn()) { toast('Backing up to Google Drive…', { icon: 'info', ms: 20000 }); CBBackup.toDrive(true); return; }
+    openBackup(false);
+  };
   // After a restore the app restarts to load everything; come back on the Backup page, not the home screen.
   try {
     if (sessionStorage.getItem('cb-reopen') === 'backup') {

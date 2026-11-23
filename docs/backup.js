@@ -300,19 +300,31 @@
     var h = Math.round(m / 60); if (h < 24) return h + ' h ago';
     var d = Math.round(h / 24); return d + (d === 1 ? ' day ago' : ' days ago');
   }
+  // A backup is due when there is something new since the last one (a game played or a word saved after
+  // it) and it's more than 3 days old, or when there has never been one and there is something to keep.
+  var DUE_AFTER = 3 * 86400000;
   function render() {
     var card = document.getElementById('backup'); if (!card) return;
-    return Promise.all([KV.get('backup-last'), KV.get('backup-drive'), KV.get('kr-saved')]).then(function (r) {
-      var last = r[0], drive = r[1], saved = (r[2] || []).length;
-      var old = !last || Date.now() - last.at > 7 * 86400000;
+    return Promise.all([KV.get('backup-last'), KV.get('backup-drive'), KV.get('kr-saved'), KV.get('library')]).then(function (r) {
+      var last = r[0], drive = r[1], words = r[2] || [], saved = words.length, lib = r[3] || [];
+      var news = 0;
+      lib.forEach(function (e) { if (e && e.played > news) news = e.played; });
+      words.forEach(function (x) { if (x && x.t > news) news = x.t; });
+      var due = last ? Date.now() - last.at > DUE_AFTER && news > last.at : news > 0;
       document.getElementById('backup-last').textContent = last ? 'Last backup ' + ago(last.at) + (last.where === 'drive' ? ' · Google Drive' : ' · file') : 'No backup yet';
-      document.getElementById('backup-last').classList.toggle('text-amber-600', old && saved > 0);
-      // The Backup row on the home screen: when you last backed up (orange when it's been a while).
-      var sum = document.getElementById('backup-sum');
-      if (sum) { sum.textContent = last ? 'Last backup ' + ago(last.at) : saved ? 'No backup yet' : 'Words, progress and game saves'; sum.classList.toggle('text-amber-600', old && saved > 0); sum.classList.toggle('dark:text-amber-400', old && saved > 0); }
+      document.getElementById('backup-last').classList.toggle('text-amber-600', due);
+      // The Backup button on the home screen: an amber chip with how long ago when a backup is due.
+      var sum = document.getElementById('backup-sum'), btn = document.getElementById('btn-backup');
+      if (sum) sum.textContent = last ? 'Last backup ' + ago(last.at) : saved ? 'No backup yet' : 'Words, progress and game saves';
+      if (btn) {
+        btn.classList.toggle('due', due);
+        var days = last ? Math.max(1, Math.floor((Date.now() - last.at) / 86400000)) : 0;
+        document.getElementById('backup-chip').textContent = last ? days + (days === 1 ? ' day' : ' days') : 'Back up';
+        btn.setAttribute('aria-label', due ? 'Backup: ' + (last ? 'last one ' + days + (days === 1 ? ' day' : ' days') + ' ago' : 'no backup yet') : 'Backup');
+      }
       // The same in the game menu (App > Backup).
       var msum = document.getElementById('m-backup-sum');
-      if (msum) { msum.textContent = sum ? sum.textContent : ''; msum.dataset.old = String(old && saved > 0); }
+      if (msum) { msum.textContent = sum ? sum.textContent : ''; msum.dataset.old = String(due); }
       document.getElementById('backup-drive').hidden = !GOOGLE_CLIENT_ID;
       document.getElementById('backup-drive-on').hidden = !drive;
       document.getElementById('backup-drive-label').textContent = drive ? 'Back up to Google Drive now' : 'Back up to Google Drive';
@@ -335,6 +347,6 @@
     var done = null; try { done = sessionStorage.getItem('cb-restored'); sessionStorage.removeItem('cb-restored'); } catch (e) {}
     if (done) setTimeout(function () { toast('Backup restored: ' + done.replace(/, from .*$/, ''), { icon: 'ok', ms: 5000 }); }, 600);
   }
-  window.CBBackup = { collect: collect, readBackup: readBackup, apply: apply, render: render, prepare: prepare, toFile: toFile, toDrive: toDrive };
+  window.CBBackup = { driveOn: function () { return connected && !!GOOGLE_CLIENT_ID; }, collect: collect, readBackup: readBackup, apply: apply, render: render, prepare: prepare, toFile: toFile, toDrive: toDrive };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();
