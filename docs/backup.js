@@ -1,6 +1,6 @@
-// Backup and restore: everything the app keeps on this device except the games themselves (and the
-// resume snapshots, which are large and get made again). Saved words, known words, review schedule,
-// flashcard screenshots, reading stats, settings and every game's in-game save.
+// Backup and restore: everything the app keeps on this device except the games themselves. Saved words,
+// known words, review schedule, flashcard screenshots, reading stats, settings, every game's in-game save
+// and its newest resume snapshot (about 1.5 MB a game), so a restore picks up where you left off.
 // To a file (share sheet / download), or to the user's own Google Drive (hidden app folder).
 (function () {
   'use strict';
@@ -12,19 +12,26 @@
   // Restore can go back. Older versions used a single 'cramboy-backup.json.gz', which counts as one of them.
   var DRIVE_PREFIX = 'cramboy-backup', KEEP = 5;
   // Not backed up: the games (and the list of them, which would point at games a new device doesn't have),
-  // resume snapshots, and the backup's own bookkeeping.
-  var SKIP = /^(rom($|:)|library$|snap|backup-)/;
+  // the older resume snapshots (only the newest, snap:<game>, goes along), and the backup's own bookkeeping.
+  var SKIP = /^(rom($|:)|library$|snap-(prev|kept):|backup-)/;
 
   function b64(u8) { var s = '', i; for (i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s); }
   function unb64(s) { var b = atob(s), u = new Uint8Array(b.length); for (var i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; }
   // Values are JSON, strings, or binary (game saves): binary is stored as {"$b64": "..."}.
-  function enc(v) {
+  // A resume snapshot is an object holding binary ({t, app, data}), so plain objects get one level more.
+  function enc(v, deep) {
     if (v instanceof ArrayBuffer) return { $b64: b64(new Uint8Array(v)), $ab: 1 };
     if (ArrayBuffer.isView(v)) return { $b64: b64(new Uint8Array(v.buffer, v.byteOffset, v.byteLength)) };
+    if (deep !== false && v && typeof v === 'object' && !Array.isArray(v)) {
+      var o = {}; Object.keys(v).forEach(function (k) { o[k] = enc(v[k], false); }); return o;
+    }
     return v;
   }
-  function dec(v) {
+  function dec(v, deep) {
     if (v && typeof v === 'object' && typeof v.$b64 === 'string') { var u = unb64(v.$b64); return v.$ab ? u.buffer : u; }
+    if (deep !== false && v && typeof v === 'object' && !Array.isArray(v)) {
+      var o = {}; Object.keys(v).forEach(function (k) { o[k] = dec(v[k], false); }); return o;
+    }
     return v;
   }
 
@@ -53,15 +60,24 @@
       return j;
     });
   }
-  // A game's resume snapshots belong to its old save: drop them for every game whose save comes back,
-  // so starting it doesn't jump to a moment that doesn't match the restored save.
+  // A game's resume snapshots belong to its old save: for every game whose save comes back, the backup's
+  // own snapshot replaces them, and without one (older backups) they go, so starting it doesn't jump to a
+  // moment that doesn't match the restored save.
   function apply(j) {
     var keys = Object.keys(j.data);
     if (window.cbBeforeRestore) window.cbBeforeRestore();   // a game that's open stops saving (emu.js)
     var snaps = [];
-    keys.forEach(function (k) { var m = /^sav-(.+)$/.exec(k); if (m) snaps.push('snap:' + m[1], 'snap-prev:' + m[1]); });
-    return Promise.all(keys.map(function (k) { return SKIP.test(k) ? null : KV.set(k, dec(j.data[k])); })
-      .concat(snaps.map(function (k) { return KV.del(k).catch(function () {}); })))
+    keys.forEach(function (k) {
+      var m = /^sav-(.+)$/.exec(k); if (!m) return;
+      snaps.push('snap-prev:' + m[1], 'snap-kept:' + m[1]);
+      if (!j.data['snap:' + m[1]]) snaps.push('snap:' + m[1]);
+    });
+    // The list of games with snapshots (so turning Resume off can delete them) keeps this device's too.
+    var ids = keys.filter(function (k) { return /^snap:/.test(k); }).map(function (k) { return k.slice(5); });
+    return KV.get('snap-ids').catch(function () { return null; }).then(function (mine) {
+      return KV.set('snap-ids', (mine || []).concat(j.data['snap-ids'] || [], ids).filter(function (id, i, a) { return a.indexOf(id) === i; }));
+    }).then(function () { return Promise.all(keys.map(function (k) { return SKIP.test(k) || k === 'snap-ids' ? null : KV.set(k, dec(j.data[k])); })
+      .concat(snaps.map(function (k) { return KV.del(k).catch(function () {}); }))); })
       .then(function () { try { sessionStorage.setItem('cb-restored', summary(j)); sessionStorage.setItem('cb-reopen', 'backup'); } catch (e) {} });
   }
   function summary(j) {
