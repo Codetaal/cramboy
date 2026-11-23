@@ -2,6 +2,11 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.46.0
+
+- Resume is on by default for new installs (if you turned it off, it stays off).
+- Backup reminder: the Backup icon on the home screen turns into an amber chip ("3 days") when you've played or saved words since a backup that's a day old or more. With Google Drive connected, tapping it backs up right away.
+
 ## 0.45.1
 
 - Quitting a game no longer backs up to Google Drive (reverts 0.45.0).
