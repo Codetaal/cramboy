@@ -24,17 +24,19 @@ BOX = [
 ]
 # Grape: C cream, D deep purple (shadow, d-pad), O light purple (buttons), L pale lilac (middle ray).
 COL = {'C': (255, 248, 231), 'D': (74, 40, 150), 'O': (170, 130, 255), 'L': (236, 224, 255)}
-TOP, BOT = (196, 160, 255), (124, 82, 224)
+# The same purples as the review banner on the home screen (app.css): bright at the top, deep at the bottom.
+TOP, MID, BOT = (168, 85, 247), (139, 92, 246), (109, 40, 217)
 
 CELL = 30   # px per pixel; the 16 x 16 map is drawn smaller than the icon so it has room around it
 
 def draw():
     img = Image.new('RGB', (512, 512))
     px = img.load()
-    # Background: 16 flat bands from light to deep amber, like the old icon.
+    # Background: 16 flat bands, light to deep (through the middle purple).
     for band in range(16):
         t = band / 15
-        c = tuple(round(TOP[i] + (BOT[i] - TOP[i]) * t) for i in range(3))
+        a, b, f = (TOP, MID, t * 2) if t < .5 else (MID, BOT, (t - .5) * 2)
+        c = tuple(round(a[i] + (b[i] - a[i]) * f) for i in range(3))
         for y in range(band * 32, band * 32 + 32):
             for x in range(512):
                 px[x, y] = c
