@@ -1406,18 +1406,58 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   // ---------- toast: the one notification style for the whole app ----------
   // toast(text, { icon: 'ok' | 'star' | 'trash' | 'warn' | 'info', ms, action: 'Undo', onAction })
   var TOAST_ICON = { ok: 'text-emerald-400', star: 'text-violet-400', trash: 'text-zinc-400', warn: 'text-red-400', info: 'text-sky-400', clock: 'text-violet-400' };
-  var toastTimer = null;
+  var toastTimer = null, toastMs = 0;
+  function toastHide() {
+    var t = $('toast');
+    clearTimeout(toastTimer); t.removeAttribute('data-show'); $('toast-action').onclick = null;
+  }
   function toast(text, o) {
     o = o || {};
     var t = $('toast'), btn = $('toast-action');
     $('toast-icon').innerHTML = o.icon ? HI(o.icon, 'size-5 ' + (TOAST_ICON[o.icon] || '')) : '';
     $('toast-text').textContent = text;
     btn.hidden = !o.action; btn.textContent = o.action || '';
-    btn.onclick = function () { hide(); if (o.onAction) o.onAction(); };
-    function hide() { clearTimeout(toastTimer); t.removeAttribute('data-show'); btn.onclick = null; }
+    btn.onclick = function () { toastHide(); if (o.onAction) o.onAction(); };
+    t.style.transform = t.style.opacity = t.style.transition = '';
     t.setAttribute('data-show', '');
+    toastMs = o.ms || (o.icon === 'warn' ? 3500 : 2000);
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(hide, o.ms || (o.icon === 'warn' ? 3500 : 2000));
+    toastTimer = setTimeout(toastHide, toastMs);
   }
+  // Swipe a toast away: up, left or right. It follows the finger; let go past a short distance (or with a
+  // flick) and it flies off that way, otherwise it springs back. The timer waits while it is held.
+  (function () {
+    var t = $('toast'), sx, sy, dx, dy, t0, id = null;
+    t.addEventListener('pointerdown', function (e) {
+      if (!t.hasAttribute('data-show') || e.target.closest('#toast-action')) return;
+      id = e.pointerId; sx = e.clientX; sy = e.clientY; dx = dy = 0; t0 = Date.now();
+      try { t.setPointerCapture(id); } catch (_) {}
+      clearTimeout(toastTimer); t.style.transition = 'none';
+    });
+    t.addEventListener('pointermove', function (e) {
+      if (e.pointerId !== id) return;
+      dx = e.clientX - sx; dy = Math.min(0, e.clientY - sy);   // up freely, down not at all
+      if (Math.abs(dx) > -dy) dy = 0; else dx = 0;              // one direction at a time
+      var d = Math.max(Math.abs(dx), -dy);
+      t.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+      t.style.opacity = String(Math.max(0.2, 1 - d / 160));
+    });
+    function end(e) {
+      if (e.pointerId !== id) return;
+      id = null;
+      var d = Math.max(Math.abs(dx), -dy), fast = d / Math.max(1, Date.now() - t0) > 0.5;
+      t.style.transition = 'transform .2s ease-out, opacity .2s ease-out';
+      if (d > 50 || (fast && d > 15)) {
+        t.style.transform = dx ? 'translate(' + (dx > 0 ? 1 : -1) * innerWidth + 'px,0)' : 'translate(0,-120px)';
+        t.style.opacity = '0';
+        setTimeout(function () { toastHide(); setTimeout(function () { if (!t.hasAttribute('data-show')) t.style.transform = t.style.opacity = t.style.transition = ''; }, 220); }, 200);
+      } else {
+        t.style.transform = ''; t.style.opacity = '';
+        toastTimer = setTimeout(toastHide, Math.max(1500, toastMs / 2));
+      }
+    }
+    t.addEventListener('pointerup', end);
+    t.addEventListener('pointercancel', end);
+  })();
   window.toast = toast;
 })();

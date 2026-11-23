@@ -301,7 +301,7 @@
 
     <!-- One toast for every notification in the app (see toast() in emu.js). Centred with auto margins, not a
          translate: a -50% shift follows the text width and would slide sideways when the text changes. -->
-    <div id="toast" role="status" aria-live="polite" class="pointer-events-none fixed inset-x-0 top-[calc(10px+env(safe-area-inset-top))] z-50 mx-auto flex w-fit max-w-[calc(100%-2rem)] -translate-y-3 items-center gap-2.5 whitespace-nowrap rounded-2xl bg-zinc-900/95 py-2.5 pl-3.5 pr-4 text-[15px] font-medium text-white opacity-0 shadow-xl ring-1 ring-white/10 transition duration-200 data-[show]:translate-y-0 data-[show]:opacity-100">
+    <div id="toast" role="status" aria-live="polite" class="pointer-events-none fixed inset-x-0 top-[calc(10px+env(safe-area-inset-top))] z-50 mx-auto flex w-fit max-w-[calc(100%-2rem)] -translate-y-3 items-center gap-2.5 whitespace-nowrap rounded-2xl bg-zinc-900/95 py-2.5 pl-3.5 pr-4 text-[15px] font-medium text-white opacity-0 shadow-xl ring-1 ring-white/10 touch-none select-none transition duration-200 data-[show]:pointer-events-auto data-[show]:translate-y-0 data-[show]:opacity-100">
       <span id="toast-icon" class="flex empty:hidden"></span><span id="toast-text" class="truncate"></span>
       <button id="toast-action" class="pointer-events-auto -my-1 -mr-1.5 ml-1 rounded-lg px-2 py-1 font-semibold text-violet-400 active:bg-white/10" hidden></button>
     </div>
