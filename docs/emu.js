@@ -1334,9 +1334,20 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
       else deleteSnapshots().then(function () { toast('Resume is off; snapshots deleted', { icon: 'trash' }); });
     }
     if (m === 'home') {
-      // Reload once the snapshot is stored (or after 1.5 s at most, if storage is slow).
+      // Reload once the snapshot is stored (or after 1.5 s at most, if storage is slow). With Google Drive
+      // connected, the save and snapshot also go to Drive first (as the day's automatic backup), in this tap
+      // so a sign-in that ran out can renew itself; 20 s at most, then it leaves anyway.
       var left = false, leave = function () { if (!left) { left = true; location.reload(); } };
-      checkSave(true); takeSnapshot(true).then(leave); setTimeout(leave, 1500);
+      checkSave(true);
+      var snapped = takeSnapshot(true);
+      if (window.CBBackup && CBBackup.connected()) {
+        toast('Backing up to Google Drive…', { icon: 'info', ms: 20000 });
+        CBBackup.toDrive(true, { auto: true, quiet: true, after: snapped }).then(function (ok) {
+          toast(ok ? 'Backed up to Google Drive' : 'Couldn\'t back up to Google Drive', { icon: ok ? 'ok' : 'warn' });
+          setTimeout(leave, ok ? 700 : 1500);
+        });
+        setTimeout(leave, 20000);
+      } else { snapped.then(leave); setTimeout(leave, 1500); }
     }
   });
   ['touchstart', 'touchmove', 'touchend'].forEach(function (t) {

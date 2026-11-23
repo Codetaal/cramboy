@@ -204,29 +204,34 @@
     else { if (b.dataset.label) label.textContent = b.dataset.label; delete b.dataset.label; b.classList.remove('bk-busy'); }
   }
   var busy = false;
-  function toDrive(interactive) {
-    if (busy) return Promise.resolve();
+  // interactive: a tap (may sign in, shows progress and a toast). o.auto: counts as the day's automatic
+  // backup even so; o.quiet: no progress or toasts; o.after: wait for this first (a snapshot being stored).
+  // Resolves true once it's in Drive, false if it wasn't backed up.
+  function toDrive(interactive, o) {
+    o = o || {};
+    if (busy) return Promise.resolve(false);
     busy = true;
+    var auto = !interactive || !!o.auto, ui = interactive && !o.quiet;
     var firstHere = false, signedIn = token && Date.now() < tokenExp - 60000;
     var tp = getToken(interactive);   // sign-in first, in the same tap
-    if (interactive) rowBusy('drive', signedIn ? 'Backing up…' : 'Signing in with Google…');
+    if (ui) rowBusy('drive', signedIn ? 'Backing up…' : 'Signing in with Google…');
     // Whether this device was connected before is read alongside.
-    return Promise.all([KV.get('backup-drive'), tp]).then(function (r0) {
+    return Promise.all([KV.get('backup-drive'), tp, o.after]).then(function (r0) {
       firstHere = !r0[0];
-      if (interactive) rowBusy('drive', 'Backing up…');
+      if (ui) rowBusy('drive', 'Backing up…');
       return Promise.all([collect(), listFiles()]);
     }).then(function (r) {
       var j = r[0], d = j.data;
-      var props = { saved: String((d['kr-saved'] || []).length), games: String(Object.keys(d).filter(function (k) { return /^sav-/.test(k); }).length), auto: interactive ? '0' : '1' };
+      var props = { saved: String((d['kr-saved'] || []).length), games: String(Object.keys(d).filter(function (k) { return /^sav-/.test(k); }).length), auto: auto ? '1' : '0' };
       // Your own backups are always new files; the automatic one updates today's automatic backup. The first
       // time on this device (another phone, or after a reinstall) always makes a new one.
-      var today = !interactive && !firstHere && r[1].filter(function (f) { return f.appProperties && f.appProperties.auto === '1' && dayKey(f.modifiedTime) === dayKey(Date.now()); })[0];
+      var today = auto && !firstHere && r[1].filter(function (f) { return f.appProperties && f.appProperties.auto === '1' && dayKey(f.modifiedTime) === dayKey(Date.now()); })[0];
       return gzip(JSON.stringify(j)).then(function (blob) { return upload(blob, today || null, props); });
     })
       .then(prune)
       .then(function () { busy = false; rowBusy('drive'); return markDone('drive'); })
-      .then(function () { if (interactive) toast('Backed up to Google Drive', { icon: 'ok' }); })
-      .catch(function (e) { busy = false; rowBusy('drive'); render(); if (interactive && !(e && e.quiet)) toast((e && e.message) || 'Backup failed', { icon: 'info' }); });
+      .then(function () { if (ui) toast('Backed up to Google Drive', { icon: 'ok' }); return true; })
+      .catch(function (e) { busy = false; rowBusy('drive'); render(); if (ui && !(e && e.quiet)) toast((e && e.message) || 'Backup failed', { icon: 'info' }); return false; });
   }
   // Restore: list the backups in Drive and let the user pick one (newest first).
   function setPick(open) {
@@ -335,6 +340,6 @@
     var done = null; try { done = sessionStorage.getItem('cb-restored'); sessionStorage.removeItem('cb-restored'); } catch (e) {}
     if (done) setTimeout(function () { toast('Backup restored: ' + done.replace(/, from .*$/, ''), { icon: 'ok', ms: 5000 }); }, 600);
   }
-  window.CBBackup = { collect: collect, readBackup: readBackup, apply: apply, render: render, prepare: prepare, toFile: toFile, toDrive: toDrive };
+  window.CBBackup = { connected: function () { return connected && !!GOOGLE_CLIENT_ID; }, collect: collect, readBackup: readBackup, apply: apply, render: render, prepare: prepare, toFile: toFile, toDrive: toDrive };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();
