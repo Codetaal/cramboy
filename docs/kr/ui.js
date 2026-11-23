@@ -1530,7 +1530,7 @@
         '<p class="kr-selectable mt-3 text-xl leading-relaxed [word-break:keep-all]">' + markOnce(other, w) + '</p>';
     } else {
       h += (stage === 2 ? '' : '<img data-shot="' + x.t + '" alt="" class="kr-shot mx-auto mt-4 hidden ' + (review.open ? 'kr-shot-back h-32' : 'h-44') + ' w-auto rounded-xl ring-1 ring-zinc-900/10 dark:ring-white/10">') +
-        (sentence ? '<div class="mt-5 flex items-start gap-1"><p class="kr-selectable flex-1 text-xl leading-relaxed [word-break:keep-all]">' + sentence + '</p>' +
+        (sentence ? '<div class="mt-5 flex items-start gap-1"><p class="kr-selectable flex-1 [word-break:keep-all] ' + (review.open ? 'text-base leading-relaxed text-zinc-500 dark:text-zinc-400' : 'text-xl leading-relaxed') + '">' + sentence + '</p>' +
           '<button class="' + SPEAK_BTN + ' -my-1 -mr-2" data-act="rv-say-s" aria-label="Hear the sentence">' + HI('speaker-wave', 'size-5') + '</button></div>'
           : '<p class="mt-6 text-center text-[34px] font-bold">' + esc(w) + '</p>') +
         whereHTML(x.place, x.game, 'mt-1');
@@ -1542,12 +1542,17 @@
     } else {
       var gotDays = nextIv(x), becomesKnown = gotDays >= KNOWN_DAYS;
       if (x.kind === 'g') h += grammarBackHTML(x);
-      else h += '<div class="mt-5 ' + C.card + '"><div class="flex items-center gap-1"><p class="kr-selectable min-w-0 flex-1 text-3xl font-bold">' + esc(x.base || x.w) +
-        (x.reading ? '<span class="ml-2 text-base font-normal text-zinc-500 dark:text-zinc-400">' + esc(x.reading) + '</span>' : '') + '</p>' +
-        '<button class="' + SPEAK_BTN + ' -mr-2" data-act="rv-say-w" aria-label="Hear the word">' + HI('speaker-wave', 'size-6') + '</button></div>' +
-        '<p class="mt-0.5 text-lg text-zinc-700 dark:text-zinc-200">' + esc(x.gloss || '—') + '</p>' +
-        (x.kind === 'g' && x.ex ? '<p class="mt-1 text-sm ' + C.muted + '">' + esc(x.ex) + '</p>' : '') +
-        '<button class="mt-1 text-sm font-medium text-zinc-500 underline decoration-zinc-300 underline-offset-2 active:opacity-60 dark:text-zinc-400 dark:decoration-zinc-600" data-act="rv-more">More about this word</button></div>';
+      else {
+        // The meaning is what the card asks for, so it leads; the word sits small above it. A long gloss
+        // ("about; to face; toward") shows its first sense big and the rest quietly underneath.
+        var senses = String(x.gloss || '—').split(/\s*;\s*/), first = senses.shift(), rest = senses.join('; ');
+        h += '<div class="mt-5 ' + C.card + '"><div class="flex items-center gap-1"><p class="kr-selectable min-w-0 flex-1 truncate text-lg font-semibold text-zinc-700 dark:text-zinc-200">' + esc(x.base || x.w) +
+          (x.reading ? '<span class="ml-2 text-sm font-normal text-zinc-500 dark:text-zinc-400">' + esc(x.reading) + '</span>' : '') + '</p>' +
+          '<button class="' + SPEAK_BTN + ' -my-2 -mr-2" data-act="rv-say-w" aria-label="Hear the word">' + HI('speaker-wave', 'size-5') + '</button></div>' +
+          '<p class="kr-selectable mt-1 text-[28px] font-bold leading-tight text-violet-700 dark:text-violet-300">' + esc(first) + '</p>' +
+          (rest ? '<p class="kr-selectable mt-1.5 text-[15px] leading-snug ' + C.muted + '">' + esc(rest) + '</p>' : '') +
+          '<button class="mt-3 text-sm font-medium text-zinc-500 underline decoration-zinc-300 underline-offset-2 active:opacity-60 dark:text-zinc-400 dark:decoration-zinc-600" data-act="rv-more">More about this word</button></div>';
+      }
       foot = '<div class="grid grid-cols-2 gap-2">' +
         '<button class="' + C.btn + ' flex-col !gap-0 !py-2.5" data-act="rv-again">Again<span class="text-xs font-normal text-zinc-500 dark:text-zinc-400">soon</span></button>' +
         '<button class="' + C.primary + ' flex-col !gap-0 !py-2.5" data-act="rv-good">Got it' +
