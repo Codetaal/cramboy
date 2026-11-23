@@ -2,6 +2,10 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.45.0
+
+- Quitting a game (power button) also backs up to Google Drive when it's connected, as the day's automatic backup.
+
 ## 0.44.1
 
 - Quit to home uses a power icon.
