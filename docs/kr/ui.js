@@ -846,7 +846,7 @@
       (from ? '<span class="kr-pmut text-[13px] text-zinc-500 dark:text-zinc-400">from ' + esc(from) + '</span>' : '') +
       (built ? '<span class="kr-pmut text-[13px] text-zinc-500 dark:text-zinc-400">' + esc(built) + '</span>' : '') + '</p>' +
       (type || rare ? '<p class="kr-ptype text-xs font-semibold uppercase tracking-wider text-violet-600 dark:text-violet-300">' + esc(type || '') + (rare ? RARE_CHIP.replace('ml-1.5', type ? 'ml-1.5' : '') : '') + '</p>' : '') + '</div>' +
-      (nameBtn ? '<button class="kr-pname -mt-0.5 shrink-0 rounded-lg px-2 py-1 text-[12.5px] font-semibold text-zinc-500 ring-1 ring-inset ring-zinc-200 active:bg-zinc-100 dark:text-zinc-400 dark:ring-zinc-600 dark:active:bg-zinc-700" data-pop="name" aria-label="This is a name">Name</button>' : '') +
+      (nameBtn ? '<button class="kr-pname -mt-0.5 flex shrink-0 items-center gap-1 rounded-full bg-zinc-100 py-1.5 pl-2 pr-2.5 text-[12.5px] font-semibold text-zinc-600 active:bg-zinc-200 dark:bg-zinc-700 dark:text-zinc-300 dark:active:bg-zinc-600" data-pop="name" aria-label="Mark as a name: no translation, not reviewed">' + HI('user', 'size-3.5') + 'It\'s a name</button>' : '') +
       '<button class="kr-psay -mr-1 -mt-0.5 grid size-8 shrink-0 place-items-center rounded-full text-zinc-500 active:bg-zinc-100 dark:text-zinc-400 dark:active:bg-zinc-700" data-pop="say" aria-label="Hear it">' + HI('speaker-wave', 'size-5') + '</button></div>';
   }
   function fillPopWord(word, raw, sentence, span, hits) {

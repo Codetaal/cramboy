@@ -214,7 +214,9 @@
 #kr-pop.kr-dock .kr-pmean b { font-weight: 700; }
 #kr-pop.kr-dock .kr-psay { width: 44px; height: 44px; margin: -4px -6px 0 0; color: var(--ink); background: var(--well); }
 #kr-pop.kr-dock .kr-psay:active { transform: scale(.92); }
-#kr-pop.kr-dock .kr-pname { margin: 4px 2px 0 0; padding: 8px 10px; border-radius: 999px; font-size: 13px; color: var(--soft); --tw-ring-color: transparent; background: transparent; }
+#kr-pop.kr-dock .kr-pname { margin: 4px 4px 0 0; height: 36px; padding: 0 12px 0 10px; gap: 5px; border-radius: 999px; font-size: 13.5px; font-weight: 600; color: var(--ink); background: var(--well); }
+#kr-pop.kr-dock .kr-pname .hi { width: 15px; height: 15px; opacity: .7; }
+#kr-pop.kr-dock .kr-pname:active { transform: scale(.96); }
 #kr-pop.kr-dock .kr-pacts { display: flex; gap: 8px; margin-top: 20px; }
 #kr-pop.kr-dock .kr-seg { flex: 1; display: grid; grid-template-columns: 1fr 1fr; padding: 4px; border-radius: 999px; background: var(--well); }
 #kr-pop.kr-dock .kr-pa { display: flex; align-items: center; justify-content: center; gap: 6px; height: 44px; margin: 0; padding: 0 12px; border-radius: 999px;
