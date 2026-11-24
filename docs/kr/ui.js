@@ -944,10 +944,10 @@
   }
   // After a re-render of the subtitles, the tapped word's new element.
   function boxSpan(w) { return Array.prototype.filter.call(document.querySelectorAll('#kr-box .kr-w, #kr-panel .kr-w'), function (n) { return n.getAttribute('data-w') === w; })[0] || null; }
-  // In a game held upright: a focused subtitle card laid over the subtitle box (the game is paused while
-  // it's open). Its top shows the message again, larger, with the word you're on marked: tap another word
-  // there to switch. Under it the word itself, its meaning and the actions. Otherwise (the reading panel,
-  // landscape): a bubble above the word, pointing at it (below when there's no room above).
+  // In a game held upright: a compact dark bubble right under the subtitle box, its tip pointing at the word
+  // (above the box when there's no room below). Word and speaker on top, the meaning, then one row:
+  // Learning, Known and › for the details. No dimming; tap another word to move it there. Otherwise (the
+  // reading panel, landscape): the light bubble above the word.
   var popSwitching = false;
   function placePop(span) {
     if (!pop) return;
@@ -958,45 +958,25 @@
     var dock = holder && holder.id === 'kr-box' && v.h > v.w;
     pop.classList.toggle('kr-dock', !!dock);
     if (dock) {
-      arrow.hidden = true;
-      if (popSwitching) pop.classList.add('kr-instant');
       var nav = pop.querySelector('.kr-pacts');
-      if (nav && !nav.querySelector('.kr-seg')) {
-        var st = nav.querySelectorAll('[data-pop=learning], [data-pop=known]');
-        if (st.length) { var seg = el('div', { className: 'kr-seg' }); nav.insertBefore(seg, st[0]); Array.prototype.forEach.call(st, function (n) { seg.appendChild(n); }); }
-        var more = nav.querySelector('.kr-pa-more'); if (more) more.innerHTML = 'More' + HI('chevron-right', 'size-4');
+      if (nav && !nav.querySelector('.kr-pa-go')) {
+        var more = nav.querySelector('.kr-pa-more');
+        if (more) { more.className = 'kr-pa kr-pa-go'; more.setAttribute('aria-label', 'More about this word'); more.innerHTML = HI('chevron-right', 'size-5'); }
       }
-      // "from 성도에서도", the word type and Rare on one small line under the word.
+      // "from 성도에서도", the word type and Rare on the word's line, small.
       var from = pop.querySelector('.kr-phead p .kr-pmut'), meta = pop.querySelector('.kr-ptype');
-      if (from) {
-        if (!meta) { meta = el('p', { className: 'kr-ptype' }); from.parentNode.parentNode.appendChild(meta); }
-        meta.insertBefore(from, meta.firstChild);
-      }
-      if (meta) meta.classList.add('kr-pmeta');
-      // The message this word is in, as in the box, with this word marked.
-      var msg = span.closest('.kr-box-text > div') || span.parentNode, words = msg.querySelectorAll('.kr-w');
-      var line = pop.querySelector('.kr-pline') || pop.insertBefore(el('div', { className: 'kr-pline' }), pop.firstChild);
-      line.innerHTML = msg.innerHTML;
-      Array.prototype.forEach.call(line.querySelectorAll('.kr-w'), function (n, k) {
-        n.className = 'kr-lw' + (words[k] === span ? ' kr-on' : '') + (words[k] && /kr-saved/.test(words[k].className) ? ' kr-saved' : '') + (words[k] && /kr-known|kr-name/.test(words[k].className) ? ' kr-plain' : '');
-        n.setAttribute('data-k', k); n.setAttribute('role', 'button');
-      });
-      line._words = words;
-      var on = line.querySelector('.kr-on'); if (on && line.scrollHeight > line.clientHeight) line.scrollTop = on.offsetTop - line.clientHeight / 2;
-      var H = pop.offsetHeight;
-      // As wide as the box (so it covers it), and from its top edge down.
-      var L = Math.max(4, hr.left - 4), W2 = Math.min(v.w - L - 4, hr.width + 8);
-      pop.style.left = L + 'px'; pop.style.width = W2 + 'px'; pop.style.right = 'auto';
-      H = pop.offsetHeight;
-      pop.style.top = Math.max(8, Math.min(hr.top - 6, v.h - 8 - H)) + 'px';
-      // Everything else dims (a tap there closes it, like anywhere).
-      var scrim = document.getElementById('kr-pop-scrim') || document.body.appendChild(el('div', { id: 'kr-pop-scrim' }));
-      scrim.style.top = '0px'; scrim.style.bottom = '0px';
+      if (from && meta) meta.insertBefore(from, meta.firstChild);
+      if (meta) { meta.classList.add('kr-pmeta'); var wp = pop.querySelector('.kr-phead p'); if (wp && meta.parentNode !== wp) wp.appendChild(meta); }
+      var L = Math.max(6, hr.left + 4), W2 = Math.min(v.w - L - 6, hr.width - 8);
+      pop.style.left = L + 'px'; pop.style.width = W2 + 'px';
+      var H = pop.offsetHeight, below = hr.bottom + 12 + H <= v.h - 8;
+      pop.style.top = (below ? hr.bottom + 12 : Math.max(8, hr.top - 12 - H)) + 'px';
+      arrow.hidden = false;
+      arrow.className = 'kr-pop-arrow ' + (below ? 'kr-up' : 'kr-down');
+      arrow.style.left = Math.max(22, Math.min(W2 - 22, r.left + r.width / 2 - L)) + 'px';
       return;
     }
-    var pl = pop.querySelector('.kr-pline'); if (pl) pl.remove();
     pop.style.width = pop.style.right = '';
-    var sc = document.getElementById('kr-pop-scrim'); if (sc) sc.remove();
     arrow.hidden = false;
     var W = pop.offsetWidth, H = pop.offsetHeight;
     // Vertically against the subtitle box, so the bubble never covers the other line of text.
@@ -1006,14 +986,6 @@
     arrow.className = 'kr-pop-arrow ' + (above ? 'kr-down' : 'kr-up');
     arrow.style.left = Math.max(16, Math.min(W - 16, r.left + r.width / 2 - left)) + 'px';
   }
-  // A word tapped in the focused card's copy of the message: open that word (as tapping it in the box).
-  document.addEventListener('click', function (e) {
-    var w = e.target.closest && e.target.closest('#kr-pop .kr-lw'); if (!w || !pop) return;
-    e.stopImmediatePropagation();
-    var line = w.closest('.kr-pline'), to = line && line._words && line._words[+w.getAttribute('data-k')];
-    if (!to || !to.isConnected) return;
-    popSwitching = true; to.click(); setTimeout(function () { popSwitching = false; }, 0);
-  }, true);
   // Tapping the right side of the subtitle box (not on a word) opens the card on the first word of the
   // message on screen; a small magnifier there hints at it.
   var boxLook = el('div', { className: 'kr-box-look', ariaHidden: 'true', innerHTML: HI('magnifying-glass', 'size-full') });
