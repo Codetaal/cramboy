@@ -2,6 +2,10 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.48.2
+
+- Tapping the right side of the subtitle box opens the first word you can see in it (not the first word of the whole message).
+
 ## 0.48.1
 
 - Tapping a subtitle word opens a compact dark bubble under the subtitle box, pointing at the word: the word and its meaning, then Learning, Known and › for details. No dimming; tap another word to move it there. (Replaces the focused card.)
