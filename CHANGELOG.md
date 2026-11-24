@@ -2,6 +2,11 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.48.0
+
+- Focused subtitle card: tapping a word opens a card over the subtitle box with the whole message on top, the word you're on marked; tap another word there to switch. Below: the word, its meaning and the actions.
+- Tap the right side of the subtitle box (a small magnifier hints at it) to open the card on the first word.
+
 ## 0.47.3
 
 - Word card is calmer: just the word and speaker on top, with "from …", the word type and Rare word on one small line.
