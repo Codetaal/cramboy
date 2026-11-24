@@ -916,20 +916,27 @@
     if (dock) {
       arrow.hidden = true;
       var nav = pop.querySelector('.kr-pacts');
-      if (nav && !nav.querySelector('[data-pop=prev]')) {
-        var more = nav.querySelector('.kr-pa-more'); if (more) more.innerHTML = HI('book-open', 'size-5') + 'More';
-        nav.insertAdjacentHTML('afterbegin', '<button class="kr-pa kr-pnav" data-pop="prev" aria-label="Previous word">' + HI('chevron-left', 'size-5') + 'Prev</button>');
-        nav.insertAdjacentHTML('beforeend', '<button class="kr-pa kr-pnav" data-pop="next" aria-label="Next word">' + HI('chevron-right', 'size-5') + 'Next</button>');
+      // Learning / Known as one switch, More beside it; underneath, the words before and after this one,
+      // tappable, so you can walk through the line from down here.
+      if (nav && !nav.querySelector('.kr-seg')) {
+        var st = nav.querySelectorAll('[data-pop=learning], [data-pop=known]');
+        if (st.length) { var seg = el('div', { className: 'kr-seg' }); nav.insertBefore(seg, st[0]); Array.prototype.forEach.call(st, function (n) { seg.appendChild(n); }); }
+        var more = nav.querySelector('.kr-pa-more'); if (more) more.innerHTML = 'More' + HI('chevron-right', 'size-4');
       }
-      var all = boxWords(), i = all.indexOf(span);
-      Array.prototype.forEach.call(pop.querySelectorAll('.kr-pnav'), function (n) { n.disabled = n.dataset.pop === 'prev' ? i <= 0 : i < 0 || i >= all.length - 1; });
+      var all = boxWords(), i = all.indexOf(span), pager = pop.querySelector('.kr-pager');
+      if (!pager) pager = pop.appendChild(el('div', { className: 'kr-pager' }));
+      var side = function (to, w) {
+        return w ? '<button class="kr-pnav kr-pnav-' + to + '" data-pop="' + to + '" aria-label="' + (to === 'prev' ? 'Previous' : 'Next') + ' word: ' + esc(w) + '">' +
+          (to === 'prev' ? HI('chevron-left', 'size-4') + '<span>' + esc(w) + '</span>' : '<span>' + esc(w) + '</span>' + HI('chevron-right', 'size-4')) + '</button>' : '<span></span>';
+      };
+      pager.innerHTML = side('prev', all[i - 1] && all[i - 1].textContent) + (all.length > 1 && i >= 0 ? '<span class="kr-pcount">' + (i + 1) + ' / ' + all.length + '</span>' : '<span></span>') + side('next', all[i + 1] && all[i + 1].textContent);
       pop.style.left = pop.style.top = '';
       // The game below the box dims, so the card reads as on top (a tap there closes it, like anywhere).
       var scrim = document.getElementById('kr-pop-scrim') || document.body.appendChild(el('div', { id: 'kr-pop-scrim' }));
       scrim.style.top = hr.bottom + 'px';
       return;
     }
-    Array.prototype.forEach.call(pop.querySelectorAll('.kr-pnav'), function (n) { n.remove(); });
+    var pg = pop.querySelector('.kr-pager'); if (pg) pg.remove();
     var sc = document.getElementById('kr-pop-scrim'); if (sc) sc.remove();
     arrow.hidden = false;
     var W = pop.offsetWidth, H = pop.offsetHeight;
