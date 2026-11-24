@@ -841,12 +841,29 @@
       }
     };
   }
+  // The flag on a word: things you can tell the app about it. It's a name (no translation, not reviewed),
+  // and two reports that open a ready-made GitHub issue, so a wrong dictionary entry or a word split in the
+  // wrong place can be fixed for everyone.
+  var FLAG_MENU = '<div class="kr-pflag-menu" hidden role="menu">' +
+    '<button data-pop="name" role="menuitem">' + HI('user', 'size-5') + '<span><b>It\'s a name</b><small>No translation, not reviewed</small></span></button>' +
+    '<button data-pop="report-meaning" role="menuitem">' + HI('exclamation-triangle', 'size-5') + '<span><b>Wrong meaning</b><small>Report it so the dictionary gets fixed</small></span></button>' +
+    '<button data-pop="report-split" role="menuitem">' + HI('scissors', 'size-5') + '<span><b>Not one word</b><small>Report that it was split in the wrong place</small></span></button></div>';
+  function toggleFlagMenu(open) {
+    var m = pop && pop.querySelector('.kr-pflag-menu'), f = pop && pop.querySelector('.kr-pflag'); if (!m) return;
+    open = open == null ? m.hidden : open;
+    m.hidden = !open; if (f) f.setAttribute('aria-expanded', String(open));
+  }
+  function reportWord(what, base, word, gloss, sentence) {
+    var body = 'Word: ' + base + (word !== base ? ' (from ' + word + ')' : '') + '\nMeaning shown: ' + (gloss || '(none)') +
+      '\nSentence: ' + (sentence || '') + '\nGame: ' + (game.name || '') + '\nLanguage: ' + lang + '\nApp version: ' + (window.APP_VERSION || '') + '\n\nWhat it should be:\n';
+    window.open('https://github.com/Codetaal/cramboy/issues/new?labels=dictionary&title=' + encodeURIComponent(what + ': ' + base) + '&body=' + encodeURIComponent(body), '_blank', 'noopener');
+  }
   function popHead(title, from, type, built, rare, nameBtn) {
     return '<div class="kr-phead flex items-start gap-2"><div class="min-w-0 flex-1"><p class="flex flex-wrap items-baseline gap-x-1.5"><span class="kr-pw kr-selectable text-[22px] font-bold leading-tight">' + esc(title) + '</span>' +
       (from ? '<span class="kr-pmut text-[13px] text-zinc-500 dark:text-zinc-400">from ' + esc(from) + '</span>' : '') +
       (built ? '<span class="kr-pmut text-[13px] text-zinc-500 dark:text-zinc-400">' + esc(built) + '</span>' : '') + '</p>' +
       (type || rare ? '<p class="kr-ptype text-xs font-semibold uppercase tracking-wider text-violet-600 dark:text-violet-300">' + (type ? '<span>' + esc(type) + '</span>' : '') + (rare ? RARE_CHIP.replace('ml-1.5', type ? 'ml-1.5' : '') : '') + '</p>' : '') + '</div>' +
-      (nameBtn ? '<button class="kr-pname -mt-0.5 flex shrink-0 items-center gap-1 rounded-full bg-zinc-100 py-1.5 pl-2 pr-2.5 text-[12.5px] font-semibold text-zinc-600 active:bg-zinc-200 dark:bg-zinc-700 dark:text-zinc-300 dark:active:bg-zinc-600" data-pop="name" aria-label="Mark as a name: no translation, not reviewed">' + HI('user', 'size-3.5') + 'It\'s a name</button>' : '') +
+      (nameBtn ? '<button class="kr-pflag -mt-0.5 grid size-8 shrink-0 place-items-center rounded-full text-zinc-400 active:bg-zinc-100 dark:text-zinc-500 dark:active:bg-zinc-700" data-pop="flag" aria-label="Flag this word" aria-expanded="false">' + HI('flag', 'size-[18px]') + '</button>' : '') +
       '<button class="kr-psay -mr-1 -mt-0.5 grid size-8 shrink-0 place-items-center rounded-full text-zinc-500 active:bg-zinc-100 dark:text-zinc-400 dark:active:bg-zinc-700" data-pop="say" aria-label="Hear it">' + HI('speaker-wave', 'size-5') + '</button></div>';
   }
   function fillPopWord(word, raw, sentence, span, hits) {
@@ -854,7 +871,7 @@
     var draw = function () {
       var meaning = hit ? verbFirst(hit).split('; ').slice(0, 2).join('; ') : 'Not in the offline dictionary. Tap More for other dictionaries.';
       var bd = breakdownText(word, hit, lang);
-      pop.innerHTML = popHead(base, bd ? '' : base !== word ? word : '', wordType(hit, lang), bd, isRare(hit, lang), true) +
+      pop.innerHTML = FLAG_MENU + popHead(base, bd ? '' : base !== word ? word : '', wordType(hit, lang), bd, isRare(hit, lang), true) +
         (hit && hit.reading ? '<p class="kr-pmut text-sm text-zinc-500 dark:text-zinc-400">' + esc(hit.reading) + '</p>' : '') +
         '<p class="kr-pmean mt-0.5 truncate text-[15px] text-zinc-700 dark:text-zinc-200">' + esc(meaning) + '</p>' + popButtons(wordStatus(word, base));
       placePop(span);
@@ -864,6 +881,12 @@
       var b = e.target.closest('[data-pop]'); if (!b) return;
       var a = b.dataset.pop;
       if (a === 'say') return speak(base, lang);
+      if (a === 'flag') return toggleFlagMenu();
+      if (a === 'report-meaning' || a === 'report-split') {
+        toggleFlagMenu(false);
+        return reportWord(a === 'report-meaning' ? 'Wrong meaning' : 'Not one word', base, word, hit ? hit.gloss : '', sentence);
+      }
+      toggleFlagMenu(false);
       if (a === 'more') { closePop(); return asPage('game', function () { showWordSheet(word, raw, sentence, hits, 'game'); }); }   // the word as a full page
       if (a === 'name') {   // mark it as a name: no underline, no translation, not reviewed
         var st2 = nameStems(raw, lang), stem = st2[1] || st2[0];   // without its particle: 지겸이 → 지겸
@@ -930,8 +953,8 @@
           (to === 'prev' ? HI('chevron-left', 'size-4') + '<span>' + esc(w) + '</span>' : '<span>' + esc(w) + '</span>' + HI('chevron-right', 'size-4')) + '</button>' : '<span></span>';
       };
       // Kept calm: the top is just the word and the speaker. "from 성도에서도", the word type and Rare go on one
-      // small line under it, and It's a name moves down to the strip, between the neighbouring words.
-      var nameBtn = pop.querySelector('.kr-pname'), from = pop.querySelector('.kr-phead p .kr-pmut');
+      // small line under it.
+      var from = pop.querySelector('.kr-phead p .kr-pmut');
       var meta = pop.querySelector('.kr-ptype');
       if (from) {
         if (!meta) { meta = el('p', { className: 'kr-ptype' }); from.parentNode.parentNode.appendChild(meta); }
@@ -939,7 +962,6 @@
       }
       if (meta) meta.classList.add('kr-pmeta');
       pager.innerHTML = side('prev', all[i - 1] && all[i - 1].textContent) + '<span class="kr-pmid"></span>' + side('next', all[i + 1] && all[i + 1].textContent);
-      if (nameBtn) pager.querySelector('.kr-pmid').appendChild(nameBtn);
       // Right under the subtitle box, following it wherever you've moved it; above it when there's no room
       // below. That side of the game dims, so the card reads as on top (a tap there closes it, like anywhere).
       var H = pop.offsetHeight, below = hr.bottom + 8 + H <= v.h - 8;
