@@ -2,6 +2,12 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.47.3
+
+- Word card is calmer: just the word and speaker on top, with "from …", the word type and Rare word on one small line.
+- A flag next to the speaker: It's a name, or Not a word (hides it: no underline, not counted or reviewed). Both can be undone.
+- Marking a name strips stacked particles (성도에서도 → 성도).
+
 ## 0.47.2
 
 - Word card: marking a word as a name is a clear button, "It's a name".
