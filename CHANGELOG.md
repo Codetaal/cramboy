@@ -2,6 +2,10 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.48.3
+
+- Better word lookup: forms with 겠/었/았 before the ending (알겠지 → 알다, 먹었지 → 먹다) and "is" glued to a noun (옆이니까 → 옆, 학생입니다 → 학생).
+
 ## 0.48.2
 
 - Tapping the right side of the subtitle box opens the first word you can see in it (not the first word of the whole message).
