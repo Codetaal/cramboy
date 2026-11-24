@@ -113,7 +113,7 @@
 #kr-box[data-font="cute"], .kr-font-sample[data-font="cute"] { font-family: 'Jua', 'Kosugi Maru', 'Apple SD Gothic Neo', sans-serif; font-weight: 400; letter-spacing: 0; }
 .kr-font-sample[data-font="gothic"] { font-family: 'Apple SD Gothic Neo', -apple-system, 'Noto Sans KR', sans-serif; font-weight: 700; }
 /* A thin dotted underline drawn as text decoration (inside the line), so it never reaches into the line below. */
-#kr-box .kr-w { border-bottom: 0; border-radius: 2px; text-decoration: underline dotted var(--f-line); text-decoration-thickness: 1px;
+#kr-box .kr-w { border-bottom: 0; border-radius: 2px; text-decoration: underline dotted var(--f-line); text-decoration-thickness: 2px;
   text-underline-offset: calc(2.5px * var(--k, 1.46)); text-decoration-skip-ink: none; -webkit-text-decoration-skip: none; }
 #kr-box .kr-w.kr-saved { color: var(--f-saved); text-decoration-color: var(--f-saved); }
 #kr-box .kr-w.kr-known, #kr-box .kr-w.kr-name { text-decoration-color: transparent; }
