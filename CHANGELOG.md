@@ -2,6 +2,10 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.47.2
+
+- Word card: marking a word as a name is a clear button, "It's a name".
+
 ## 0.47.1
 
 - The word card opens right under the subtitle box (above it when there's no room), wherever you've moved the box.
