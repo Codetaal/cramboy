@@ -1005,10 +1005,13 @@
       '<h1 class="mt-1 text-[34px] font-bold leading-tight tracking-tight">' + title + '</h1>' +
       (below ? '<div class="pt-3" data-sheet-head>' + below + '</div>' : '<div data-sheet-head></div>');
     // data-pin: these bars are see-through until you scroll, so the mascot behind the title shows (ui.css).
-    return '<div class="sticky top-0 z-20 -mx-4 flex h-[60px] items-center gap-1 bg-zinc-50 px-4 dark:bg-zinc-950" data-pin>' + (back || '') + '<div class="flex-1"></div>' + RESUME + '</div>' +
+    return '<div class="sticky top-0 z-20 -mx-4 flex h-[60px] items-center gap-1 bg-zinc-50 px-4 dark:bg-zinc-950" data-pin>' + (back || '') + '<div class="flex-1"></div></div>' +
       '<h1 class="text-[34px] font-bold leading-tight tracking-tight">' + title + '</h1>' +
       (below ? '<div class="sticky top-[60px] z-10 -mx-4 bg-zinc-50 px-4 pb-1 pt-2 dark:bg-zinc-950" data-sheet-head data-pin>' + below + FADE_DOWN + '</div>' : '<div data-sheet-head></div>');
   }
+  // Pages over a game (Study, a word, settings): Resume as a big button stuck to the bottom, in thumb reach.
+  var RESUME_BAR = '<div class="sticky bottom-0 z-20 -mx-4 mt-auto bg-gradient-to-t from-zinc-50 from-60% to-zinc-50/0 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-6 dark:from-zinc-950 dark:to-zinc-950/0">' +
+    '<button class="flex w-full items-center justify-center gap-2 rounded-2xl bg-violet-600 py-3.5 text-[17px] font-semibold text-white shadow-lg shadow-violet-600/25 active:scale-[0.98] active:bg-violet-500" data-act="close">' + HI('play', 'size-5') + 'Resume</button></div>';
   var RESUME = '<button class="flex shrink-0 items-center gap-1.5 rounded-full bg-violet-600 px-4 py-2.5 font-semibold text-white shadow-sm active:scale-95 active:bg-violet-500" data-act="close">' + HI('play', 'size-4') + 'Resume</button>';
   // Back to game is the secondary button everywhere else (soft lilac); solid purple is kept for real actions
   // (Start review, Show meaning, Got it).
@@ -1021,7 +1024,8 @@
     swipePrev = sheet.hidden ? null : { html: card.innerHTML, y: card.scrollTop, full: sheet.classList.contains('kr-full') };
     sheet.classList.toggle('kr-full', !!full);
     // The handle on a bottom sheet; on the Study page a page without its own header (a word) starts a bit lower.
-    card.innerHTML = (full || html.indexOf('data-sheet-head') >= 0 ? '' : pageMode ? '<div class="h-4"></div>' : GRAB) + html + (withBack && !pageMode ? BACK : '<div class="pb-[calc(1.5rem+env(safe-area-inset-bottom))]"></div>');
+    card.innerHTML = (full || html.indexOf('data-sheet-head') >= 0 ? '' : pageMode ? '<div class="h-4"></div>' : GRAB) + html +
+      (pageMode && pageFrom !== 'home' && !full ? RESUME_BAR : withBack && !pageMode ? BACK : '<div class="pb-[calc(1.5rem+env(safe-area-inset-bottom))]"></div>');
     var newBack = card.querySelector('[data-swipe-back]');
     if (!sheet.hidden && oldBack && newBack && oldBack.outerHTML === newBack.outerHTML) swipePrev = keep;
     if (swipePrev && /data-loading/.test(swipePrev.html)) swipePrev = keep;   // not the "Looking up…" placeholder
@@ -1250,7 +1254,7 @@
   function wordHead() {
     if (pageMode && pageFrom === 'home') return '<div class="flex h-11 items-center" data-sheet-head>' + backLink(TAB_LABEL[wordBack], 'data-act="back"') + '</div>';
     if (pageMode) return '<div class="sticky top-0 z-20 -mx-4 flex h-[60px] items-center gap-1 bg-zinc-50 px-4 dark:bg-zinc-950" data-sheet-head>' +
-      backLink(TAB_LABEL[wordBack], 'data-act="back"') + '<div class="flex-1"></div>' + RESUME + '</div>';
+      backLink(TAB_LABEL[wordBack], 'data-act="back"') + '<div class="flex-1"></div></div>';
     return '<button class="-ml-1.5 -mt-1 mb-1 flex items-center gap-0.5 py-1 pr-2 font-medium text-zinc-600 active:opacity-60 dark:text-zinc-300" data-act="back" data-swipe-back>' +
       HI('chevron-left', 'size-5') + TAB_LABEL[wordBack] + '</button>';
   }
