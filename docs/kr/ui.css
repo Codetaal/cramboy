@@ -234,7 +234,13 @@
 #kr-pop.kr-dock .kr-pnav .hi { flex: none; }
 #kr-pop.kr-dock .kr-pnav-next { justify-self: end; }
 #kr-pop.kr-dock .kr-pnav:active { color: var(--ink); }
-#kr-pop.kr-dock .kr-pcount { font-size: 12px; font-variant-numeric: tabular-nums; color: var(--soft); opacity: .7; }
+#kr-pop.kr-dock .kr-pmeta { display: flex; flex-wrap: wrap; align-items: baseline; margin-top: 4px; font-size: 13.5px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--soft); }
+#kr-pop.kr-dock .kr-pmeta > * { font-size: inherit; color: inherit; }
+#kr-pop.kr-dock .kr-pmeta > * + *::before { content: '·'; margin: 0 6px; color: var(--soft); opacity: .6; }
+#kr-pop.kr-dock .kr-pmeta .kr-rare { margin: 0; padding: 0; background: none; font-size: inherit; font-weight: 600; letter-spacing: 0; text-transform: none; color: #d97706; }
+@media (prefers-color-scheme: dark) { #kr-pop.kr-dock .kr-pmeta .kr-rare { color: #fbbf24; } }
+#kr-pop.kr-dock .kr-pmid { display: flex; justify-content: center; }
+#kr-pop.kr-dock .kr-pager .kr-pname { margin: 0; height: 34px; font-size: 13px; color: var(--soft); background: var(--well); }
 #kr-pop-scrim { position: fixed; left: 0; right: 0; bottom: 0; z-index: 58; background: rgba(0, 0, 0, .42); animation: kr-fade .2s; }
 @keyframes kr-fade { from { opacity: 0; } }
 .kr-pop-arrow { position: absolute; width: 14px; height: 14px; margin-left: -7px; transform: rotate(45deg); background: inherit; }

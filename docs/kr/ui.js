@@ -746,7 +746,7 @@
     if (l === 'ja') return hit.rank >= 199;
     return !!koCommon && !koCommon[hit.word] && !(koPos && koPos[hit.word] === 'x');
   }
-  var RARE_CHIP = '<span class="ml-1.5 inline-block rounded-full bg-amber-100 px-1.5 py-px align-[1px] text-[10px] font-semibold uppercase tracking-wider text-amber-700 dark:bg-amber-400/15 dark:text-amber-300">Rare word</span>';
+  var RARE_CHIP = '<span class="kr-rare ml-1.5 inline-block rounded-full bg-amber-100 px-1.5 py-px align-[1px] text-[10px] font-semibold uppercase tracking-wider text-amber-700 dark:bg-amber-400/15 dark:text-amber-300">Rare word</span>';
   // "썼다 = 쓰 + 었다": how a Korean verb form is built (null for other words).
   function breakdownText(word, hit, l) {
     if ((l || wlang) !== 'ko' || !hit) return '';
@@ -845,7 +845,7 @@
     return '<div class="kr-phead flex items-start gap-2"><div class="min-w-0 flex-1"><p class="flex flex-wrap items-baseline gap-x-1.5"><span class="kr-pw kr-selectable text-[22px] font-bold leading-tight">' + esc(title) + '</span>' +
       (from ? '<span class="kr-pmut text-[13px] text-zinc-500 dark:text-zinc-400">from ' + esc(from) + '</span>' : '') +
       (built ? '<span class="kr-pmut text-[13px] text-zinc-500 dark:text-zinc-400">' + esc(built) + '</span>' : '') + '</p>' +
-      (type || rare ? '<p class="kr-ptype text-xs font-semibold uppercase tracking-wider text-violet-600 dark:text-violet-300">' + esc(type || '') + (rare ? RARE_CHIP.replace('ml-1.5', type ? 'ml-1.5' : '') : '') + '</p>' : '') + '</div>' +
+      (type || rare ? '<p class="kr-ptype text-xs font-semibold uppercase tracking-wider text-violet-600 dark:text-violet-300">' + (type ? '<span>' + esc(type) + '</span>' : '') + (rare ? RARE_CHIP.replace('ml-1.5', type ? 'ml-1.5' : '') : '') + '</p>' : '') + '</div>' +
       (nameBtn ? '<button class="kr-pname -mt-0.5 flex shrink-0 items-center gap-1 rounded-full bg-zinc-100 py-1.5 pl-2 pr-2.5 text-[12.5px] font-semibold text-zinc-600 active:bg-zinc-200 dark:bg-zinc-700 dark:text-zinc-300 dark:active:bg-zinc-600" data-pop="name" aria-label="Mark as a name: no translation, not reviewed">' + HI('user', 'size-3.5') + 'It\'s a name</button>' : '') +
       '<button class="kr-psay -mr-1 -mt-0.5 grid size-8 shrink-0 place-items-center rounded-full text-zinc-500 active:bg-zinc-100 dark:text-zinc-400 dark:active:bg-zinc-700" data-pop="say" aria-label="Hear it">' + HI('speaker-wave', 'size-5') + '</button></div>';
   }
@@ -929,7 +929,17 @@
         return w ? '<button class="kr-pnav kr-pnav-' + to + '" data-pop="' + to + '" aria-label="' + (to === 'prev' ? 'Previous' : 'Next') + ' word: ' + esc(w) + '">' +
           (to === 'prev' ? HI('chevron-left', 'size-4') + '<span>' + esc(w) + '</span>' : '<span>' + esc(w) + '</span>' + HI('chevron-right', 'size-4')) + '</button>' : '<span></span>';
       };
-      pager.innerHTML = side('prev', all[i - 1] && all[i - 1].textContent) + (all.length > 1 && i >= 0 ? '<span class="kr-pcount">' + (i + 1) + ' / ' + all.length + '</span>' : '<span></span>') + side('next', all[i + 1] && all[i + 1].textContent);
+      // Kept calm: the top is just the word and the speaker. "from 성도에서도", the word type and Rare go on one
+      // small line under it, and It's a name moves down to the strip, between the neighbouring words.
+      var nameBtn = pop.querySelector('.kr-pname'), from = pop.querySelector('.kr-phead p .kr-pmut');
+      var meta = pop.querySelector('.kr-ptype');
+      if (from) {
+        if (!meta) { meta = el('p', { className: 'kr-ptype' }); from.parentNode.parentNode.appendChild(meta); }
+        meta.insertBefore(from, meta.firstChild);
+      }
+      if (meta) meta.classList.add('kr-pmeta');
+      pager.innerHTML = side('prev', all[i - 1] && all[i - 1].textContent) + '<span class="kr-pmid"></span>' + side('next', all[i + 1] && all[i + 1].textContent);
+      if (nameBtn) pager.querySelector('.kr-pmid').appendChild(nameBtn);
       // Right under the subtitle box, following it wherever you've moved it; above it when there's no room
       // below. That side of the game dims, so the card reads as on top (a tap there closes it, like anywhere).
       var H = pop.offsetHeight, below = hr.bottom + 8 + H <= v.h - 8;
