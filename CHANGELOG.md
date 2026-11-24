@@ -2,6 +2,10 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.48.1
+
+- Tapping a subtitle word opens a compact dark bubble under the subtitle box, pointing at the word: the word and its meaning, then Learning, Known and › for details. No dimming; tap another word to move it there. (Replaces the focused card.)
+
 ## 0.48.0
 
 - Focused subtitle card: tapping a word opens a card over the subtitle box with the whole message on top, the word you're on marked; tap another word there to switch. Below: the word, its meaning and the actions.
