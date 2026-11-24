@@ -944,10 +944,11 @@
   }
   // After a re-render of the subtitles, the tapped word's new element.
   function boxSpan(w) { return Array.prototype.filter.call(document.querySelectorAll('#kr-box .kr-w, #kr-panel .kr-w'), function (n) { return n.getAttribute('data-w') === w; })[0] || null; }
-  // In a game held upright: a card right under the subtitle box (the game is paused while it's open, so it
-  // may cover the bottom screen). Its bottom row also steps to the
-  // previous and next word, so you can read a whole line without reaching up to the box. Otherwise (the
-  // reading panel, landscape): a bubble above the word, pointing at it (below when there's no room above).
+  // In a game held upright: a focused subtitle card laid over the subtitle box (the game is paused while
+  // it's open). Its top shows the message again, larger, with the word you're on marked: tap another word
+  // there to switch. Under it the word itself, its meaning and the actions. Otherwise (the reading panel,
+  // landscape): a bubble above the word, pointing at it (below when there's no room above).
+  var popSwitching = false;
   function placePop(span) {
     if (!pop) return;
     pop._span = span;
@@ -958,39 +959,43 @@
     pop.classList.toggle('kr-dock', !!dock);
     if (dock) {
       arrow.hidden = true;
+      if (popSwitching) pop.classList.add('kr-instant');
       var nav = pop.querySelector('.kr-pacts');
-      // Learning / Known as one switch, More beside it; underneath, the words before and after this one,
-      // tappable, so you can walk through the line from down here.
       if (nav && !nav.querySelector('.kr-seg')) {
         var st = nav.querySelectorAll('[data-pop=learning], [data-pop=known]');
         if (st.length) { var seg = el('div', { className: 'kr-seg' }); nav.insertBefore(seg, st[0]); Array.prototype.forEach.call(st, function (n) { seg.appendChild(n); }); }
         var more = nav.querySelector('.kr-pa-more'); if (more) more.innerHTML = 'More' + HI('chevron-right', 'size-4');
       }
-      var all = boxWords(), i = all.indexOf(span), pager = pop.querySelector('.kr-pager');
-      if (!pager) pager = pop.appendChild(el('div', { className: 'kr-pager' }));
-      var side = function (to, w) {
-        return w ? '<button class="kr-pnav kr-pnav-' + to + '" data-pop="' + to + '" aria-label="' + (to === 'prev' ? 'Previous' : 'Next') + ' word: ' + esc(w) + '">' +
-          (to === 'prev' ? HI('chevron-left', 'size-4') + '<span>' + esc(w) + '</span>' : '<span>' + esc(w) + '</span>' + HI('chevron-right', 'size-4')) + '</button>' : '<span></span>';
-      };
-      // Kept calm: the top is just the word and the speaker. "from 성도에서도", the word type and Rare go on one
-      // small line under it.
-      var from = pop.querySelector('.kr-phead p .kr-pmut');
-      var meta = pop.querySelector('.kr-ptype');
+      // "from 성도에서도", the word type and Rare on one small line under the word.
+      var from = pop.querySelector('.kr-phead p .kr-pmut'), meta = pop.querySelector('.kr-ptype');
       if (from) {
         if (!meta) { meta = el('p', { className: 'kr-ptype' }); from.parentNode.parentNode.appendChild(meta); }
         meta.insertBefore(from, meta.firstChild);
       }
       if (meta) meta.classList.add('kr-pmeta');
-      pager.innerHTML = side('prev', all[i - 1] && all[i - 1].textContent) + '<span class="kr-pmid"></span>' + side('next', all[i + 1] && all[i + 1].textContent);
-      // Right under the subtitle box, following it wherever you've moved it; above it when there's no room
-      // below. That side of the game dims, so the card reads as on top (a tap there closes it, like anywhere).
-      var H = pop.offsetHeight, below = hr.bottom + 8 + H <= v.h - 8;
-      pop.style.left = ''; pop.style.top = (below ? hr.bottom + 8 : Math.max(8, hr.top - 8 - H)) + 'px';
+      // The message this word is in, as in the box, with this word marked.
+      var msg = span.closest('.kr-box-text > div') || span.parentNode, words = msg.querySelectorAll('.kr-w');
+      var line = pop.querySelector('.kr-pline') || pop.insertBefore(el('div', { className: 'kr-pline' }), pop.firstChild);
+      line.innerHTML = msg.innerHTML;
+      Array.prototype.forEach.call(line.querySelectorAll('.kr-w'), function (n, k) {
+        n.className = 'kr-lw' + (words[k] === span ? ' kr-on' : '') + (words[k] && /kr-saved/.test(words[k].className) ? ' kr-saved' : '') + (words[k] && /kr-known|kr-name/.test(words[k].className) ? ' kr-plain' : '');
+        n.setAttribute('data-k', k); n.setAttribute('role', 'button');
+      });
+      line._words = words;
+      var on = line.querySelector('.kr-on'); if (on && line.scrollHeight > line.clientHeight) line.scrollTop = on.offsetTop - line.clientHeight / 2;
+      var H = pop.offsetHeight;
+      // As wide as the box (so it covers it), and from its top edge down.
+      var L = Math.max(4, hr.left - 4), W2 = Math.min(v.w - L - 4, hr.width + 8);
+      pop.style.left = L + 'px'; pop.style.width = W2 + 'px'; pop.style.right = 'auto';
+      H = pop.offsetHeight;
+      pop.style.top = Math.max(8, Math.min(hr.top - 6, v.h - 8 - H)) + 'px';
+      // Everything else dims (a tap there closes it, like anywhere).
       var scrim = document.getElementById('kr-pop-scrim') || document.body.appendChild(el('div', { id: 'kr-pop-scrim' }));
-      scrim.style.top = below ? hr.bottom + 'px' : '0px'; scrim.style.bottom = below ? '0px' : (v.h - hr.top) + 'px';
+      scrim.style.top = '0px'; scrim.style.bottom = '0px';
       return;
     }
-    var pg = pop.querySelector('.kr-pager'); if (pg) pg.remove();
+    var pl = pop.querySelector('.kr-pline'); if (pl) pl.remove();
+    pop.style.width = pop.style.right = '';
     var sc = document.getElementById('kr-pop-scrim'); if (sc) sc.remove();
     arrow.hidden = false;
     var W = pop.offsetWidth, H = pop.offsetHeight;
@@ -1001,15 +1006,24 @@
     arrow.className = 'kr-pop-arrow ' + (above ? 'kr-down' : 'kr-up');
     arrow.style.left = Math.max(16, Math.min(W - 16, r.left + r.width / 2 - left)) + 'px';
   }
-  function boxWords() { return Array.prototype.slice.call(document.querySelectorAll('#kr-box .kr-w')); }
-  // The docked card's ‹ › buttons: open the word before or after (like tapping it in the box).
+  // A word tapped in the focused card's copy of the message: open that word (as tapping it in the box).
   document.addEventListener('click', function (e) {
-    var b = e.target.closest && e.target.closest('#kr-pop [data-pop=prev], #kr-pop [data-pop=next]'); if (!b || !pop) return;
+    var w = e.target.closest && e.target.closest('#kr-pop .kr-lw'); if (!w || !pop) return;
     e.stopImmediatePropagation();
-    var all = boxWords(), i = all.indexOf(pop._span && pop._span.isConnected ? pop._span : boxSpan(pop._span && pop._span.getAttribute('data-w')));
-    var to = all[i + (b.dataset.pop === 'next' ? 1 : -1)];
-    if (to) to.click();
+    var line = w.closest('.kr-pline'), to = line && line._words && line._words[+w.getAttribute('data-k')];
+    if (!to || !to.isConnected) return;
+    popSwitching = true; to.click(); setTimeout(function () { popSwitching = false; }, 0);
   }, true);
+  // Tapping the right side of the subtitle box (not on a word) opens the card on the first word of the
+  // message on screen; a small magnifier there hints at it.
+  var boxLook = el('div', { className: 'kr-box-look', ariaHidden: 'true', innerHTML: HI('magnifying-glass', 'size-full') });
+  box.appendChild(boxLook);
+  box.addEventListener('click', function (e) {
+    if (e.target.closest('.kr-w, .kr-box-grip, .kr-box-size')) return;
+    var br = box.getBoundingClientRect(); if (e.clientX < br.left + br.width * 0.6) return;
+    var msgs = boxText.children, last = msgs[msgs.length - 1], first = last && last.querySelector('.kr-w');
+    if (first) first.click();
+  });
 
   // ---------- pause / resume ----------
   var wasRunning = false;
