@@ -2,6 +2,10 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.47.0
+
+- Tapping a subtitle word opens a card at the bottom of the screen, in reach of your thumbs: the meaning first, a Learning/Known switch, More, and the words before and after it to step through the line. (Landscape and the reading panel keep the bubble.)
+
 ## 0.46.2
 
 - Subtitle dotted underlines are 1px thicker.
