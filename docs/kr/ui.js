@@ -285,13 +285,15 @@
     var b = baseFor(tok);
     return !!(b && k[b]);
   }
-  function wordClass(tok) { return 'kr-w' + (isSaved(tok) ? ' kr-saved' : isKnown(tok) ? ' kr-known' : nameInfo(tok) ? ' kr-name' : ''); }
+  function isDismissed(tok, l) { l = l || lang; return !!dismissed[l][l === 'ja' ? KRLookupJa.clean(tok) : KRLookup.clean(tok)]; }
+  function wordClass(tok) { return 'kr-w' + (isDismissed(tok) ? ' kr-name kr-off' : isSaved(tok) ? ' kr-saved' : isKnown(tok) ? ' kr-known' : nameInfo(tok) ? ' kr-name' : ''); }
 
   // ---------- names ----------
   // Names can't be translated, and the dictionary even turns some into wrong words (우박사님 → 우박 "hail").
   // A name loses its underline and its popup says it's a name. Found two ways: a word you marked as a
   // name, or (Korean) an unknown word with a title: 공박사님 = 공 + 박사 (Professor) + 님 (polite).
-  var names = { ko: {}, ja: {} }, notNames = { ko: {}, ja: {} }, gameNames = {};
+  // dismissed: words you flagged as Not a word (a wrong split, a sound effect): no underline, no card.
+  var names = { ko: {}, ja: {} }, notNames = { ko: {}, ja: {} }, dismissed = { ko: {}, ja: {} }, gameNames = {};
   // Your name and your rival's in the game you're playing, read from its save (emu.js saveNames).
   window.KRSetGameNames = function (list) {
     gameNames = {};
@@ -306,12 +308,13 @@
       ['ko', 'ja'].forEach(function (l) {
         (v[l] || []).forEach(function (w) { names[l][w] = 1; });
         (v.not && v.not[l] || []).forEach(function (w) { notNames[l][w] = 1; });
+        (v.off && v.off[l] || []).forEach(function (w) { dismissed[l][w] = 1; });
       });
       if (current) renderPanel();
     }).catch(function () {});
   }
   function persistNames() {
-    if (store) store.setItem('names', { ko: Object.keys(names.ko), ja: Object.keys(names.ja), not: { ko: Object.keys(notNames.ko), ja: Object.keys(notNames.ja) } }).catch(function () { toast('Could not save', 'warn'); });
+    if (store) store.setItem('names', { ko: Object.keys(names.ko), ja: Object.keys(names.ja), not: { ko: Object.keys(notNames.ko), ja: Object.keys(notNames.ja) }, off: { ko: Object.keys(dismissed.ko), ja: Object.keys(dismissed.ja) } }).catch(function () { toast('Could not save', 'warn'); });
   }
   var NAME_PARTICLES = ['께서', '에게', '한테', '이랑', '이나', '이야', '이여', '에서', '으로', '이는', '이가', '은', '는', '이', '가', '을', '를', '의', '에', '도', '만', '와', '과', '로', '랑', '야', '아', '여'];
   // Titles after a name. Strong ones (박사, 관장…) mark a name whenever name + title isn't a word itself;
@@ -804,6 +807,7 @@
     loadDict(lang).then(function (d) {
       if (!pop) return;
       if (isChunk) return fillPopGrammar(raw, sentence, span, d);
+      if (isDismissed(raw)) return fillPopDismissed(raw, span);
       var ni = nameInfo(raw);
       if (ni) return fillPopName(ni, raw, span);
       var r = lang === 'ja' ? KRLookupJa.lookup(d, raw, 3) : null, hits = r ? r.hits : KRLookup.lookup(d, raw, 3);
@@ -841,22 +845,31 @@
       }
     };
   }
-  // The flag on a word: things you can tell the app about it. It's a name (no translation, not reviewed),
-  // and two reports that open a ready-made GitHub issue, so a wrong dictionary entry or a word split in the
-  // wrong place can be fixed for everyone.
+  // The flag on a word: It's a name (no translation, not reviewed) or Not a word (dismissed: a wrong split,
+  // a sound effect; no underline, no card). Both can be undone by tapping the word again.
   var FLAG_MENU = '<div class="kr-pflag-menu" hidden role="menu">' +
     '<button data-pop="name" role="menuitem">' + HI('user', 'size-5') + '<span><b>It\'s a name</b><small>No translation, not reviewed</small></span></button>' +
-    '<button data-pop="report-meaning" role="menuitem">' + HI('exclamation-triangle', 'size-5') + '<span><b>Wrong meaning</b><small>Report it so the dictionary gets fixed</small></span></button>' +
-    '<button data-pop="report-split" role="menuitem">' + HI('scissors', 'size-5') + '<span><b>Not one word</b><small>Report that it was split in the wrong place</small></span></button></div>';
+    '<button data-pop="dismiss" role="menuitem">' + HI('x-mark', 'size-5') + '<span><b>Not a word</b><small>Split wrong or just a sound: hide it</small></span></button></div>';
   function toggleFlagMenu(open) {
     var m = pop && pop.querySelector('.kr-pflag-menu'), f = pop && pop.querySelector('.kr-pflag'); if (!m) return;
     open = open == null ? m.hidden : open;
     m.hidden = !open; if (f) f.setAttribute('aria-expanded', String(open));
   }
-  function reportWord(what, base, word, gloss, sentence) {
-    var body = 'Word: ' + base + (word !== base ? ' (from ' + word + ')' : '') + '\nMeaning shown: ' + (gloss || '(none)') +
-      '\nSentence: ' + (sentence || '') + '\nGame: ' + (game.name || '') + '\nLanguage: ' + lang + '\nApp version: ' + (window.APP_VERSION || '') + '\n\nWhat it should be:\n';
-    window.open('https://github.com/Codetaal/cramboy/issues/new?labels=dictionary&title=' + encodeURIComponent(what + ': ' + base) + '&body=' + encodeURIComponent(body), '_blank', 'noopener');
+  // A dismissed word's card: what it is, and Undo.
+  function fillPopDismissed(raw, span) {
+    var key = lang === 'ja' ? KRLookupJa.clean(raw) : KRLookup.clean(raw);
+    pop.innerHTML = popHead(key, '', '') + '<p class="kr-pmean mt-0.5 text-[15px] leading-snug text-zinc-700 dark:text-zinc-200">Marked as not a word</p>' +
+      '<p class="kr-pmut mt-0.5 text-[13px] text-zinc-500 dark:text-zinc-400">It isn\'t underlined, counted or reviewed.</p>' +
+      '<div class="kr-pacts mt-2.5 flex"><button class="kr-pa flex items-center gap-1 rounded-lg bg-zinc-100 px-2.5 py-1.5 text-[13px] font-semibold text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200" data-pop="undo-dismiss">' + HI('arrow-uturn-left', 'size-4') + 'Undo</button></div>';
+    placePop(span);
+    pop.onclick = function (e) {
+      var b = e.target.closest('[data-pop]'); if (!b) return;
+      if (b.dataset.pop === 'say') return speak(key, lang);
+      if (b.dataset.pop === 'undo-dismiss') {
+        delete dismissed[lang][key]; persistNames(); renderPanel(); closePop(true);
+        var sp = boxSpan(raw); if (sp) sp.click();   // show it as a word again
+      }
+    };
   }
   function popHead(title, from, type, built, rare, nameBtn) {
     return '<div class="kr-phead flex items-start gap-2"><div class="min-w-0 flex-1"><p class="flex flex-wrap items-baseline gap-x-1.5"><span class="kr-pw kr-selectable text-[22px] font-bold leading-tight">' + esc(title) + '</span>' +
@@ -882,9 +895,13 @@
       var a = b.dataset.pop;
       if (a === 'say') return speak(base, lang);
       if (a === 'flag') return toggleFlagMenu();
-      if (a === 'report-meaning' || a === 'report-split') {
-        toggleFlagMenu(false);
-        return reportWord(a === 'report-meaning' ? 'Wrong meaning' : 'Not one word', base, word, hit ? hit.gloss : '', sentence);
+      if (a === 'dismiss') {
+        dismissed[lang][KRLookup.clean(raw)] = 1;
+        if (lang === 'ja') dismissed[lang][KRLookupJa.clean(raw)] = 1;
+        persistNames(); renderPanel(); closePop();
+        return window.toast && window.toast('Hidden: ' + KRLookup.clean(raw), { icon: 'info', ms: 4000, action: 'Undo', onAction: function () {
+          delete dismissed[lang][KRLookup.clean(raw)]; if (lang === 'ja') delete dismissed[lang][KRLookupJa.clean(raw)]; persistNames(); renderPanel();
+        } });
       }
       toggleFlagMenu(false);
       if (a === 'more') { closePop(); return asPage('game', function () { showWordSheet(word, raw, sentence, hits, 'game'); }); }   // the word as a full page
@@ -1161,6 +1178,7 @@
       }).join('\n');
     }
     lineWords(rest).forEach(function (tok) {
+      if (isDismissed(tok)) return;   // marked Not a word
       var k = wordKey(tok); if (!k || (GR() && (GR().FILLER[tok] || GR().FILLER[k]))) return;
       count(k);
     });
