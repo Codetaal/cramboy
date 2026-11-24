@@ -864,7 +864,7 @@
       var b = e.target.closest('[data-pop]'); if (!b) return;
       var a = b.dataset.pop;
       if (a === 'say') return speak(base, lang);
-      if (a === 'more') { closePop(); return asPage('game', function () { showWordSheet(word, raw, sentence, hits); }); }   // the word as a full page
+      if (a === 'more') { closePop(); return asPage('game', function () { showWordSheet(word, raw, sentence, hits, 'game'); }); }   // the word as a full page
       if (a === 'name') {   // mark it as a name: no underline, no translation, not reviewed
         var st2 = nameStems(raw, lang), stem = st2[1] || st2[0];   // without its particle: 지겸이 → 지겸
         delete notNames[lang][stem]; names[lang][stem] = 1;
@@ -893,7 +893,7 @@
       var b = e.target.closest('[data-pop]'); if (!b) return;
       var a = b.dataset.pop;
       if (a === 'say') return speak(chunk, lang);
-      if (a === 'more') { closePop(); return asPage('game', function () { openGrammar(chunk, sentence, null); }); }
+      if (a === 'more') { closePop(); return asPage('game', function () { openGrammar(chunk, sentence, null); wordBack = 'game'; }); }
       setPatternStatus(x, chunk, sentence, patternState(x.id, lang) === a ? 'new' : a);
       span = boxSpan(chunk) || span; span.classList.add('kr-sel');
       draw();
@@ -1218,7 +1218,7 @@
   // Which Words & text tab the word sheet's back button returns to: the tab the word was
   // tapped in, or Now when it was tapped in the subtitles.
   var menuTab = null, wordBack = 'now', settingsBack = 'now';
-  var TAB_LABEL = { now: 'Dialogue', words: 'Words', review: 'Review', progress: 'Progress', session: 'Review', settings: 'Study settings' };
+  var TAB_LABEL = { game: 'Game', now: 'Dialogue', words: 'Words', review: 'Review', progress: 'Progress', session: 'Review', settings: 'Study settings' };
   // l: the word's own language (a saved word from a game in the other language); default the game's.
   var wlang = 'ko';
   function openWord(raw, sentence, span, l) {
@@ -1254,7 +1254,8 @@
     return '<button class="-ml-1.5 -mt-1 mb-1 flex items-center gap-0.5 py-1 pr-2 font-medium text-zinc-600 active:opacity-60 dark:text-zinc-300" data-act="back" data-swipe-back>' +
       HI('chevron-left', 'size-5') + TAB_LABEL[wordBack] + '</button>';
   }
-  function showWordSheet(word, raw, sentence, hits) { wordBack = menuTab || 'now'; showWord(word, raw, sentence, hits); }
+  // back: where the back button goes; 'game' (opened from the word card over the game) closes the page.
+  function showWordSheet(word, raw, sentence, hits, back) { wordBack = back || menuTab || 'now'; showWord(word, raw, sentence, hits); }
   function showWord(word, raw, sentence, hits) {
     var savedNow = isSaved(word), OUT = HI('arrow-top-right-on-square', 'size-4 text-zinc-400');
     var base = hits && hits[0] ? hits[0].word : word, knownNow = !savedNow && !!(known[wlang][word] || known[wlang][base]);
@@ -1738,6 +1739,7 @@
   var OLD_TABS = { saved: 'words', recent: 'now' };
   // Back to the page you came from, at the same scroll position (back button and swipe back).
   function goBack(tab) {
+    if (tab === 'game') return closeSheet();   // a word opened from the card over the game: back to the game
     var y = swipePrev ? swipePrev.y : 0;
     openMenu(tab);
     card.scrollTop = y;
