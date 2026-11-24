@@ -2,6 +2,13 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.47.1
+
+- The word card opens right under the subtitle box (above it when there's no room), wherever you've moved the box.
+- Back from a word's details (opened with More) returns to the game.
+- Pages over a game have Resume as a big button stuck to the bottom again.
+- Sheet pages no longer pin their header: the back link and tabs scroll with the page.
+
 ## 0.47.0
 
 - Tapping a subtitle word opens a card at the bottom of the screen, in reach of your thumbs: the meaning first, a Learning/Known switch, More, and the words before and after it to step through the line. (Landscape and the reading panel keep the bubble.)
