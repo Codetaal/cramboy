@@ -268,16 +268,8 @@
   .kr-tl-meta { color: #a1a1aa; }
   .kr-tl-count { background: rgba(139, 92, 246, .2); color: #ddd6fe; }
 }
-/* The same 12 px between a sheet's pinned header and its content on every Study page (as in Settings). */
+/* The same 12 px between a sheet's header and its content on every Study page (as in Settings). */
 #kr-sheet [data-sheet-head] + * { margin-top: 0.75rem !important; }
-
-/* Study as a page from a game: the pinned bars are see-through at the top, so the faint mascot behind the
-   title shows as on the other full-screen pages; once you scroll they turn solid. */
-/* Once you scroll they fade in to the page colour (and the soft fade under the tabs comes back). */
-#kr-sheet.kr-page .kr-card [data-pin] { transition: background-color .3s ease; }
-#kr-sheet.kr-page .kr-card:not(.kr-scrolled) [data-pin] { background-color: transparent; }
-#kr-sheet.kr-page .kr-card [data-pin] > [aria-hidden] { transition: opacity .3s ease; }
-#kr-sheet.kr-page .kr-card:not(.kr-scrolled) [data-pin] > [aria-hidden] { opacity: 0; }
 
 /* The word popover's text can be selected and copied (press and hold); its buttons can't. */
 #kr-pop { -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }

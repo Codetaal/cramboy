@@ -965,11 +965,10 @@
   function resume() { if (wasRunning && window.uiCurrentMode === 'player' && window.emuIsGameLoaded) window.emuIsRunning = true; wasRunning = false; }
   var GRAB = '<div class="mx-auto mb-3 mt-2 h-1.5 w-10 rounded-full bg-zinc-300 dark:bg-zinc-700"></div>'; // same handle as the menu
   // Sheet header, the same as the Settings menu's (index.html): handle, a title row (title, buttons) and
-  // what belongs under it (tabs), pinned at the top while the content scrolls away under a short fade.
+  // what belongs under it (tabs); it scrolls with the content.
   function SHEET_HEAD(left, title, right, below) {
-    return '<div class="sticky top-0 z-10 -mx-4 bg-zinc-50 px-4 pb-1 dark:bg-zinc-950" data-sheet-head>' + GRAB +
-      '<div class="flex min-h-11 items-center gap-1">' + left + '<p class="min-w-0 flex-1 truncate text-xl font-bold">' + title + '</p>' + right + '</div>' + (below || '') +
-      '<div class="pointer-events-none absolute inset-x-0 top-full h-3 bg-gradient-to-b from-zinc-50 to-transparent dark:from-zinc-950" aria-hidden="true"></div></div>';
+    return '<div class="pb-1" data-sheet-head>' + GRAB +
+      '<div class="flex min-h-11 items-center gap-1">' + left + '<p class="min-w-0 flex-1 truncate text-xl font-bold">' + title + '</p>' + right + '</div>' + (below || '') + '</div>';
   }
   // "Back to game" stays pinned to the bottom of the sheet while the content above it scrolls.
   var BACK = '<div class="sticky bottom-0 -mx-4 mt-auto bg-gradient-to-t from-zinc-50 from-70% to-zinc-50/0 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-5 dark:from-zinc-950 dark:to-zinc-950/0">' +
@@ -992,22 +991,16 @@
     openingPage = true; show(); openingPage = false;
     requestAnimationFrame(function () { requestAnimationFrame(function () { sheet.classList.remove('kr-off'); }); });
   }
-  var FADE_DOWN = '<div class="pointer-events-none absolute inset-x-0 top-full h-3 bg-gradient-to-b from-zinc-50 to-transparent dark:from-zinc-950" aria-hidden="true"></div>';
   var GEAR = '<button class="grid size-10 shrink-0 place-items-center rounded-full text-zinc-500 active:bg-zinc-200 dark:text-zinc-400 dark:active:bg-zinc-800" data-act="game-menu" aria-label="Settings">' + HI('cog-6-tooth', 'size-6') + '</button>';
   function backLink(label, attrs) {
     return '<button class="-ml-2 flex items-center gap-0.5 rounded-lg px-1 py-1 text-[17px] text-violet-600 active:opacity-60 dark:text-violet-400" ' + attrs + ' data-swipe-back>' + HI('chevron-left', 'size-6') + label + '</button>';
   }
-  // Page header, as on the Backup page: a bar with the back button (and the gear and Resume) that stays at
-  // the top, the large title, and what belongs under it (Study's tabs), which stays pinned under the bar.
-  // From the home screen there is no Resume, so nothing needs to stay pinned: it scrolls like the Backup page.
+  // Page header, as on the Backup page: the back link, the large title and what belongs under it (Study's
+  // tabs). Nothing stays pinned: it all scrolls away with the page (Resume is at the bottom).
   function PAGE_HEAD(back, title, below) {
-    if (pageFrom === 'home') return '<div class="flex h-11 items-center">' + (back || '') + '</div>' +
+    return '<div class="flex h-11 items-center">' + (back || '') + '</div>' +
       '<h1 class="mt-1 text-[34px] font-bold leading-tight tracking-tight">' + title + '</h1>' +
       (below ? '<div class="pt-3" data-sheet-head>' + below + '</div>' : '<div data-sheet-head></div>');
-    // data-pin: these bars are see-through until you scroll, so the mascot behind the title shows (ui.css).
-    return '<div class="sticky top-0 z-20 -mx-4 flex h-[60px] items-center gap-1 bg-zinc-50 px-4 dark:bg-zinc-950" data-pin>' + (back || '') + '<div class="flex-1"></div></div>' +
-      '<h1 class="text-[34px] font-bold leading-tight tracking-tight">' + title + '</h1>' +
-      (below ? '<div class="sticky top-[60px] z-10 -mx-4 bg-zinc-50 px-4 pb-1 pt-2 dark:bg-zinc-950" data-sheet-head data-pin>' + below + FADE_DOWN + '</div>' : '<div data-sheet-head></div>');
   }
   // Pages over a game (Study, a word, settings): Resume as a big button stuck to the bottom, in thumb reach.
   var RESUME_BAR = '<div class="sticky bottom-0 z-20 -mx-4 mt-auto bg-gradient-to-t from-zinc-50 from-60% to-zinc-50/0 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-6 dark:from-zinc-950 dark:to-zinc-950/0">' +
@@ -1032,7 +1025,6 @@
     sheet.hidden = false; card.scrollTop = 0;
   }
   // Redraw the open tab after a change made on it (Know, a setting) without jumping back to the top.
-  card.addEventListener('scroll', function () { card.classList.toggle('kr-scrolled', card.scrollTop > 2); }, { passive: true });
   function stay(tab) { var y = card.scrollTop; openMenu(tab); card.scrollTop = y; }
   // toSettings: the Study page's back button (or study mode turned off) when it came from Settings: Settings
   // stays open under it. Otherwise closing goes back to the game, closing Settings too.
@@ -1252,9 +1244,7 @@
   }
   // The top of a word or grammar page: back to where it came from; on a page also Resume (as Study has).
   function wordHead() {
-    if (pageMode && pageFrom === 'home') return '<div class="flex h-11 items-center" data-sheet-head>' + backLink(TAB_LABEL[wordBack], 'data-act="back"') + '</div>';
-    if (pageMode) return '<div class="sticky top-0 z-20 -mx-4 flex h-[60px] items-center gap-1 bg-zinc-50 px-4 dark:bg-zinc-950" data-sheet-head>' +
-      backLink(TAB_LABEL[wordBack], 'data-act="back"') + '<div class="flex-1"></div></div>';
+    if (pageMode) return '<div class="flex h-11 items-center" data-sheet-head>' + backLink(TAB_LABEL[wordBack], 'data-act="back"') + '</div>';
     return '<button class="-ml-1.5 -mt-1 mb-1 flex items-center gap-0.5 py-1 pr-2 font-medium text-zinc-600 active:opacity-60 dark:text-zinc-300" data-act="back" data-swipe-back>' +
       HI('chevron-left', 'size-5') + TAB_LABEL[wordBack] + '</button>';
   }
