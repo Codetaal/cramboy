@@ -2,6 +2,10 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.46.1
+
+- Faster updates: only the files that changed are downloaded (instead of the whole app, ~5 MB), and the Japanese dictionary and subtitle fonts are kept across updates.
+
 ## 0.46.0
 
 - Resume is on by default for new installs (if you turned it off, it stays off).
