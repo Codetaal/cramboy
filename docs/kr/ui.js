@@ -777,6 +777,8 @@
   function closePop(keepPaused) {
     if (!pop) return;
     pop.remove(); pop = null;
+    var sc = document.getElementById('kr-pop-scrim'); if (sc && !keepPaused) sc.remove();
+    if (sc && keepPaused) setTimeout(function () { if (!pop && sc.isConnected) sc.remove(); }, 0);
     document.removeEventListener('pointerdown', popOutside, true);
     Array.prototype.forEach.call(document.querySelectorAll('.kr-sel'), function (n) { n.classList.remove('kr-sel'); });
     if (popPaused && !keepPaused) { popPaused = false; resume(); }
@@ -813,19 +815,19 @@
   function popButtons(st) {
     var b = function (to, label, icon, on) {
       return '<button class="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[13px] font-semibold ' + (st === to ? on : 'bg-zinc-100 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200') +
-        '" data-pop="' + to + '" aria-pressed="' + (st === to) + '">' + HI(icon, 'size-4') + label + '</button>';
+        ' kr-pa" data-pop="' + to + '" aria-pressed="' + (st === to) + '">' + HI(icon, 'size-4') + label + '</button>';
     };
-    return '<div class="mt-2.5 flex items-center gap-1.5">' + b('learning', 'Learning', 'star', 'bg-violet-600 text-white') + b('known', 'Known', 'check', 'bg-emerald-500 text-white') +
-      '<button class="ml-auto flex items-center gap-0.5 py-1.5 pl-2 text-[13px] font-semibold text-violet-600 dark:text-violet-300" data-pop="more">More' + HI('chevron-right', 'size-4') + '</button></div>';
+    return '<div class="kr-pacts mt-2.5 flex items-center gap-1.5">' + b('learning', 'Learning', 'star', 'bg-violet-600 text-white') + b('known', 'Known', 'check', 'bg-emerald-500 text-white') +
+      '<button class="kr-pa kr-pa-more ml-auto flex items-center gap-0.5 py-1.5 pl-2 text-[13px] font-semibold text-violet-600 dark:text-violet-300" data-pop="more">More' + HI('chevron-right', 'size-4') + '</button></div>';
   }
   // A name's popup: what it is, and a way to undo it (Not a name).
   function fillPopName(info, raw, span) {
     var draw = function () {
       pop.innerHTML = popHead(info.whole, '', 'name') +
-        '<p class="mt-0.5 text-[15px] leading-snug text-zinc-700 dark:text-zinc-200"><b>' + esc(info.name) + '</b> ' + (info.who === 'you' ? 'your name in this game' : info.who === 'rival' ? 'your rival\'s name' : 'a name') +
+        '<p class="kr-pmean mt-0.5 text-[15px] leading-snug text-zinc-700 dark:text-zinc-200"><b>' + esc(info.name) + '</b> ' + (info.who === 'you' ? 'your name in this game' : info.who === 'rival' ? 'your rival\'s name' : 'a name') +
         (info.title ? ' <span class="text-zinc-400">+</span> <b class="text-violet-700 dark:text-violet-300">' + esc(info.title) + '</b> ' + esc(info.titleEn) : '') + '</p>' +
-        '<p class="mt-0.5 text-[13px] text-zinc-500 dark:text-zinc-400">Names aren\'t translated or reviewed.</p>' +
-        (info.who ? '' : '<div class="mt-2.5 flex"><button class="flex items-center gap-1 rounded-lg bg-zinc-100 px-2.5 py-1.5 text-[13px] font-semibold text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200" data-pop="not-name">' + HI('x-mark', 'size-4') + 'Not a name</button></div>');
+        '<p class="kr-pmut mt-0.5 text-[13px] text-zinc-500 dark:text-zinc-400">Names aren\'t translated or reviewed.</p>' +
+        (info.who ? '' : '<div class="kr-pacts mt-2.5 flex"><button class="kr-pa flex items-center gap-1 rounded-lg bg-zinc-100 px-2.5 py-1.5 text-[13px] font-semibold text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200" data-pop="not-name">' + HI('x-mark', 'size-4') + 'Not a name</button></div>');
       placePop(span);
     };
     draw();
@@ -840,12 +842,12 @@
     };
   }
   function popHead(title, from, type, built, rare, nameBtn) {
-    return '<div class="flex items-start gap-2"><div class="min-w-0 flex-1"><p class="flex flex-wrap items-baseline gap-x-1.5"><span class="kr-selectable text-[22px] font-bold leading-tight">' + esc(title) + '</span>' +
-      (from ? '<span class="text-[13px] text-zinc-500 dark:text-zinc-400">from ' + esc(from) + '</span>' : '') +
-      (built ? '<span class="text-[13px] text-zinc-500 dark:text-zinc-400">' + esc(built) + '</span>' : '') + '</p>' +
-      (type || rare ? '<p class="text-xs font-semibold uppercase tracking-wider text-violet-600 dark:text-violet-300">' + esc(type || '') + (rare ? RARE_CHIP.replace('ml-1.5', type ? 'ml-1.5' : '') : '') + '</p>' : '') + '</div>' +
-      (nameBtn ? '<button class="-mt-0.5 shrink-0 rounded-lg px-2 py-1 text-[12.5px] font-semibold text-zinc-500 ring-1 ring-inset ring-zinc-200 active:bg-zinc-100 dark:text-zinc-400 dark:ring-zinc-600 dark:active:bg-zinc-700" data-pop="name" aria-label="This is a name">Name</button>' : '') +
-      '<button class="-mr-1 -mt-0.5 grid size-8 shrink-0 place-items-center rounded-full text-zinc-500 active:bg-zinc-100 dark:text-zinc-400 dark:active:bg-zinc-700" data-pop="say" aria-label="Hear it">' + HI('speaker-wave', 'size-5') + '</button></div>';
+    return '<div class="kr-phead flex items-start gap-2"><div class="min-w-0 flex-1"><p class="flex flex-wrap items-baseline gap-x-1.5"><span class="kr-pw kr-selectable text-[22px] font-bold leading-tight">' + esc(title) + '</span>' +
+      (from ? '<span class="kr-pmut text-[13px] text-zinc-500 dark:text-zinc-400">from ' + esc(from) + '</span>' : '') +
+      (built ? '<span class="kr-pmut text-[13px] text-zinc-500 dark:text-zinc-400">' + esc(built) + '</span>' : '') + '</p>' +
+      (type || rare ? '<p class="kr-ptype text-xs font-semibold uppercase tracking-wider text-violet-600 dark:text-violet-300">' + esc(type || '') + (rare ? RARE_CHIP.replace('ml-1.5', type ? 'ml-1.5' : '') : '') + '</p>' : '') + '</div>' +
+      (nameBtn ? '<button class="kr-pname -mt-0.5 shrink-0 rounded-lg px-2 py-1 text-[12.5px] font-semibold text-zinc-500 ring-1 ring-inset ring-zinc-200 active:bg-zinc-100 dark:text-zinc-400 dark:ring-zinc-600 dark:active:bg-zinc-700" data-pop="name" aria-label="This is a name">Name</button>' : '') +
+      '<button class="kr-psay -mr-1 -mt-0.5 grid size-8 shrink-0 place-items-center rounded-full text-zinc-500 active:bg-zinc-100 dark:text-zinc-400 dark:active:bg-zinc-700" data-pop="say" aria-label="Hear it">' + HI('speaker-wave', 'size-5') + '</button></div>';
   }
   function fillPopWord(word, raw, sentence, span, hits) {
     var hit = hits && hits[0], base = hit ? hit.word : word;
@@ -853,8 +855,8 @@
       var meaning = hit ? verbFirst(hit).split('; ').slice(0, 2).join('; ') : 'Not in the offline dictionary. Tap More for other dictionaries.';
       var bd = breakdownText(word, hit, lang);
       pop.innerHTML = popHead(base, bd ? '' : base !== word ? word : '', wordType(hit, lang), bd, isRare(hit, lang), true) +
-        (hit && hit.reading ? '<p class="text-sm text-zinc-500 dark:text-zinc-400">' + esc(hit.reading) + '</p>' : '') +
-        '<p class="mt-0.5 truncate text-[15px] text-zinc-700 dark:text-zinc-200">' + esc(meaning) + '</p>' + popButtons(wordStatus(word, base));
+        (hit && hit.reading ? '<p class="kr-pmut text-sm text-zinc-500 dark:text-zinc-400">' + esc(hit.reading) + '</p>' : '') +
+        '<p class="kr-pmean mt-0.5 truncate text-[15px] text-zinc-700 dark:text-zinc-200">' + esc(meaning) + '</p>' + popButtons(wordStatus(word, base));
       placePop(span);
     };
     draw();
@@ -883,7 +885,7 @@
       var parts = c.verbs.slice(0, 1).map(function (v, i) { return '<b>' + esc(v) + '</b> ' + esc((c.glosses[i] || '').split(';')[0]); })
         .concat(c.patterns.map(function (p) { return '<b class="text-violet-700 dark:text-violet-300">' + esc(p.label) + '</b> ' + esc(p.en.split(',')[0]); }));
       pop.innerHTML = popHead(chunk, '', 'grammar') +
-        '<p class="mt-0.5 text-[15px] leading-snug text-zinc-700 dark:text-zinc-200">' + parts.join(' <span class="text-zinc-400">+</span> ') + '</p>' + popButtons(patternState(x.id, lang));
+        '<p class="kr-pmean mt-0.5 text-[15px] leading-snug text-zinc-700 dark:text-zinc-200">' + parts.join(' <span class="text-zinc-400">+</span> ') + '</p>' + popButtons(patternState(x.id, lang));
       placePop(span);
     };
     draw();
@@ -899,19 +901,54 @@
   }
   // After a re-render of the subtitles, the tapped word's new element.
   function boxSpan(w) { return Array.prototype.filter.call(document.querySelectorAll('#kr-box .kr-w, #kr-panel .kr-w'), function (n) { return n.getAttribute('data-w') === w; })[0] || null; }
-  // Above the word, pointing at it; below when there's no room above. Kept inside the screen.
+  // In a game held upright: a card docked at the bottom of the screen, where your thumbs already are (the
+  // game is paused while it's open, so it may cover the controls). Its bottom row also steps to the
+  // previous and next word, so you can read a whole line without reaching up to the box. Otherwise (the
+  // reading panel, landscape): a bubble above the word, pointing at it (below when there's no room above).
   function placePop(span) {
     if (!pop) return;
-    var r = span.getBoundingClientRect(), W = pop.offsetWidth, H = pop.offsetHeight, v = vw();
-    // Vertically against the subtitle box, so the bubble never covers the other line of text.
+    pop._span = span;
+    var r = span.getBoundingClientRect(), v = vw();
     var holder = span.closest('#kr-box, #kr-panel'), hr = holder ? holder.getBoundingClientRect() : r;
+    var arrow = pop.querySelector('.kr-pop-arrow') || pop.appendChild(el('i', { className: 'kr-pop-arrow' }));
+    var dock = holder && holder.id === 'kr-box' && v.h > v.w;
+    pop.classList.toggle('kr-dock', !!dock);
+    if (dock) {
+      arrow.hidden = true;
+      var nav = pop.querySelector('.kr-pacts');
+      if (nav && !nav.querySelector('[data-pop=prev]')) {
+        var more = nav.querySelector('.kr-pa-more'); if (more) more.innerHTML = HI('book-open', 'size-5') + 'More';
+        nav.insertAdjacentHTML('afterbegin', '<button class="kr-pa kr-pnav" data-pop="prev" aria-label="Previous word">' + HI('chevron-left', 'size-5') + 'Prev</button>');
+        nav.insertAdjacentHTML('beforeend', '<button class="kr-pa kr-pnav" data-pop="next" aria-label="Next word">' + HI('chevron-right', 'size-5') + 'Next</button>');
+      }
+      var all = boxWords(), i = all.indexOf(span);
+      Array.prototype.forEach.call(pop.querySelectorAll('.kr-pnav'), function (n) { n.disabled = n.dataset.pop === 'prev' ? i <= 0 : i < 0 || i >= all.length - 1; });
+      pop.style.left = pop.style.top = '';
+      // The game below the box dims, so the card reads as on top (a tap there closes it, like anywhere).
+      var scrim = document.getElementById('kr-pop-scrim') || document.body.appendChild(el('div', { id: 'kr-pop-scrim' }));
+      scrim.style.top = hr.bottom + 'px';
+      return;
+    }
+    Array.prototype.forEach.call(pop.querySelectorAll('.kr-pnav'), function (n) { n.remove(); });
+    var sc = document.getElementById('kr-pop-scrim'); if (sc) sc.remove();
+    arrow.hidden = false;
+    var W = pop.offsetWidth, H = pop.offsetHeight;
+    // Vertically against the subtitle box, so the bubble never covers the other line of text.
     var left = Math.max(8, Math.min(v.w - W - 8, r.left + r.width / 2 - W / 2));
     var above = hr.top - H - 10 >= 8, top = above ? hr.top - H - 10 : hr.bottom + 10;
     pop.style.left = left + 'px'; pop.style.top = top + 'px';
-    var arrow = pop.querySelector('.kr-pop-arrow') || pop.appendChild(el('i', { className: 'kr-pop-arrow' }));
     arrow.className = 'kr-pop-arrow ' + (above ? 'kr-down' : 'kr-up');
     arrow.style.left = Math.max(16, Math.min(W - 16, r.left + r.width / 2 - left)) + 'px';
   }
+  function boxWords() { return Array.prototype.slice.call(document.querySelectorAll('#kr-box .kr-w')); }
+  // The docked card's ‹ › buttons: open the word before or after (like tapping it in the box).
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('#kr-pop [data-pop=prev], #kr-pop [data-pop=next]'); if (!b || !pop) return;
+    e.stopImmediatePropagation();
+    var all = boxWords(), i = all.indexOf(pop._span && pop._span.isConnected ? pop._span : boxSpan(pop._span && pop._span.getAttribute('data-w')));
+    var to = all[i + (b.dataset.pop === 'next' ? 1 : -1)];
+    if (to) to.click();
+  }, true);
 
   // ---------- pause / resume ----------
   var wasRunning = false;

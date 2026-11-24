@@ -191,6 +191,38 @@
 #kr-sheet.kr-page.kr-full .kr-card { padding-top: calc(0.5rem + env(safe-area-inset-top)); }
 
 /* Word popover arrow: a rotated square in the bubble's colour, pointing at the tapped word. */
+/* The word card docked at the bottom, in reach of your thumbs (ui.js placePop). Meaning first; one row of
+   big buttons: ‹ previous word, Learning, Known, More, next word ›. */
+#kr-pop.kr-dock {
+  left: 10px; right: 10px; top: auto; bottom: calc(10px + env(safe-area-inset-bottom)); width: auto; max-width: 520px; margin: 0 auto;
+  padding: 18px 16px 14px; border-radius: 28px;
+  box-shadow: 0 -2px 0 rgba(255, 255, 255, .06) inset, 0 24px 60px -10px rgba(0, 0, 0, .6), 0 0 0 1px rgba(0, 0, 0, .06);
+  animation: kr-dock .22s cubic-bezier(.2, .9, .25, 1.12);
+}
+@keyframes kr-dock { from { transform: translateY(40px); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { #kr-pop.kr-dock { animation: none; } }
+#kr-pop.kr-dock .kr-pw { font-size: 26px; letter-spacing: -.01em; }
+#kr-pop.kr-dock .kr-ptype { margin-top: 3px; font-size: 10.5px; letter-spacing: .08em; }
+#kr-pop.kr-dock .kr-pmean { margin-top: 8px; white-space: normal; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  font-size: 21px; font-weight: 700; line-height: 1.28; color: inherit; }
+#kr-pop.kr-dock .kr-psay { width: 46px; height: 46px; margin: -6px -4px 0 0; color: #7c3aed; background: #f4f4f5; }
+.dark #kr-pop.kr-dock .kr-psay, :root.dark #kr-pop.kr-dock .kr-psay { background: #3f3f46; color: #c4b5fd; }
+@media (prefers-color-scheme: dark) { #kr-pop.kr-dock .kr-psay { background: #3f3f46; color: #c4b5fd; } }
+#kr-pop.kr-dock .kr-psay:active { transform: scale(.92); }
+#kr-pop.kr-dock .kr-pname { margin-top: 2px; padding: 8px 12px; border-radius: 999px; }
+#kr-pop.kr-dock .kr-pacts { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 16px; }
+#kr-pop.kr-dock .kr-pa { display: flex; align-items: center; flex-direction: column; height: 60px; margin: 0; padding: 0 2px; justify-content: center; gap: 3px; border-radius: 16px;
+  font-size: 12.5px; font-weight: 650; white-space: nowrap; transition: transform .08s; }
+#kr-pop.kr-dock .kr-pa .hi { order: -1; width: 22px; height: 22px; }
+#kr-pop.kr-dock .kr-pa:active { transform: scale(.95); }
+#kr-pop.kr-dock .kr-pa-more { color: #fff; background: #7c3aed; }
+#kr-pop.kr-dock .kr-pa-more:active { background: #6d28d9; }
+#kr-pop.kr-dock .kr-pacts:has(> :only-child) { grid-template-columns: 1fr; }
+#kr-pop.kr-dock .kr-pnav { color: #71717a; background: transparent; box-shadow: inset 0 0 0 1.5px #e4e4e7; }
+#kr-pop.kr-dock .kr-pnav:disabled { opacity: .3; }
+#kr-pop-scrim { position: fixed; left: 0; right: 0; bottom: 0; z-index: 58; background: rgba(0, 0, 0, .5); animation: kr-fade .2s; }
+@keyframes kr-fade { from { opacity: 0; } }
+@media (prefers-color-scheme: dark) { #kr-pop.kr-dock .kr-pnav { color: #a1a1aa; box-shadow: inset 0 0 0 1.5px #3f3f46; } }
 .kr-pop-arrow { position: absolute; width: 14px; height: 14px; margin-left: -7px; transform: rotate(45deg); background: inherit; }
 .kr-pop-arrow.kr-down { bottom: -7px; box-shadow: 3px 3px 4px rgba(0, 0, 0, 0.06); border-radius: 0 0 3px 0; }
 .kr-pop-arrow.kr-up { top: -7px; border-radius: 3px 0 0 0; }
