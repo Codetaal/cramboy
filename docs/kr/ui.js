@@ -901,8 +901,8 @@
   }
   // After a re-render of the subtitles, the tapped word's new element.
   function boxSpan(w) { return Array.prototype.filter.call(document.querySelectorAll('#kr-box .kr-w, #kr-panel .kr-w'), function (n) { return n.getAttribute('data-w') === w; })[0] || null; }
-  // In a game held upright: a card docked at the bottom of the screen, where your thumbs already are (the
-  // game is paused while it's open, so it may cover the controls). Its bottom row also steps to the
+  // In a game held upright: a card right under the subtitle box (the game is paused while it's open, so it
+  // may cover the bottom screen). Its bottom row also steps to the
   // previous and next word, so you can read a whole line without reaching up to the box. Otherwise (the
   // reading panel, landscape): a bubble above the word, pointing at it (below when there's no room above).
   function placePop(span) {
@@ -930,10 +930,12 @@
           (to === 'prev' ? HI('chevron-left', 'size-4') + '<span>' + esc(w) + '</span>' : '<span>' + esc(w) + '</span>' + HI('chevron-right', 'size-4')) + '</button>' : '<span></span>';
       };
       pager.innerHTML = side('prev', all[i - 1] && all[i - 1].textContent) + (all.length > 1 && i >= 0 ? '<span class="kr-pcount">' + (i + 1) + ' / ' + all.length + '</span>' : '<span></span>') + side('next', all[i + 1] && all[i + 1].textContent);
-      pop.style.left = pop.style.top = '';
-      // The game below the box dims, so the card reads as on top (a tap there closes it, like anywhere).
+      // Right under the subtitle box, following it wherever you've moved it; above it when there's no room
+      // below. That side of the game dims, so the card reads as on top (a tap there closes it, like anywhere).
+      var H = pop.offsetHeight, below = hr.bottom + 8 + H <= v.h - 8;
+      pop.style.left = ''; pop.style.top = (below ? hr.bottom + 8 : Math.max(8, hr.top - 8 - H)) + 'px';
       var scrim = document.getElementById('kr-pop-scrim') || document.body.appendChild(el('div', { id: 'kr-pop-scrim' }));
-      scrim.style.top = hr.bottom + 'px';
+      scrim.style.top = below ? hr.bottom + 'px' : '0px'; scrim.style.bottom = below ? '0px' : (v.h - hr.top) + 'px';
       return;
     }
     var pg = pop.querySelector('.kr-pager'); if (pg) pg.remove();

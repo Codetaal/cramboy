@@ -191,12 +191,12 @@
 #kr-sheet.kr-page.kr-full .kr-card { padding-top: calc(0.5rem + env(safe-area-inset-top)); }
 
 /* Word popover arrow: a rotated square in the bubble's colour, pointing at the tapped word. */
-/* The word card docked at the bottom, in reach of your thumbs (ui.js placePop). Calm and roomy: the word,
+/* The word card right under the subtitle box (ui.js placePop). Calm and roomy: the word,
    then its meaning as the biggest text, one row of controls (Learning/Known switch + More), and a quiet
    strip with the words before and after it. Corners follow the phone's own. */
 #kr-pop.kr-dock {
   --ink: #18181b; --soft: #71717a; --well: #f4f4f5; --line: #ececef; --card: #fff;
-  left: 8px; right: 8px; top: auto; bottom: calc(8px + env(safe-area-inset-bottom)); width: auto; max-width: 520px; margin: 0 auto;
+  left: 8px; right: 8px; bottom: auto; width: auto; max-width: 520px; margin: 0 auto;
   padding: 22px 20px 0; border-radius: 34px; color: var(--ink); background: var(--card);
   box-shadow: 0 30px 80px -20px rgba(0, 0, 0, .55); --tw-ring-shadow: 0 0 #0000;
   animation: kr-dock .26s cubic-bezier(.16, 1, .3, 1);
@@ -204,7 +204,7 @@
 @media (prefers-color-scheme: dark) {
   #kr-pop.kr-dock { --ink: #fafafa; --soft: #a1a1aa; --well: #2c2c30; --line: #2f2f33; --card: #1c1c1f; }
 }
-@keyframes kr-dock { from { transform: translateY(24px); opacity: 0; } }
+@keyframes kr-dock { from { transform: translateY(-10px) scale(.98); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { #kr-pop.kr-dock { animation: none; } }
 #kr-pop.kr-dock .kr-pw { font-size: 30px; font-weight: 700; letter-spacing: -.02em; }
 #kr-pop.kr-dock .kr-pmut { color: var(--soft); }
