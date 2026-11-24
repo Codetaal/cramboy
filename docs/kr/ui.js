@@ -986,14 +986,19 @@
     arrow.className = 'kr-pop-arrow ' + (above ? 'kr-down' : 'kr-up');
     arrow.style.left = Math.max(16, Math.min(W - 16, r.left + r.width / 2 - left)) + 'px';
   }
-  // Tapping the right side of the subtitle box (not on a word) opens the card on the first word of the
-  // message on screen; a small magnifier there hints at it.
+  // Tapping the right side of the subtitle box (not on a word) opens the bubble on the first word you can
+  // see in it; a small magnifier there hints at it.
   var boxLook = el('div', { className: 'kr-box-look', ariaHidden: 'true', innerHTML: HI('magnifying-glass', 'size-full') });
   box.appendChild(boxLook);
   box.addEventListener('click', function (e) {
     if (e.target.closest('.kr-w, .kr-box-grip, .kr-box-size')) return;
     var br = box.getBoundingClientRect(); if (e.clientX < br.left + br.width * 0.6) return;
-    var msgs = boxText.children, last = msgs[msgs.length - 1], first = last && last.querySelector('.kr-w');
+    // The first word you can see: the box shows the last lines of a longer message, or older text when
+    // you've scrolled back.
+    var tr = boxText.getBoundingClientRect();
+    var first = Array.prototype.filter.call(boxText.querySelectorAll('.kr-w'), function (n) {
+      var q = n.getBoundingClientRect(); return q.bottom > tr.top + 4 && q.top < tr.bottom - 4;
+    })[0];
     if (first) first.click();
   });
 
