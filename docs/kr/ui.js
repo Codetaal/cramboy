@@ -324,7 +324,9 @@
     ['님', 'polite title', 0], ['씨', 'Mr. / Ms.', 0], ['군', 'young man', 0], ['양', 'Miss', 0]];
   function nameStems(tok, l) {
     var c = l === 'ja' ? KRLookupJa.clean(tok) : KRLookup.clean(tok), out = [c];
-    if (l !== 'ja') NAME_PARTICLES.forEach(function (p) { if (c.length > p.length + 1 && c.slice(-p.length) === p) out.push(c.slice(0, -p.length)); });
+    // Two particles can stack (성도에서도 = 성도 + 에서 + 도), so strip twice.
+    var strip = function (w) { NAME_PARTICLES.forEach(function (p) { if (w.length > p.length + 1 && w.slice(-p.length) === p && out.indexOf(w.slice(0, -p.length)) < 0) out.push(w.slice(0, -p.length)); }); };
+    if (l !== 'ja') { strip(c); out.slice(1).forEach(strip); }
     return out;
   }
   function nameInfo(tok, l) {
@@ -830,8 +832,9 @@
       pop.innerHTML = popHead(info.whole, '', 'name') +
         '<p class="kr-pmean mt-0.5 text-[15px] leading-snug text-zinc-700 dark:text-zinc-200"><b>' + esc(info.name) + '</b> ' + (info.who === 'you' ? 'your name in this game' : info.who === 'rival' ? 'your rival\'s name' : 'a name') +
         (info.title ? ' <span class="text-zinc-400">+</span> <b class="text-violet-700 dark:text-violet-300">' + esc(info.title) + '</b> ' + esc(info.titleEn) : '') + '</p>' +
-        '<p class="kr-pmut mt-0.5 text-[13px] text-zinc-500 dark:text-zinc-400">Names aren\'t translated or reviewed.</p>' +
-        (info.who ? '' : '<div class="kr-pacts mt-2.5 flex"><button class="kr-pa flex items-center gap-1 rounded-lg bg-zinc-100 px-2.5 py-1.5 text-[13px] font-semibold text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200" data-pop="not-name">' + HI('x-mark', 'size-4') + 'Not a name</button></div>');
+        '<p class="kr-pmut mt-0.5 text-[13px] text-zinc-500 dark:text-zinc-400">' + (info.mine ? 'Marked as a name. ' : '') + 'Names aren\'t translated or reviewed.</p>' +
+        (info.who ? '' : '<div class="kr-pacts mt-2.5 flex"><button class="kr-pa flex items-center gap-1 rounded-lg bg-zinc-100 px-2.5 py-1.5 text-[13px] font-semibold text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200" data-pop="not-name">' +
+          (info.mine ? HI('arrow-uturn-left', 'size-4') + 'Undo' : HI('x-mark', 'size-4') + 'Not a name') + '</button></div>');   // one you marked yourself: Undo, as for Not a word
       placePop(span);
     };
     draw();
@@ -906,7 +909,7 @@
       toggleFlagMenu(false);
       if (a === 'more') { closePop(); return asPage('game', function () { showWordSheet(word, raw, sentence, hits, 'game'); }); }   // the word as a full page
       if (a === 'name') {   // mark it as a name: no underline, no translation, not reviewed
-        var st2 = nameStems(raw, lang), stem = st2[1] || st2[0];   // without its particle: 지겸이 → 지겸
+        var st2 = nameStems(raw, lang), stem = st2.slice(1).sort(function (a, b) { return a.length - b.length; })[0] || st2[0];   // without its particles: 지겸이 → 지겸, 성도에서도 → 성도
         delete notNames[lang][stem]; names[lang][stem] = 1;
         persistNames(); renderPanel(); closePop(true);
         var sp2 = boxSpan(raw); if (sp2) sp2.click();
